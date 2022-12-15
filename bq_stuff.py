@@ -2,7 +2,7 @@
 # Import the required libraries
 
 import os
-path_to_json = 'files/bq_key.json'
+path_to_json = 'bq_key.json'
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path_to_json
 
 import pandas as pd

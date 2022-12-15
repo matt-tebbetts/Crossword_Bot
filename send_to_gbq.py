@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 import pandas as pd
 
 # set google credentials
-path_to_json = 'files/bq_key.json'
+path_to_json = 'bq_key.json'
 my_credentials = service_account.Credentials.from_service_account_file(path_to_json)
 
 # connect to client
