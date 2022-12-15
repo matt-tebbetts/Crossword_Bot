@@ -54,12 +54,10 @@ async def on_message(message):
 
     # get message details
     msg_text = str(message.content)
-    user_id = str(message.author.name)
-    user_nickname = message.author.display_name
-    #print(user_nickname)
+    user_id = str(message.author.display_name)
 
     print(f"""*** {game_time} ... received message in {message.channel.name}""")
-    print(f"""*** {user_nickname} said:""")
+    print(f"""*** {user_id} said:""")
     print('')
     print(f"""{msg_text}""")
     print('')
