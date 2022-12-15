@@ -49,7 +49,7 @@ def add_score(game_id, user_id, msg_txt):
     # send to csv
     send_to_csv = True
     if send_to_csv:
-        save_loc = 'files/games/game_history.csv
+        save_loc = 'files/games/game_history.csv'
         df.to_csv(save_loc, mode='a', index=False, header=False)
         print('I saved this score to : ' + save_loc)
 
