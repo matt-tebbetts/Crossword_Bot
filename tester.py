@@ -3,7 +3,6 @@ import pandas as pd
 import pandasql as ps
 from tabulate import tabulate
 from datetime import datetime
-import image_creator as img
 
 # nice printer
 def print_nicely(df_to_print):

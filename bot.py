@@ -9,7 +9,7 @@ import pytz
 from datetime import datetime
 
 # custom
-import score_scraper
+import bot_functions
 
 # get date and time
 now = datetime.now(pytz.timezone('US/Eastern'))
@@ -32,13 +32,33 @@ async def on_ready():
 # command to get today's mini
 @bot.command(name='mini')
 async def mini(ctx):
-    my_image = '/home/matttebbetts/mini_screenshots/latest.png'
+    my_image = 'files/daily/Mini.png'
     await ctx.channel.send(file=discord.File(my_image))
 
-# command for getting leaderboard image?
-@bot.command(name='ranks')
-async def ranks(ctx):
-    await ctx.channel.send('Sorry, can''t do that yet. I''m just a big dumb bot.')
+# command to get other leaderboards
+@bot.command(name='wordle')
+async def wordle(ctx):
+    bot_functions.get_leaderboard('wordle')
+    response_image = 'files/weekly/Wordle.png'
+    await ctx.channel.send(file=discord.File(response_image))
+
+@bot.command(name='factle')
+async def wordle(ctx):
+    bot_functions.get_leaderboard('factle')
+    response_image = 'files/weekly/Factle.png'
+    await ctx.channel.send(file=discord.File(response_image))
+
+@bot.command(name='worldle')
+async def wordle(ctx):
+    bot_functions.get_leaderboard('worldle')
+    response_image = 'files/weekly/Worldle.png'
+    await ctx.channel.send(file=discord.File(response_image))
+
+
+# command to draft something
+@bot.command(name='draft')
+async def draft(ctx, movie_name):
+    await ctx.channel.send(f'drafting {movie_name}')
 
 # message reader
 @bot.event
@@ -64,19 +84,18 @@ async def on_message(message):
 
     # check all potential score posts
     pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me']
-
     for game_id in pref_list:
         if msg_text.startswith(game_id):
             print('This looks like a game score for: ' + game_id)
 
             # send to score scraper
-            response = score_scraper.add_score(game_id, user_id, msg_text)
+            response = bot_functions.add_score(game_id, user_id, msg_text)
             print(response)
 
             # send message back?
             await message.channel.send(response)
 
-    # this tells it to process this command
+    # this just tells the message reader to run (don't touch)
     await bot.process_commands(message)
     print('')
 
