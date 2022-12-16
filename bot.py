@@ -18,7 +18,7 @@ game_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 # connect to discord
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
+TOKEN = os.getenv('TEBBETTS_BOT')
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents)
