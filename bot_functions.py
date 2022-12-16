@@ -10,11 +10,6 @@ import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-COOKIE = os.getenv('NYT_COOKIE')
-
-
 ## generic functions:
 ## ------------------------------------------------------------------------------------------- ##
 
@@ -64,6 +59,11 @@ def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=14,
 
 # save mini dataframe and send image
 def get_mini(send_to_bq=False):
+
+    # get cookie
+    load_dotenv()
+    COOKIE = os.getenv('NYT_COOKIE')
+
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
     now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
