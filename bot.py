@@ -1,7 +1,7 @@
 # main functions and connecting
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 # for getting date and time
@@ -29,6 +29,14 @@ async def on_ready():
     print(game_time + ': ' + bot.user.name + ' is ready')
     print('')
 
+## ************************************************************** ##
+## scheduled actions
+## ************************************************************** ##
+
+
+## ************************************************************** ##
+## commands
+## ************************************************************** ##
 # command to get today's mini
 @bot.command(name='mini')
 async def mini(ctx):
@@ -60,7 +68,7 @@ async def wordle(ctx):
     await ctx.channel.send(file=discord.File(response_image))
 
 @bot.command(name='worldle')
-async def wordle(ctx):
+async def worldle(ctx):
     bot_functions.get_leaderboard('worldle')
     response_image = 'files/weekly/Worldle.png'
     await ctx.channel.send(file=discord.File(response_image))

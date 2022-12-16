@@ -63,7 +63,7 @@ def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=14,
 ## ------------------------------------------------------------------------------------------- ##
 
 # save mini dataframe and send image
-def get_mini():
+def get_mini(send_to_bq=False):
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
     now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -97,14 +97,18 @@ def get_mini():
 
     # append to master file
     df.to_csv('files/mini_history.csv', mode='a', index=False, header=False)
-    print('saved to master file')
+    print('mini: saved to master file')
+    print('mini: attempting to send to BigQuery')
 
-    # append to google bigquery
-    send_to_gbq = False
-    if send_to_gbq:
-        my_project = 'angular-operand-300822'
-        my_table = 'crossword.mini_history'
-        df.to_gbq(destination_table=my_table, project_id=my_project, if_exists='append')
+    # append to google bigquery (optional)
+    if send_to_bq:
+        try:
+            my_project = 'angular-operand-300822'
+            my_table = 'crossword.mini_history'
+            df.to_gbq(destination_table=my_table, project_id=my_project, if_exists='append')
+            print('mini: sent to BigQuery')
+        except:
+            print('mini: error - was unable to send to BigQuery')
 
     # set up for image creation
     real_names = pd.read_csv('files/users.csv')
@@ -118,6 +122,7 @@ def get_mini():
     img_title = f"The Mini: {mini_dt}"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
+    print('mini: image output created')
 
     # send image back to discord
     return img_file
