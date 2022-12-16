@@ -32,15 +32,26 @@ async def on_ready():
 # command to get today's mini
 @bot.command(name='mini')
 async def mini(ctx):
-    my_image = 'files/daily/Mini.png'
+    my_image = bot_functions.get_mini()
     await ctx.channel.send(file=discord.File(my_image))
 
 # command to get other leaderboards
 @bot.command(name='wordle')
-async def wordle(ctx):
-    bot_functions.get_leaderboard('wordle')
-    response_image = 'files/weekly/Wordle.png'
-    await ctx.channel.send(file=discord.File(response_image))
+async def wordle(ctx, time_frame='daily'):
+    time_frame = str.lower(time_frame.strip())
+
+    # this should return a list object
+    response = bot_functions.get_leaderboard('wordle', time_frame)
+    print('response is: ' + str(response))
+
+    if response[0]:
+        response_image = f'files/{time_frame.lower()}/Wordle.png'
+        print(f"here's the {time_frame} leaderboard")
+        await ctx.channel.send(file=discord.File(response_image))
+    else:
+        print('generic response')
+        await ctx.channel.send("I have no records for Wordle today")
+
 
 @bot.command(name='factle')
 async def wordle(ctx):
@@ -53,7 +64,6 @@ async def wordle(ctx):
     bot_functions.get_leaderboard('worldle')
     response_image = 'files/weekly/Worldle.png'
     await ctx.channel.send(file=discord.File(response_image))
-
 
 # command to draft something
 @bot.command(name='draft')
@@ -77,9 +87,7 @@ async def on_message(message):
     user_id = str(message.author.display_name)
 
     print(f"""*** {game_time} ... received message in {message.channel.name}""")
-    print(f"""*** {user_id} said:""")
-    print('')
-    print(f"""{msg_text}""")
+    print(f"""*** {user_id} said: {msg_text}""")
     print('')
 
     # check all potential score posts
