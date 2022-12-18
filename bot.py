@@ -18,10 +18,11 @@ game_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 # connect to discord
 load_dotenv()
-TOKEN = os.getenv('TEBBETTS_BOT')
+TOKEN = os.getenv('CROSSWORD_BOT')  # TEBBETTS_BOT or #CROSSWORD_BOT
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents)
+
 
 # confirm ready
 @bot.event
@@ -29,61 +30,45 @@ async def on_ready():
     print(game_time + ': ' + bot.user.name + ' is ready')
     print('')
 
-## ************************************************************** ##
-## scheduled actions
-## ************************************************************** ##
 
-
-## ************************************************************** ##
-## commands
-## ************************************************************** ##
 # command to get today's mini
 @bot.command(name='mini')
 async def mini(ctx):
     my_image = bot_functions.get_mini()
     await ctx.channel.send(file=discord.File(my_image))
 
-# command to get other leaderboards
-@bot.command(name='wordle')
-async def wordle(ctx, time_frame='daily'):
-    time_frame = str.lower(time_frame.strip())
 
-    # this should return a list object
-    response = bot_functions.get_leaderboard('wordle', time_frame)
+# command to get other leaderboards
+@bot.command(name='get', aliases=['wordle', 'factle', 'worldle'])
+async def get(ctx, time_frame='daily'):
+    time_frame = str.lower(time_frame.strip())
+    game_name = ctx.invoked_with
+
+    response = bot_functions.get_leaderboard(game_name, time_frame)
     print('response is: ' + str(response))
 
+    proper_game_id = str.upper(game_name[0]) + str.lower(game_name[1:len(game_name)])
+
     if response[0]:
-        response_image = f'files/{time_frame.lower()}/Wordle.png'
+        response_image = f'files/{time_frame.lower()}/{proper_game_id}.png'
         print(f"here's the {time_frame} leaderboard")
         await ctx.channel.send(file=discord.File(response_image))
     else:
-        print('generic response')
-        await ctx.channel.send("I have no records for Wordle today")
+        print('no records found')
+        await ctx.channel.send(f"I have no records for {game_name} today")
 
-
-@bot.command(name='factle')
-async def wordle(ctx):
-    bot_functions.get_leaderboard('factle')
-    response_image = 'files/weekly/Factle.png'
-    await ctx.channel.send(file=discord.File(response_image))
-
-@bot.command(name='worldle')
-async def worldle(ctx):
-    bot_functions.get_leaderboard('worldle')
-    response_image = 'files/weekly/Worldle.png'
-    await ctx.channel.send(file=discord.File(response_image))
 
 # command to draft something
 @bot.command(name='draft')
 async def draft(ctx, movie_name):
     await ctx.channel.send(f'drafting {movie_name}')
 
+
 # message reader
 @bot.event
 async def on_message(message):
-
     # only comment on certain channel(s)
-    if message.channel.name not in ["crossword", "bot_tester"]:
+    if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test"]:
         return
 
     # don't respond to self
@@ -114,6 +99,7 @@ async def on_message(message):
     # this just tells the message reader to run (don't touch)
     await bot.process_commands(message)
     print('')
+
 
 # run bot
 bot.run(TOKEN)

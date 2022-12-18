@@ -95,6 +95,11 @@ def get_mini(send_to_bq=False):
     df.insert(0, 'game_date', mini_dt)
     df['added_ts'] = now_ts
 
+    if len(df) == 0:
+        print('Nobody did the mini yet')
+        no_mini = 'files/daily/No_Mini_Yet.png'
+        return no_mini
+
     # append to master file
     df.to_csv('files/mini_history.csv', mode='a', index=False, header=False)
     print('mini: saved to master file')
@@ -212,6 +217,9 @@ def get_leaderboard(game_id, time_frame='daily'):
     user_df['player_id'] = user_df['player_id'].str.lower()
     df = pd.merge(data_df, user_df, how='left', on='player_id')[
         ['game_date', 'game_name', 'game_score', 'added_ts', 'game_dtl', 'player_name']]
+
+
+
 
     # remove dupes and make some adjustments
     df['game_dtl'] = df['game_dtl'].str[0:19].mask(pd.isnull, 'None')
