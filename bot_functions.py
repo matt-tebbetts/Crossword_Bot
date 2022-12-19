@@ -171,6 +171,8 @@ def add_score(game_prefix, player_id, msg_txt):
     # game_name = 'atlantic'
     # game_score =
 
+    # test change
+
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'player_id', 'game_dtl']
     my_data = [[game_date, game_name, game_score, game_time, player_id, game_dtl]]
