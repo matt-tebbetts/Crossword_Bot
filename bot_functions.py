@@ -134,7 +134,7 @@ def get_mini(send_to_bq=False):
 
 
 # add discord scores to database
-def add_score(game_id, player_id, msg_txt):
+def add_score(game_prefix, player_id, msg_txt):
 
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -146,21 +146,21 @@ def add_score(game_id, player_id, msg_txt):
     game_score = None
     game_dtl = None
 
-    if game_id == "#Worldle":
-        game_name = "Worldle"
+    if game_prefix == "#Worldle":
+        game_name = "worldle"
         game_score = msg_txt[14:17]
 
-    if game_id == "Wordle":
-        game_name = "Wordle"
+    if game_prefix == "Wordle":
+        game_name = "wordle"
         game_score = msg_txt[11:14]
 
-    if game_id == "Factle.app":
-        game_name = "Factle"
+    if game_prefix == "Factle.app":
+        game_name = "factle"
         game_score = msg_txt[14:17]
         game_dtl = msg_txt.splitlines()[1]
 
-    if game_id == 'boxofficega.me':
-        game_name = 'BoxOffice'
+    if game_prefix == 'boxofficega.me':
+        game_name = 'boxoffice'
         game_dtl = msg_txt.split('\n')[1]
         trophy_symbol = u'\U0001f3c6'
         for line in msg_txt.split('\n'):
@@ -187,11 +187,11 @@ def add_score(game_id, player_id, msg_txt):
 
 
 # this creates two images (daily + weekly) of the leaderboard into the folder
-def get_leaderboard(game_id, time_frame='daily'):
+def get_leaderboard(game_name, time_frame='daily'):
 
-    print(f'fetching {time_frame} for {game_id}')
+    print(f'fetching {time_frame} for {game_name}')
 
-    if game_id not in ['wordle', 'worldle', 'factle']:
+    if game_name not in ['wordle', 'worldle', 'factle']:
         print('sorry, game_id not set up yet')
         return
 
@@ -199,17 +199,13 @@ def get_leaderboard(game_id, time_frame='daily'):
         print('sorry, timeframe not set up yet')
         return
 
-    # (should just build match dataframe or dictionary)
-    # set proper case of game name (need to adjust for boxoffice)
-    game_id = str.upper(game_id[0]) + str.lower(game_id[1:len(game_id)])
-
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
     now_date = now.strftime("%Y-%m-%d")
 
     # pull game_history for game_id
     data_df = pd.read_csv('files/game_history.csv')
-    data_df = data_df[data_df['game_name'] == game_id]
+    data_df = data_df[data_df['game_name'] == game_name]
 
     # get player names
     user_df = pd.read_csv('files/users.csv')[['player_id', 'player_name']]
@@ -217,9 +213,6 @@ def get_leaderboard(game_id, time_frame='daily'):
     user_df['player_id'] = user_df['player_id'].str.lower()
     df = pd.merge(data_df, user_df, how='left', on='player_id')[
         ['game_date', 'game_name', 'game_score', 'added_ts', 'game_dtl', 'player_name']]
-
-
-
 
     # remove dupes and make some adjustments
     df['game_dtl'] = df['game_dtl'].str[0:19].mask(pd.isnull, 'None')
@@ -235,56 +228,40 @@ def get_leaderboard(game_id, time_frame='daily'):
     df['guesses'] = np.where(act_g == 0, max_g + 1, act_g)
     df['points'] = np.where(act_g == 0, 0, pow((max_g + 1) - act_g, 2))
 
-    # rename
-    df.rename(columns={'game_score': 'score', 'player_name': 'player'}, inplace=True)
+    # do some calcs
+    current_week = np.max(df['week_nbr'])
 
-    guessing_games = ['Wordle', 'Worldle', 'Factle']
-    if game_id in guessing_games:
-
-        # if no one has gone yet today, then exit
-        if np.max(df['game_date']) != now_date:
-            exit_msg = [False, f'No one has completed the {game_id} yet today']
-            return exit_msg
-
-        if time_frame == 'daily':
-
-            # build daily leaderboard
-            df_day = df[df['game_date'] == now_date][['player', 'score', 'points']]
-            rank = df_day['points'].rank(method='dense', ascending=False)
-            df_day.insert(loc=0, column='rank', value=rank)
-            df_day.set_index('rank', drop=True, inplace=True)
-            df_day.sort_values(by='points', ascending=False, inplace=True)
-            print('got daily for ' + game_id)
-
-            # save image
-            path_daily = 'files/daily/' + game_id + '.png'
-            chart_title = f'{game_id}, {now_date}'
-            fig = render_mpl_table(df_day, chart_title=chart_title).figure
-            fig.savefig(path_daily, dpi=300, bbox_inches='tight', pad_inches=.5)
-            print(f'printed daily leaderboard image for {game_id} to {path_daily}')
-
-        if time_frame == 'weekly':
-
-            # create weekly leaderboard
-            current_week = np.max(df['week_nbr'])
-            df_week = df[(df['game_name'] == game_id) & (df['week_nbr'] == current_week)]
-            df_week = df_week \
-                .groupby(['week_nbr', 'game_name', 'player'], as_index=False) \
-                .agg({'points': 'sum', 'guesses': 'mean'}) \
-                .sort_values(by='points', ascending=False) \
-                .rename(columns={'guesses': 'avg_guess'})
-            rank = df_week.groupby(['game_name'])['points'].rank(method='dense', ascending=False).astype(int)
-            df_week.insert(loc=0, column='rank', value=rank)
-            df_week.drop(columns={'week_nbr', 'game_name'}, inplace=True)
-            df_week.set_index('rank', drop=True, inplace=True)
-            df_week['avg_guess'] = np.round(df_week['avg_guess'], 1)
-            print('got weekly for ' + game_id)
-
-            # save image
-            path_wkly = 'files/weekly/' + game_id + '.png'
-            fig = render_mpl_table(df_week, chart_title=f'{game_id}, Week #{current_week}').figure
-            fig.savefig(path_wkly, dpi=300, bbox_inches='tight', pad_inches=.5)
-            print(f'printed weekly leaderboard image for {game_id} to {path_wkly}')
-
-        exit_msg = [True, f'Got {time_frame} {game_id}']
+    # if no one has gone yet today, then exit
+    if np.max(df['game_date']) != now_date:
+        exit_msg = [False, f'No one has completed the {game_name} yet today']
         return exit_msg
+
+    if time_frame == 'daily':
+        leaderboard = df[df['game_date'] == now_date][['player_name', 'game_score', 'points']]
+        chart_title = f'{time_frame} {game_name}, {now_date}'
+
+    if time_frame == 'weekly':
+        leaderboard = df[df['week_nbr'] == current_week][['player_name', 'guesses', 'points']]
+        leaderboard['games'] = 1
+        leaderboard = leaderboard.groupby(['player_name'], as_index=False) \
+            .agg({'games': 'sum',
+                  'points': 'sum',
+                  'guesses': 'mean'}) \
+            .sort_values(by='points', ascending=False) \
+            .rename(columns={'guesses': 'avg_guess'})
+        leaderboard['avg_guess'] = np.round(leaderboard['avg_guess'], 1)
+        chart_title = f'{time_frame} {game_name}, {current_week}'
+
+    # get rank (regardless of timeframe)
+    rank = leaderboard['points'].rank(method='dense', ascending=False).astype(int)
+    leaderboard.insert(loc=0, column='rank', value=rank)
+    leaderboard.set_index('rank', drop=True, inplace=True)
+    leaderboard.sort_values(by='points', ascending=False, inplace=True)
+
+    # save image
+    img_save_as = f'files/images/{time_frame}_{game_name}.png'
+    fig = render_mpl_table(leaderboard, chart_title=chart_title).figure
+    fig.savefig(img_save_as, dpi=300, bbox_inches='tight', pad_inches=.5)
+    print(f'printed {time_frame} leaderboard image for {game_name} to {img_save_as}')
+    exit_msg = [True, f'Got {game_name} {time_frame}']
+    return exit_msg
