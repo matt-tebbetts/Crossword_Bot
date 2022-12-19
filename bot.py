@@ -3,6 +3,7 @@ import os
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+import pandas as pd
 
 # for getting date and time
 import pytz
@@ -41,16 +42,17 @@ async def mini(ctx):
 # command to get other leaderboards
 @bot.command(name='get', aliases=['wordle', 'factle', 'worldle'])
 async def get(ctx, time_frame='daily'):
+
+    # figure out which game it is
     time_frame = str.lower(time_frame.strip())
     game_name = ctx.invoked_with
 
+    # get the leaderboard
     response = bot_functions.get_leaderboard(game_name, time_frame)
     print('response is: ' + str(response))
 
-    proper_game_id = str.upper(game_name[0]) + str.lower(game_name[1:len(game_name)])
-
     if response[0]:
-        response_image = f'files/{time_frame.lower()}/{proper_game_id}.png'
+        response_image = f'files/images/{time_frame.lower()}_{game_name}.png'
         print(f"here's the {time_frame} leaderboard")
         await ctx.channel.send(file=discord.File(response_image))
     else:
@@ -67,6 +69,7 @@ async def draft(ctx, movie_name):
 # message reader
 @bot.event
 async def on_message(message):
+
     # only comment on certain channel(s)
     if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test"]:
         return
@@ -79,18 +82,22 @@ async def on_message(message):
     msg_text = str(message.content)
     user_id = str(message.author.display_name)
 
+    # find real name of user_id
+    real_names = pd.read_csv('files/users.csv')
+
+
     print(f"""*** {game_time} ... received message in {message.channel.name}""")
     print(f"""*** {user_id} said: {msg_text}""")
     print('')
 
     # check all potential score posts
     pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me']
-    for game_id in pref_list:
-        if msg_text.startswith(game_id):
-            print('This looks like a game score for: ' + game_id)
+    for game_prefix in pref_list:
+        if msg_text.startswith(game_prefix):
+            print('This looks like a game score for: ' + game_prefix)
 
             # send to score scraper
-            response = bot_functions.add_score(game_id, user_id, msg_text)
+            response = bot_functions.add_score(game_prefix, user_id, msg_text)
             print(response)
 
             # send message back?
