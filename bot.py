@@ -1,16 +1,14 @@
 # main functions and connecting
 import os
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from dotenv import load_dotenv
-import pandas as pd
-
-# for getting date and time
 import pytz
 from datetime import datetime
-
-# custom
 import bot_functions
+
+# set testing mode here!
+testing_mode = False
 
 # get date and time
 now = datetime.now(pytz.timezone('US/Eastern'))
@@ -19,16 +17,17 @@ game_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 # connect to discord
 load_dotenv()
-TOKEN = os.getenv('CROSSWORD_BOT')  # TEBBETTS_BOT or #CROSSWORD_BOT
+TOKEN = os.getenv('CROSSWORD_BOT')
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents)
-
 
 # confirm ready
 @bot.event
 async def on_ready():
     print(game_time + ': ' + bot.user.name + ' is ready')
+    for guild in bot.guilds:
+        print(f'Connected to the server: {guild.name}')
     print('')
 
 
