@@ -10,6 +10,7 @@ import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
 
+
 ## generic functions:
 ## ------------------------------------------------------------------------------------------- ##
 
@@ -55,11 +56,11 @@ def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=14,
     # end of function is to return the "ax" variable? why not .figure?
     return ax
 
+
 ## ------------------------------------------------------------------------------------------- ##
 
 # save mini dataframe and send image
 def get_mini(send_to_bq=False):
-
     # get cookie
     load_dotenv()
     COOKIE = os.getenv('NYT_COOKIE')
@@ -135,7 +136,6 @@ def get_mini(send_to_bq=False):
 
 # add discord scores to database
 def add_score(game_prefix, player_id, msg_txt):
-
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
     game_date = now.strftime("%Y-%m-%d")
@@ -167,6 +167,10 @@ def add_score(game_prefix, player_id, msg_txt):
             if line.find(trophy_symbol) >= 0:
                 game_score = line.split(' ')[1]
 
+    # if game_prefix == 'atlantic':
+    # game_name = 'atlantic'
+    # game_score =
+
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'player_id', 'game_dtl']
     my_data = [[game_date, game_name, game_score, game_time, player_id, game_dtl]]
@@ -188,7 +192,6 @@ def add_score(game_prefix, player_id, msg_txt):
 
 # this creates two images (daily + weekly) of the leaderboard into the folder
 def get_leaderboard(game_name, time_frame='daily'):
-
     print(f'fetching {time_frame} for {game_name}')
 
     if game_name not in ['wordle', 'worldle', 'factle']:

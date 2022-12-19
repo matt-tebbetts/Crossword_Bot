@@ -82,10 +82,6 @@ async def on_message(message):
     msg_text = str(message.content)
     user_id = str(message.author.display_name)
 
-    # find real name of user_id
-    real_names = pd.read_csv('files/users.csv')
-
-
     print(f"""*** {game_time} ... received message in {message.channel.name}""")
     print(f"""*** {user_id} said: {msg_text}""")
     print('')
@@ -103,7 +99,7 @@ async def on_message(message):
             # send message back?
             await message.channel.send(response)
 
-    # this just tells the message reader to run (don't touch)
+    # run the message check
     await bot.process_commands(message)
     print('')
 
