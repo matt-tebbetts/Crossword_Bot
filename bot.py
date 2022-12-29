@@ -70,7 +70,7 @@ async def draft(ctx, movie_name):
 async def on_message(message):
 
     # only comment on certain channel(s)
-    if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test"]:
+    if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test", "game-scores"]:
         return
 
     # don't respond to self
@@ -86,10 +86,13 @@ async def on_message(message):
     print('')
 
     # check all potential score posts
-    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me']
+    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic', 'atlantic']
     for game_prefix in pref_list:
         if msg_text.startswith(game_prefix):
             print('This looks like a game score for: ' + game_prefix)
+
+            if game_prefix in ['Atlantic', 'The Atlantic', 'atlantic']:
+                game_prefix = 'atlantic'
 
             # send to score scraper
             response = bot_functions.add_score(game_prefix, user_id, msg_text)
