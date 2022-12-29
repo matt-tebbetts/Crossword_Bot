@@ -80,10 +80,12 @@ async def on_message(message):
         return
 
     # get message details
+    msg_now = datetime.now(pytz.timezone('US/Eastern'))
+    msg_time = msg_now.strftime("%Y-%m-%d %H:%M:%S")
     msg_text = str(message.content)
-    msg_time = now.strftime("%Y-%m-%d %H:%M:%S")
     user_id = str(message.author.display_name)
 
+    # print details
     print(f"""*** {msg_time} ... received message in {message.channel.name}""")
     print(f"""*** {user_id} said: {msg_text}""")
     print('')
