@@ -210,7 +210,6 @@ def add_score(game_prefix, player_id, msg_txt):
     print('')
 
     # send to bq
-    game_history = 'crossword.game_history'
     my_project = 'angular-operand-300822'
     try:
         df.to_gbq(destination_table=game_history, project_id=my_project, if_exists='append')
