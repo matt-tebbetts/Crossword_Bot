@@ -1,14 +1,12 @@
 # main functions and connecting
 import os
+import socket
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 import pytz
 from datetime import datetime
 import bot_functions
-
-# set testing mode here!
-testing_mode = False
 
 # get date and time
 now = datetime.now(pytz.timezone('US/Eastern'))
@@ -28,6 +26,10 @@ async def on_ready():
     print(game_time + ': ' + bot.user.name + ' is ready')
     for guild in bot.guilds:
         print(f'Connected to the server: {guild.name}')
+    
+    # check if local
+    local_mode = True if socket.gethostname() == "MJT" else False
+    print(f'Variable local_mode is set to: {local_mode}')
     print('')
 
 
@@ -79,9 +81,10 @@ async def on_message(message):
 
     # get message details
     msg_text = str(message.content)
+    msg_time = now.strftime("%Y-%m-%d %H:%M:%S")
     user_id = str(message.author.display_name)
 
-    print(f"""*** {game_time} ... received message in {message.channel.name}""")
+    print(f"""*** {msg_time} ... received message in {message.channel.name}""")
     print(f"""*** {user_id} said: {msg_text}""")
     print('')
 
@@ -98,8 +101,24 @@ async def on_message(message):
             response = bot_functions.add_score(game_prefix, user_id, msg_text)
             print(response)
 
-            # send message back?
-            await message.channel.send(response)
+            if not response[0]:
+                emoji = '❌'
+
+            else:
+                if game_prefix in ['worldle', "#Worldle"]:
+                    emoji = '🌎'
+                elif game_prefix in ['Factle.app']:
+                    emoji = '📈'
+                elif game_prefix in ['Wordle']:
+                    emoji = '📚'
+                elif game_prefix in ['boxofficega.me']:
+                    emoji = '🎥'
+                else:
+                    emoji = '✅'
+
+            # react with proper emoji
+            await message.add_reaction(emoji)
+
 
     # run the message check
     await bot.process_commands(message)
