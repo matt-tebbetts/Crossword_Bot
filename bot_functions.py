@@ -1,4 +1,5 @@
 import os
+import socket
 import requests
 import pandas as pd
 from dotenv import load_dotenv
@@ -10,8 +11,14 @@ import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
 
+# set global variables
+test_mode = True if socket.gethostname() == "MJT" else False
+print(test_mode)
 
-## generic functions:
+my_project = 'angular-operand-300822'
+mini_history = 'crossword.mini_history'
+game_history = 'crossword.game_history'
+
 ## ------------------------------------------------------------------------------------------- ##
 
 # print a dataframe nicely
@@ -60,10 +67,12 @@ def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=14,
 ## ------------------------------------------------------------------------------------------- ##
 
 # save mini dataframe and send image
-def get_mini(send_to_bq=False):
+def get_mini():
     # get cookie
     load_dotenv()
     COOKIE = os.getenv('NYT_COOKIE')
+
+    print('current directory is: ' + os.getcwd())
 
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -96,35 +105,39 @@ def get_mini(send_to_bq=False):
     df.insert(0, 'game_date', mini_dt)
     df['added_ts'] = now_ts
 
+    # check if anyone did it yet
     if len(df) == 0:
         print('Nobody did the mini yet')
-        no_mini = 'files/daily/No_Mini_Yet.png'
+        no_mini = '/home/matttebbetts/projects/Crossword_Bot/files/images/No_Mini_Yet.png'
         return no_mini
 
+    # set location for csv file
+    if test_mode:
+        mini_history_loc = 'files/mini_history.csv'
+    else:
+        mini_history_loc = '/home/matttebbetts/projects/Crossword_Bot/files/mini_history.csv'
+
     # append to master file
-    df.to_csv('files/mini_history.csv', mode='a', index=False, header=False)
+    df.to_csv(mini_history_loc, mode='a', index=False, header=False)
     print('mini: saved to master file')
     print('mini: attempting to send to BigQuery')
 
-    # append to google bigquery (optional)
-    if send_to_bq:
-        try:
-            my_project = 'angular-operand-300822'
-            my_table = 'crossword.mini_history'
-            df.to_gbq(destination_table=my_table, project_id=my_project, if_exists='append')
-            print('mini: sent to BigQuery')
-        except:
-            print('mini: error - was unable to send to BigQuery')
+    # append to bq
+    try:
+        df.to_gbq(destination_table=mini_history, project_id=my_project, if_exists='append')
+        print('mini: successfully sent to BQ')
+    except Exception as e:
+        print('mini: ERROR. did not send to BQ')
 
     # set up for image creation
-    real_names = pd.read_csv('files/users.csv')
+    real_names = pd.read_csv('/home/matttebbetts/projects/Crossword_Bot/files/users.csv')
     img_df = pd.merge(df, real_names, how='inner', on='player_id')
     img_df = img_df[img_df['give_rank'] == True][['player_name', 'game_time']].reset_index(drop=True)
     game_rank = img_df['game_time'].rank(method='dense').astype(int)
     img_df.insert(0, 'game_rank', game_rank)
 
     # create image
-    img_file = 'files/daily/Mini.png'
+    img_file = '/home/matttebbetts/projects/Crossword_Bot/files/daily/Mini.png'
     img_title = f"The Mini: {mini_dt}"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
@@ -132,7 +145,6 @@ def get_mini(send_to_bq=False):
 
     # send image back to discord
     return img_file
-
 
 # add discord scores to database
 def add_score(game_prefix, player_id, msg_txt):
@@ -167,11 +179,27 @@ def add_score(game_prefix, player_id, msg_txt):
             if line.find(trophy_symbol) >= 0:
                 game_score = line.split(' ')[1]
 
-    # if game_prefix == 'atlantic':
-    # game_name = 'atlantic'
-    # game_score =
+    if game_prefix == 'atlantic':
+        game_name = 'atlantic'
+        msg_txt = msg_txt.replace('[', '')
 
-    # test change
+        # find position of colon to get time
+        s = msg_txt.find(':')
+        game_score = msg_txt[s - 2:s + 3].strip()
+
+        # find position of / to get date
+        d = msg_txt.find('/')
+        r_month = msg_txt[d - 2:d].strip()
+        r_day = msg_txt[d + 1:d + 3].strip()
+
+        # find year (this is generally not working)
+        if '202' in msg_txt:
+            y = msg_txt.find('202')
+            r_year = msg_txt[y:y + 4]
+        else:
+            r_year = game_date[0:4]
+
+        game_date = f'{r_year}-{r_month}-{r_day}'
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'player_id', 'game_dtl']
@@ -181,16 +209,16 @@ def add_score(game_prefix, player_id, msg_txt):
     print(tabulate(df, headers='keys', tablefmt='psql'))
     print('')
 
-    # send to csv
-    save_loc = 'files/game_history.csv'
-    df.to_csv(save_loc, mode='a', index=False, header=False)
-    print('I saved this score to : ' + save_loc)
-
-    # confirmation message
-    msg_back = f"Hi {player_id}, I saved your {game_name} score of {game_score}"""
+    # send to bq
+    game_history = 'crossword.game_history'
+    my_project = 'angular-operand-300822'
+    try:
+        df.to_gbq(destination_table=game_history, project_id=my_project, if_exists='append')
+        msg_back = 'Got it'
+    except:
+        msg_back = 'Error: Did not save to BigQuery table'
 
     return msg_back
-
 
 # this creates two images (daily + weekly) of the leaderboard into the folder
 def get_leaderboard(game_name, time_frame='daily'):
@@ -209,11 +237,11 @@ def get_leaderboard(game_name, time_frame='daily'):
     now_date = now.strftime("%Y-%m-%d")
 
     # pull game_history for game_id
-    data_df = pd.read_csv('files/game_history.csv')
+    data_df = pd.read_csv('/home/matttebbetts/projects/Crossword_Bot/files/game_history.csv')
     data_df = data_df[data_df['game_name'] == game_name]
 
     # get player names
-    user_df = pd.read_csv('files/users.csv')[['player_id', 'player_name']]
+    user_df = pd.read_csv('/home/matttebbetts/projects/Crossword_Bot/files/users.csv')[['player_id', 'player_name']]
     data_df['player_id'] = data_df['player_id'].str.lower()
     user_df['player_id'] = user_df['player_id'].str.lower()
     df = pd.merge(data_df, user_df, how='left', on='player_id')[
@@ -264,7 +292,7 @@ def get_leaderboard(game_name, time_frame='daily'):
     leaderboard.sort_values(by='points', ascending=False, inplace=True)
 
     # save image
-    img_save_as = f'files/images/{time_frame}_{game_name}.png'
+    img_save_as = f'/home/matttebbetts/projects/Crossword_Bot/files/images/{time_frame}_{game_name}.png'
     fig = render_mpl_table(leaderboard, chart_title=chart_title).figure
     fig.savefig(img_save_as, dpi=300, bbox_inches='tight', pad_inches=.5)
     print(f'printed {time_frame} leaderboard image for {game_name} to {img_save_as}')
