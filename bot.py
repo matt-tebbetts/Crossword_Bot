@@ -33,32 +33,30 @@ async def on_ready():
     print('')
 
 
-# command to get today's mini
-@bot.command(name='mini')
-async def mini(ctx):
-    my_image = bot_functions.get_mini()
-    await ctx.channel.send(file=discord.File(my_image))
-
-
 # command to get other leaderboards
-@bot.command(name='get', aliases=['wordle', 'factle', 'worldle'])
-async def get(ctx, time_frame='daily'):
+@bot.command(name='get', aliases=['wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'mini'])
+async def get(ctx, *, time_frame='daily'):
 
-    # figure out which game it is
-    time_frame = str.lower(time_frame.strip())
+    # clarify request
+    time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
 
-    # get the leaderboard
-    response = bot_functions.get_leaderboard(game_name, time_frame)
-    print('response is: ' + str(response))
+    # if daily mini, just run get_mini
+    if game_name == 'mini' and time_frame == 'daily':
+        my_image = bot_functions.get_mini()
+        await ctx.channel.send(file=discord.File(my_image))
 
-    if response[0]:
-        response_image = f'files/images/{time_frame.lower()}_{game_name}.png'
-        print(f"here's the {time_frame} leaderboard")
-        await ctx.channel.send(file=discord.File(response_image))
+    # otherwise, get the requested leaderboard
     else:
-        print('no records found')
-        await ctx.channel.send(f"I have no records for {game_name} today")
+        response = bot_functions.get_leaderboard(game_name, time_frame)
+        print('response is: ' + str(response))
+        if response[0]:
+            response_image = response[2]
+            print(f"here's the requested leaderboard...")
+            await ctx.channel.send(file=discord.File(response_image))
+        else:
+            print('no records found')
+            await ctx.channel.send(f"I have no records for {game_name} today")
 
 
 # command to draft something
@@ -118,9 +116,9 @@ async def on_message(message):
                 else:
                     emoji = '✅'
 
-            # react with proper emoji
+            # finally, react with proper emoji
             await message.add_reaction(emoji)
-
+            print('reacted')
 
     # run the message check
     await bot.process_commands(message)
