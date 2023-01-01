@@ -37,7 +37,7 @@ def tab_df(data):
 
 
 # create image of dataframe
-def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=14,
+def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=16,
                      header_color='#40466e', row_colors=['#f1f1f2', 'w'], edge_color='w',
                      bbox=[0, 0, 1, 1], header_columns=0, chart_title='Title',
                      ax=None, **kwargs):
@@ -111,14 +111,16 @@ def get_mini():
 
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
-    df.insert(0, 'game_date', mini_dt)
-    df['added_ts'] = now_ts
 
     # check if anyone did it yet
     if len(df) == 0:
         print('Nobody did the mini yet')
         no_mini = f'{img_loc}No_Mini_Yet.png'
         return no_mini
+
+    # add date details
+    df.insert(0, 'game_date', mini_dt)
+    df['added_ts'] = now_ts
 
     # append to master file
     df.to_csv(mini_csv, mode='a', index=False, header=False)
@@ -140,9 +142,26 @@ def get_mini():
     game_rank = img_df['game_time'].rank(method='dense').astype(int)
     img_df.insert(0, 'game_rank', game_rank)
 
+    # find winner(s) and create tagline for subtitle
+    winners = img_df.loc[img_df['game_rank'] == 1]['player_name'].unique()
+
+    # check for a tie
+    if len(winners) > 1:
+        tagline = "It's a tie!"
+    else:
+        winner = winners[0]
+        if winner in ['Whit', 'Jess', 'Evan', 'Ryan', 'Andrew', 'Landon', 'Kyle', 'Kenzie']:
+            tagline = f"A wild {winner} appeared!"
+        elif winner == 'Aaron':
+            tagline = "This guy again?!"
+        elif winner == 'Brice':
+            tagline = "It's cow time, baby!"
+        elif winner in ['Zach', 'Mary Beth', 'Matt']:
+            tagline = f'Congrats, {winner}!'
+
     # create image
     img_file = f'{img_loc}daily_mini.png'
-    img_title = f"The Mini: {mini_dt}"
+    img_title = f"The Mini: {mini_dt} \n \n {tagline} \n"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
     print('mini: image output created')
@@ -231,6 +250,21 @@ def add_score(game_prefix, player_id, msg_txt):
 def get_leaderboard(game_name, time_frame):
     print(f'fetching {time_frame} for {game_name}')
 
+    # presets
+    cond1 = False
+    cond2 = False
+
+    # get mini date to know which day is "today" for mini
+    if game_name == 'mini':
+        # get mini date
+        now = datetime.now(pytz.timezone('US/Eastern'))
+        cond1 = (now.weekday() >= 5 and now.hour >= 18)  # weekend night (after 6pm)
+        cond2 = (now.weekday() <= 4 and now.hour >= 22)  # weekday night (after 10pm)
+        if cond1 or cond2:
+            mini_dt = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            mini_dt = now.strftime("%Y-%m-%d")
+
     # determine the requested timeframe details
     if time_frame in ['this week', 'current week', 'weekly']:
         time_category = 'weekly'
@@ -238,14 +272,20 @@ def get_leaderboard(game_name, time_frame):
     elif time_frame in ['last week', 'previous week']:
         time_category = 'weekly'
         time_field = 'is_last_week'
-    elif time_frame in ['daily', 'today']:
+    elif time_frame in ['daily', 'today', 'current', 'current day']:
         time_category = 'daily'
-        time_field = "current_date('America/New_York')"
-    elif time_frame in ['yesterday']:
+        if game_name == 'mini' and (cond1 or cond2):
+            time_field = 'current_date("America/New_York")+1'
+        else:
+            time_field = 'current_date("America/New_York")'
+    elif time_frame in ['yesterday', 'previous']:
         time_category = 'daily'
-        time_field = "current_date('America/New_York')-1"
+        if game_name == 'mini' and (cond1 or cond2):
+            time_field = 'current_date("America/New_York")'
+        else:
+            time_field = 'current_date("America/New_York")-1'
     else:
-        response = 'Invalid entry'
+        response = [False, f'Invalid entry {time_frame}', None]
         return response
 
     if time_category == 'daily':
@@ -256,11 +296,11 @@ def get_leaderboard(game_name, time_frame):
             and game_date = """ + time_field + """
         """
         df = pd.read_gbq(my_query, project_id=my_project)[
-            ['game_date', 'game_rank', 'player_name', 'game_score', 'tot_points']]
+            ['game_date', 'game_rank', 'player_name', 'game_score', 'points']]
 
         # get time detail and set columns for nice image
         time_category_dtl = df['game_date'].unique()[0]
-        img_df = df.loc[:, df.columns != 'game_date']
+        img_df = df.loc[:, df.columns != 'game_date'].sort_values(by='game_rank')
 
     if time_category == 'weekly':
         my_query = """
@@ -270,7 +310,7 @@ def get_leaderboard(game_name, time_frame):
             and """ + time_field + """
         """
         df = pd.read_gbq(my_query, project_id=my_project)[
-            ['game_week', 'week_rank', 'player_name', 'games', 'wins', 'tot_points']]
+            ['game_week', 'week_rank', 'player_name', 'games', 'wins', 'points']]
 
         # get time detail and set columns for nice image
         time_category_dtl = df['game_week'].unique()[0]

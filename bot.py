@@ -59,7 +59,7 @@ async def get(ctx, *, time_frame='daily'):
             await ctx.channel.send(f"I have no records for {game_name} today")
 
 
-# command to draft something
+# command to draft something # WORK IN PROGRESS
 @bot.command(name='draft')
 async def draft(ctx, movie_name):
     await ctx.channel.send(f'drafting {movie_name}')
