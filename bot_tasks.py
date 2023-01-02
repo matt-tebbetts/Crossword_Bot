@@ -7,7 +7,7 @@ now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
 print(f'current time is: {now_ts} (Hour {now.hour})')
 
 # set hours
-run_hours = [11, 16, 17, 20, 21, 23] # really only need 17 (5:59pm) and 21 (9:59pm)
+run_hours = [9, 11, 16, 17, 20, 21, 23] # really only need 17 (5:59pm) and 21 (9:59pm)
 
 if now.hour not in run_hours:
     print(f'task: this script only runs during hours: {run_hours}')
