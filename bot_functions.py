@@ -19,10 +19,12 @@ if local_mode:
     img_loc = 'files/images/'
     user_csv = 'files/users.csv'
     mini_csv = 'files/mini_history.csv'
+    game_csv = 'files/game_history.csv'
 else:
     img_loc = '/home/matttebbetts/projects/Crossword_Bot/files/images/'
     user_csv = '/home/matttebbetts/projects/Crossword_Bot/files/users.csv'
     mini_csv = '/home/matttebbetts/projects/Crossword_Bot/files/mini_history.csv'
+    game_csv = '/home/matttebbetts/projects/Crossword_Bot/files/game_history.csv'
 
 # set bq details (do I not need credentials?)
 my_project = 'angular-operand-300822'
@@ -81,8 +83,6 @@ def get_mini():
     load_dotenv()
     COOKIE = os.getenv('NYT_COOKIE')
 
-    print('current directory is: ' + os.getcwd())
-
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
     now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -96,6 +96,7 @@ def get_mini():
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
     html = requests.get(leaderboard_url, cookies={'NYT-S': COOKIE})
+    print('going to NYT website...')
 
     # find scores in the html
     soup = BeautifulSoup(html.text, features='lxml')
@@ -111,6 +112,10 @@ def get_mini():
 
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
+    df['player_id'] = df['player_id'].str.lower()
+
+    print('got scores into this dataframe...')
+    print(df)
 
     # check if anyone did it yet
     if len(df) == 0:
@@ -125,15 +130,16 @@ def get_mini():
     # append to master file
     df.to_csv(mini_csv, mode='a', index=False, header=False)
     print('mini: saved to master file')
-    print('mini: attempting to send to BigQuery')
 
     # append to bq
-    try:
-        print('Attempting to send to BQ...')
-        df.to_gbq(destination_table=mini_history, project_id=my_project, if_exists='append')
-        print('mini: successfully sent to BQ')
-    except Exception as e:
-        print('mini: ERROR. did not send to BQ')
+    send_to_bq = False
+    if send_to_bq:
+        try:
+            print('Attempting to send to BQ...')
+            df.to_gbq(destination_table=mini_history, project_id=my_project, if_exists='append')
+            print('mini: successfully sent to BQ')
+        except Exception as e:
+            print('mini: ERROR. did not send to BQ')
 
     # get real names and set up for image creation
     real_names = pd.read_csv(user_csv)
@@ -213,10 +219,10 @@ def add_score(game_prefix, player_id, msg_txt):
             msg_back = [False, 'Invalid format']
             return msg_back
 
-        # find game score and date from the message
+        # find score and date
         game_score = msg_txt[s - 2:s + 3].strip()
-        r_month = msg_txt[d - 2:d].strip()
-        r_day = msg_txt[d + 1:d + 3].strip()
+        r_month = msg_txt[d - 2:d].strip().zfill(2)
+        r_day = msg_txt[d + 1:d + 3].strip().zfill(2)
 
         # find year (this is generally not working)
         if '202' in msg_txt:
@@ -236,13 +242,19 @@ def add_score(game_prefix, player_id, msg_txt):
     print('')
 
     # send to bq
-    my_project = 'angular-operand-300822'
-    try:
-        print('Attempting to send to BQ...')
-        df.to_gbq(destination_table=game_history, project_id=my_project, if_exists='append')
-        msg_back = [True, 'Added to BQ']
-    except:
-        msg_back = [False, 'Error: Did not save to BigQuery table']
+    send_to_bq = False
+    if send_to_bq:
+        try:
+            print('Attempting to send to BQ...')
+            df.to_gbq(destination_table=game_history, project_id=my_project, if_exists='append')
+            msg_back = [True, 'Added to BQ']
+        except:
+            msg_back = [False, 'Error: Did not save to BigQuery table']
+
+    else:
+        # send to csv
+        df.to_csv(game_csv, mode='a', index=False, header=False)
+        msg_back = [True, 'Added to CSV, not BQ']
 
     return msg_back
 
@@ -309,6 +321,10 @@ def get_leaderboard(game_name, time_frame):
             where game_name = '""" + game_name + """'
             and """ + time_field + """
         """
+
+        # read CSV instead of BQ
+        #df = pd.read_csv(game_csv)
+
         df = pd.read_gbq(my_query, project_id=my_project)[
             ['game_week', 'week_rank', 'player_name', 'games', 'wins', 'points']]
 

@@ -41,22 +41,34 @@ async def get(ctx, *, time_frame='daily'):
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
 
-    # if daily mini, just run get_mini
     if game_name == 'mini' and time_frame == 'daily':
-        my_image = bot_functions.get_mini()
-        await ctx.channel.send(file=discord.File(my_image))
-
-    # otherwise, get the requested leaderboard
+        disabled = False
     else:
-        response = bot_functions.get_leaderboard(game_name, time_frame)
-        print('response is: ' + str(response))
-        if response[0]:
-            response_image = response[2]
-            print(f"here's the requested leaderboard...")
-            await ctx.channel.send(file=discord.File(response_image))
+        disabled = True
+
+    # temporarily disable the leaderboard pulls
+    if disabled:
+        print('leaderboard disabled')
+        temp_msg = "Terribly sorry, but this service is currently disabled"
+        await ctx.channel.send(temp_msg)
+    else:
+        print('leaderboard enabled')
+        # if daily mini, just run get_mini
+        if game_name == 'mini' and time_frame == 'daily':
+            my_image = bot_functions.get_mini()
+            await ctx.channel.send(file=discord.File(my_image))
+
+        # otherwise, get the requested leaderboard
         else:
-            print('no records found')
-            await ctx.channel.send(f"I have no records for {game_name} today")
+            response = bot_functions.get_leaderboard(game_name, time_frame)
+            print('response is: ' + str(response))
+            if response[0]:
+                response_image = response[2]
+                print(f"here's the requested leaderboard...")
+                await ctx.channel.send(file=discord.File(response_image))
+            else:
+                print('no records found')
+                await ctx.channel.send(f"I have no records for {game_name} today")
 
 
 # command to draft something # WORK IN PROGRESS
