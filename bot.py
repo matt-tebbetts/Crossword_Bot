@@ -2,7 +2,9 @@
 import os
 import socket
 import discord
-from discord.ext import commands
+import asyncio
+from discord.ext import commands, tasks
+from discord.ext.commands import Converter, Context
 from dotenv import load_dotenv
 import pytz
 from datetime import datetime
@@ -13,20 +15,27 @@ now = datetime.now(pytz.timezone('US/Eastern'))
 game_date = now.strftime("%Y-%m-%d")
 game_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-# connect to discord
+# connection details
 load_dotenv()
 TOKEN = os.getenv('CROSSWORD_BOT')
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents)
 
+
 # confirm ready
 @bot.event
 async def on_ready():
     print(game_time + ': ' + bot.user.name + ' is ready')
     for guild in bot.guilds:
-        print(f'Connected to the server: {guild.name}')
-    
+        print(f'Connected to the server: {guild.name} guild id: {guild.id}')
+        for channel in guild.channels:
+            if channel.name in ['crossword-corner', 'bot-test', 'bot_tester', 'game-scores']:
+                print(f'{channel.name} has ID {channel.id}')
+
+    # start this auto-task
+    auto_post_the_mini.start()
+
     # check if local
     local_mode = True if socket.gethostname() == "MJT" else False
     print(f'Variable local_mode is set to: {local_mode}')
@@ -36,7 +45,6 @@ async def on_ready():
 # command to get other leaderboards
 @bot.command(name='get', aliases=['wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'mini'])
 async def get(ctx, *, time_frame='daily'):
-
     # clarify request
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
@@ -71,16 +79,33 @@ async def get(ctx, *, time_frame='daily'):
                 await ctx.channel.send(f"I have no records for {game_name} today")
 
 
+# accept multiple words
+class BracketSeparatedWords(Converter):
+    async def convert(self, ctx: Context, argument: str) -> list:
+        # return argument.split("[")[1].split("]")[0].split()
+        argument = argument.strip("[]")
+        return argument.split()
+
+
 # command to draft something # WORK IN PROGRESS
 @bot.command(name='draft')
-async def draft(ctx, movie_name):
-    await ctx.channel.send(f'drafting {movie_name}')
+async def draft(ctx, thing: BracketSeparatedWords, category: BracketSeparatedWords):
+    # read command details
+    user_id = ctx.author.display_name
+    confirmation = f"Looks like {user_id} selected '{thing}' from '{category}'"
+
+    list_of_categories = ['A', 'B', 'C']
+
+    if category not in list_of_categories:
+        print('invalid category')
+
+    # send message
+    await ctx.channel.send(confirmation)
 
 
 # message reader
 @bot.event
 async def on_message(message):
-
     # only comment on certain channel(s)
     if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test", "game-scores"]:
         return
@@ -137,5 +162,33 @@ async def on_message(message):
     print('')
 
 
-# run bot
+# command that runs at certain time
+@tasks.loop(seconds=60)
+async def auto_post_the_mini():
+
+    # check current time
+    check_now = datetime.now(pytz.timezone('US/Eastern'))
+
+    # conditions on when to take action
+    cond1 = check_now.weekday() >= 5 and check_now.hour == 17  # 5:59PM
+    cond2 = check_now.weekday() <= 4 and check_now.hour == 21  # 9:59PM
+    test_cond = False
+    post_min = 58
+    is_end_of_hour = (check_now.minute == post_min)
+
+    # if mini expiring soon...
+    if is_end_of_hour and (cond1 or cond2 or test_cond):
+        print("Oh snap. Mini expiring soon!")
+
+        # ending message
+        msg = "The mini expires in under a minute. Here's the final leaderboard..."
+        guild = bot.get_guild(672233217985871908)
+        channel = guild.get_channel(806881904073900042)
+        await channel.send(msg)
+
+        # get score and post image
+        img = bot_functions.get_mini()
+        await channel.send(file=discord.File(img))
+
+# run
 bot.run(TOKEN)

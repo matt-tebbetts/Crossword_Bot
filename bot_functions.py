@@ -113,9 +113,7 @@ def get_mini():
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
     df['player_id'] = df['player_id'].str.lower()
-
-    print('got scores into this dataframe...')
-    print(df)
+    print('got scores into dataframe...')
 
     # check if anyone did it yet
     if len(df) == 0:
@@ -151,6 +149,8 @@ def get_mini():
     # find winner(s) and create tagline for subtitle
     winners = img_df.loc[img_df['game_rank'] == 1]['player_name'].unique()
 
+    tagline = "It ain't over til it's over"
+
     # check for a tie
     if len(winners) > 1:
         tagline = "It's a tie!"
@@ -162,12 +162,12 @@ def get_mini():
             tagline = "This guy again?!"
         elif winner == 'Brice':
             tagline = "It's cow time, baby!"
-        elif winner in ['Zach', 'Mary Beth', 'Matt']:
+        else:
             tagline = f'Congrats, {winner}!'
 
     # create image
     img_file = f'{img_loc}daily_mini.png'
-    img_title = f"The Mini: {mini_dt} \n \n {tagline} \n"
+    img_title = f"The Mini \n {mini_dt} \n \n {tagline} \n"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
     print('mini: image output created')
