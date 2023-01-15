@@ -30,6 +30,7 @@ else:
 my_project = 'angular-operand-300822'
 mini_history = 'crossword.mini_history'
 game_history = 'crossword.game_history'
+crossword_channel_id = 806881904073900042
 
 ## ------------------------------------------------------------------------------------------- ##
 
@@ -78,25 +79,25 @@ def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=16,
 ## ------------------------------------------------------------------------------------------- ##
 
 # save mini dataframe and send image
-def get_mini():
-    # get cookie
+def get_mini(is_family=False):
     load_dotenv()
-    COOKIE = os.getenv('NYT_COOKIE')
+    cookie = os.getenv('NYT_COOKIE')
 
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
     now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
-    cond1 = (now.weekday() >= 5 and now.hour >= 18)
-    cond2 = (now.weekday() <= 4 and now.hour >= 22)
-    if cond1 or cond2:
+    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
+
+    # if we're past cutoff_hour, mini is on tomorrow's date
+    if now.hour > cutoff_hour:
         mini_dt = (now + timedelta(days=1)).strftime("%Y-%m-%d")
     else:
         mini_dt = now.strftime("%Y-%m-%d")
 
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
-    html = requests.get(leaderboard_url, cookies={'NYT-S': COOKIE})
-    print('going to NYT website...')
+    html = requests.get(leaderboard_url, cookies={'NYT-S': cookie})
+    print('mini: going to NYT website...')
 
     # find scores in the html
     soup = BeautifulSoup(html.text, features='lxml')
@@ -113,7 +114,9 @@ def get_mini():
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
     df['player_id'] = df['player_id'].str.lower()
-    print('got scores into dataframe...')
+    df.insert(0, 'game_date', mini_dt)
+    df['added_ts'] = now_ts
+    print('mini: got the scores')
 
     # check if anyone did it yet
     if len(df) == 0:
@@ -121,13 +124,9 @@ def get_mini():
         no_mini = f'{img_loc}No_Mini_Yet.png'
         return no_mini
 
-    # add date details
-    df.insert(0, 'game_date', mini_dt)
-    df['added_ts'] = now_ts
-
-    # append to master file
+    # append to csv history
     df.to_csv(mini_csv, mode='a', index=False, header=False)
-    print('mini: saved to master file')
+    print('mini: saved to csv')
 
     # append to bq
     send_to_bq = False
@@ -139,31 +138,46 @@ def get_mini():
         except Exception as e:
             print('mini: ERROR. did not send to BQ')
 
-    # get real names and set up for image creation
-    real_names = pd.read_csv(user_csv)
-    img_df = pd.merge(df, real_names, how='inner', on='player_id')
-    img_df = img_df[img_df['give_rank'] == True][['player_name', 'game_time']].reset_index(drop=True)
+    # get user detail
+    users = pd.read_csv(user_csv)
+    img_df = pd.merge(df, users, how='inner', on='player_id')
+
+    # determine family or friends list
+    if is_family:
+        print('keeping only family data for img_df')
+        img_df = img_df[(img_df['give_rank'] == False) | (img_df['player_name'] == 'Matt')][
+            ['player_name', 'game_time']].reset_index(drop=True)
+    else:
+        print('keeping only friend data for img_df')
+        img_df = img_df[img_df['give_rank'] == True][
+            ['player_name', 'game_time']].reset_index(drop=True)
+
+    # create rank
     game_rank = img_df['game_time'].rank(method='dense').astype(int)
     img_df.insert(0, 'game_rank', game_rank)
+    print('added rank to img_df and printing now')
+    print(img_df)
 
     # find winner(s) and create tagline for subtitle
     winners = img_df.loc[img_df['game_rank'] == 1]['player_name'].unique()
 
-    tagline = "It ain't over til it's over"
-
-    # check for a tie
-    if len(winners) > 1:
+    # if we're past the nightly cutoff time, or before the cutoff hour:
+    if now.hour < cutoff_hour and now.minute <= 45:
+        tagline = "It ain't over til it's over"
+    elif len(winners) > 1:
         tagline = "It's a tie!"
     else:
         winner = winners[0]
-        if winner in ['Whit', 'Jess', 'Evan', 'Ryan', 'Andrew', 'Landon', 'Kyle', 'Kenzie']:
-            tagline = f"A wild {winner} appeared!"
+        if winner == 'Brice':
+            tagline = "Mooooooooo"
+        elif winner == 'Zach':
+            tagline = "We've been Throoped!"
+        elif winner == 'Matt':
+            tagline = "Yeah baby, yeah!"
         elif winner == 'Aaron':
-            tagline = "This guy again?!"
-        elif winner == 'Brice':
-            tagline = "It's cow time, baby!"
+            tagline = "Well look who decided to play today!"
         else:
-            tagline = f'Congrats, {winner}!'
+            tagline = f"A wild {winner} appeared!"
 
     # create image
     img_file = f'{img_loc}daily_mini.png'
@@ -174,6 +188,7 @@ def get_mini():
 
     # send image back to discord
     return img_file
+    # return [True, img_file, no_mini_list]
 
 # add discord scores to database
 def add_score(game_prefix, player_id, msg_txt):
@@ -186,6 +201,9 @@ def add_score(game_prefix, player_id, msg_txt):
     game_name = None
     game_score = None
     game_dtl = None
+    metric_01 = ""
+    metric_02 = ""
+    metric_03 = ""
 
     if game_prefix == "#Worldle":
         game_name = "worldle"
@@ -193,20 +211,44 @@ def add_score(game_prefix, player_id, msg_txt):
 
     if game_prefix == "Wordle":
         game_name = "wordle"
-        game_score = msg_txt[11:14]
+
+        # find position slash for the score
+        found_score = msg_txt.find('/')
+        if found_score == -1:
+            msg_back = [False, 'Invalid format']
+            return msg_back
+        else:
+            game_score = msg_txt[11:14]
 
     if game_prefix == "Factle.app":
         game_name = "factle"
         game_score = msg_txt[14:17]
         game_dtl = msg_txt.splitlines()[1]
+        lines = msg_txt.split('\n')
+        final_line = lines[-1]
+        if "Top" in final_line:
+            metric_01 = final_line[4:]
 
     if game_prefix == 'boxofficega.me':
         game_name = 'boxoffice'
         game_dtl = msg_txt.split('\n')[1]
+        movies_guessed = 0
         trophy_symbol = u'\U0001f3c6'
+        check_mark = u'\u2705'
+
+        # check for overall score and movies_guessed
         for line in msg_txt.split('\n'):
+
             if line.find(trophy_symbol) >= 0:
+                print('found game score')
                 game_score = line.split(' ')[1]
+
+            if line.find(check_mark) >= 0:
+                print('found check mark')
+                movies_guessed += 1
+
+        print(f"{movies_guessed} correctly guessed")
+        metric_01 = movies_guessed
 
     if game_prefix == 'atlantic':
         game_name = 'atlantic'
@@ -234,12 +276,10 @@ def add_score(game_prefix, player_id, msg_txt):
         game_date = f'{r_year}-{r_month}-{r_day}'
 
     # put into dataframe
-    my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'player_id', 'game_dtl']
-    my_data = [[game_date, game_name, game_score, game_time, player_id, game_dtl]]
+    my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'player_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
+    my_data = [[game_date, game_name, game_score, game_time, player_id, game_dtl, metric_01, metric_02, metric_03]]
     df = pd.DataFrame(data=my_data, columns=my_cols)
-    print('I created this dataframe:')
-    print(tabulate(df, headers='keys', tablefmt='psql'))
-    print('')
+    print('sent to dataframe')
 
     # send to bq
     send_to_bq = False
