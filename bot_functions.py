@@ -10,9 +10,14 @@ import six
 import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
+from sqlalchemy import create_engine
 
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
+
+# load environment variables
+load_dotenv()
+crossword_channel_id = 806881904073900042
 
 # set file locations
 if local_mode:
@@ -26,11 +31,31 @@ else:
     mini_csv = '/home/matttebbetts/projects/Crossword_Bot/files/mini_history.csv'
     game_csv = '/home/matttebbetts/projects/Crossword_Bot/files/game_history.csv'
 
-# set bq details (do I not need credentials?)
-my_project = 'angular-operand-300822'
-mini_history = 'crossword.mini_history'
-game_history = 'crossword.game_history'
-crossword_channel_id = 806881904073900042
+# set mySQL details
+if local_mode:
+    # login (local)
+    sql_pass = os.getenv("MYSQLPASS")
+    sql_user = 'root'
+
+    # connection
+    sql_host = 'localhost'
+    sql_port = '3306'
+    database = 'games'
+    sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
+    engine = create_engine(sql_addr)
+
+else:
+    # login (online)
+    sql_pass = "Test123$"
+    sql_user = 'matttebbetts'
+
+    # connection
+    sql_host = 'matttebbetts.mysql.pythonanywhere-services.com'
+    sql_port = '3306'
+    database = 'matttebbetts$crossword'
+    sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
+    engine = create_engine(sql_addr)
+
 
 ## ------------------------------------------------------------------------------------------- ##
 
@@ -97,7 +122,6 @@ def get_mini(is_family=False):
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
     html = requests.get(leaderboard_url, cookies={'NYT-S': cookie})
-    print('mini: going to NYT website...')
 
     # find scores in the html
     soup = BeautifulSoup(html.text, features='lxml')
@@ -116,7 +140,6 @@ def get_mini(is_family=False):
     df['player_id'] = df['player_id'].str.lower()
     df.insert(0, 'game_date', mini_dt)
     df['added_ts'] = now_ts
-    print('mini: got the scores')
 
     # check if anyone did it yet
     if len(df) == 0:
@@ -126,17 +149,13 @@ def get_mini(is_family=False):
 
     # append to csv history
     df.to_csv(mini_csv, mode='a', index=False, header=False)
-    print('mini: saved to csv')
 
-    # append to bq
-    send_to_bq = False
-    if send_to_bq:
-        try:
-            print('Attempting to send to BQ...')
-            df.to_gbq(destination_table=mini_history, project_id=my_project, if_exists='append')
-            print('mini: successfully sent to BQ')
-        except Exception as e:
-            print('mini: ERROR. did not send to BQ')
+    # append to mySQL
+    send_to_sql = True
+    if send_to_sql:
+        df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
+
+    ## everything below should be within its own separate function
 
     # get user detail
     users = pd.read_csv(user_csv)
@@ -144,25 +163,21 @@ def get_mini(is_family=False):
 
     # determine family or friends list
     if is_family:
-        print('keeping only family data for img_df')
         img_df = img_df[(img_df['give_rank'] == False) | (img_df['player_name'] == 'Matt')][
             ['player_name', 'game_time']].reset_index(drop=True)
     else:
-        print('keeping only friend data for img_df')
         img_df = img_df[img_df['give_rank'] == True][
             ['player_name', 'game_time']].reset_index(drop=True)
 
     # create rank
     game_rank = img_df['game_time'].rank(method='dense').astype(int)
     img_df.insert(0, 'game_rank', game_rank)
-    print('added rank to img_df and printing now')
-    print(img_df)
 
     # find winner(s) and create tagline for subtitle
     winners = img_df.loc[img_df['game_rank'] == 1]['player_name'].unique()
 
     # if we're past the nightly cutoff time, or before the cutoff hour:
-    if now.hour < cutoff_hour and now.minute <= 45:
+    if now.hour < cutoff_hour:
         tagline = "It ain't over til it's over"
     elif len(winners) > 1:
         tagline = "It's a tie!"
@@ -176,6 +191,8 @@ def get_mini(is_family=False):
             tagline = "Yeah baby, yeah!"
         elif winner == 'Aaron':
             tagline = "Well look who decided to play today!"
+        elif winner == 'Samantha':
+            tagline = "Slammin' Sammy!"
         else:
             tagline = f"A wild {winner} appeared!"
 
@@ -184,14 +201,14 @@ def get_mini(is_family=False):
     img_title = f"The Mini \n {mini_dt} \n \n {tagline} \n"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
-    print('mini: image output created')
+    print('mini: got the mini')
 
     # send image back to discord
     return img_file
     # return [True, img_file, no_mini_list]
 
 # add discord scores to database
-def add_score(game_prefix, player_id, msg_txt):
+def add_score(game_prefix, discord_id, msg_txt):
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
     game_date = now.strftime("%Y-%m-%d")
@@ -201,9 +218,9 @@ def add_score(game_prefix, player_id, msg_txt):
     game_name = None
     game_score = None
     game_dtl = None
-    metric_01 = ""
-    metric_02 = ""
-    metric_03 = ""
+    metric_01 = None
+    metric_02 = None
+    metric_03 = None
 
     if game_prefix == "#Worldle":
         game_name = "worldle"
@@ -219,15 +236,38 @@ def add_score(game_prefix, player_id, msg_txt):
             return msg_back
         else:
             game_score = msg_txt[11:14]
+            metric_02 = 1 if game_score[0] != 'X' else 0
 
     if game_prefix == "Factle.app":
         game_name = "factle"
         game_score = msg_txt[14:17]
         game_dtl = msg_txt.splitlines()[1]
         lines = msg_txt.split('\n')
+
+        # find green frogs
+        g1, g2, g3, g4, g5 = 0, 0, 0, 0, 0
+        for line in lines[2:]:
+            if line[0] == '🐸':
+                g1 = 1
+            if line[1] == '🐸':
+                g2 = 1
+            if line[2] == '🐸':
+                g3 = 1
+            if line[3] == '🐸':
+                g4 = 1
+            if line[4] == '🐸':
+                g5 = 1
+        metric_03 = g1 + g2 + g3 + g4 + g5
+        print(f"got {metric_03} green frogs")
+
+        # get top X% denoting a win
         final_line = lines[-1]
         if "Top" in final_line:
             metric_01 = final_line[4:]
+            metric_02 = 1
+        else:
+            game_score = 'X/5'
+            metric_02 = 0
 
     if game_prefix == 'boxofficega.me':
         game_name = 'boxoffice'
@@ -240,11 +280,9 @@ def add_score(game_prefix, player_id, msg_txt):
         for line in msg_txt.split('\n'):
 
             if line.find(trophy_symbol) >= 0:
-                print('found game score')
                 game_score = line.split(' ')[1]
 
             if line.find(check_mark) >= 0:
-                print('found check mark')
                 movies_guessed += 1
 
         print(f"{movies_guessed} correctly guessed")
@@ -276,25 +314,19 @@ def add_score(game_prefix, player_id, msg_txt):
         game_date = f'{r_year}-{r_month}-{r_day}'
 
     # put into dataframe
-    my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'player_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
-    my_data = [[game_date, game_name, game_score, game_time, player_id, game_dtl, metric_01, metric_02, metric_03]]
+    my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
+    my_data = [[game_date, game_name, game_score, game_time, discord_id, game_dtl, metric_01, metric_02, metric_03]]
     df = pd.DataFrame(data=my_data, columns=my_cols)
-    print('sent to dataframe')
 
-    # send to bq
-    send_to_bq = False
-    if send_to_bq:
-        try:
-            print('Attempting to send to BQ...')
-            df.to_gbq(destination_table=game_history, project_id=my_project, if_exists='append')
-            msg_back = [True, 'Added to BQ']
-        except:
-            msg_back = [False, 'Error: Did not save to BigQuery table']
+    # send to csv
+    df.to_csv(game_csv, mode='a', index=False, header=False)
 
-    else:
-        # send to csv
-        df.to_csv(game_csv, mode='a', index=False, header=False)
-        msg_back = [True, 'Added to CSV, not BQ']
+    # append to mySQL
+    send_to_sql = True
+    if send_to_sql:
+        df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
+
+    msg_back = [True, 'sent to CSV and SQL']
 
     return msg_back
 

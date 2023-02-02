@@ -10,11 +10,18 @@ import six
 import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
-import bot_functions
+import bot_functions as bf
+import os
 
-# file locations
-mini_csv = 'files/mini_history.csv'
-game_csv = 'files/game_history.csv'
+import inspect
 
+# send message and tag users
+warning_msg = inspect.cleandoc(f"""The mini expires at now!
+                The following players have not done the mini today: 
+                """)
+user_id = 'matt'
+warning_msg += f"<@{user_id}> "
+warning_msg += "\n"
+warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
 
-df = pd.read_csv(mini_csv)
+print(f"warning: {warning_msg}")
