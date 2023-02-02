@@ -11,12 +11,8 @@ from discord.ext.commands import Converter, Context
 from dotenv import load_dotenv
 import pytz
 from datetime import datetime, timedelta
+import inspect
 import bot_functions
-
-# get date and time
-now = datetime.now(pytz.timezone('US/Eastern'))
-game_date = now.strftime("%Y-%m-%d")
-game_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 # connection details
 load_dotenv()
@@ -34,6 +30,7 @@ game_scores = 1058057309068197989
 
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
+print(f"local_mode = {local_mode}")
 
 # set file locations
 if local_mode:
@@ -77,13 +74,16 @@ async def on_ready():
                 guild_df = pd.concat([guild_df, new_row], ignore_index=True)
             guild_df.to_csv(f'files/users_{guild.name}.csv', mode='w', index=False)
 
+    # ready time
+    ready_ts = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
+
     # start timed tasks
     auto_post_the_mini.start()
 
     # check if local
     print(f'Local? {local_mode}')
     print('')
-    print(game_time + ': ' + bot.user.name + ' is ready')
+    print(f"{ready_ts}: {bot.user.name} is ready")
 
 
 # messages
@@ -101,7 +101,7 @@ async def on_message(message):
     msg_now = datetime.now(pytz.timezone('US/Eastern'))
     msg_time = msg_now.strftime("%Y-%m-%d %H:%M:%S")
     msg_text = str(message.content)
-    user_id = str(message.author.display_name)
+    user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
 
     # print details
     print(f"""{msg_time}: received message in {message.channel.name}""")
@@ -116,10 +116,10 @@ async def on_message(message):
             old_msg = await message.channel.fetch_message(message.reference.message_id)
             print('replacing variables to refer to old message...')
             msg_text = str(old_msg.content)
-            user_id = str(old_msg.author.display_name)
+            user_id = str(old_msg.author.name + "#" + old_msg.author.discriminator)
 
     # check all potential score posts
-    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic', 'atlantic']
+    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
     for game_prefix in pref_list:
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
             print('This looks like a game score for: ' + game_prefix)
@@ -163,25 +163,28 @@ async def on_message(message):
 async def auto_post_the_mini():
     # check current time
     now_ts = datetime.now(pytz.timezone('US/Eastern'))
+    now_txt = now_ts.strftime("%Y-%m-%d %H:%M:%S")
     hr = now_ts.hour
     mn = now_ts.minute
     the_time = str(now_ts.hour).zfill(2) + ':' + str(now_ts.minute).zfill(2)
-    if now_ts.minute in [0, 15, 30, 60]:
-        print(f"auto: current time is {the_time}")
 
     # get mini_date and cutoff hour
-    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    expiry_time_txt = "6:00PM" if now.weekday() in [5, 6] else "10:00PM"
+    cutoff_hour = 17 if now_ts.weekday() in [5, 6] else 21
+    expiry_time_txt = "6:00PM" if now_ts.weekday() in [5, 6] else "10:00PM"
     if now_ts.hour > cutoff_hour:
         mini_dt = (now_ts + timedelta(days=1)).strftime("%Y-%m-%d")
     else:
         mini_dt = now_ts.strftime("%Y-%m-%d")
 
+    # print check
+    if now_ts.minute in [0]:
+        print(f"{now_txt}: Just checking in. Current weekday is {now_ts.weekday()}, mini closes at {cutoff_hour} ({expiry_time_txt})")
+
     # regular run hours of get_mini
-    hours_to_run = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
+    hours_to_run = [1, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23]
     minute_to_run = 45
     if hr in hours_to_run and mn == minute_to_run:
-        print(f"auto: it's {the_time} so let's run get_mini")
+        print(f"{now_txt}: it's {the_time}, time to run get_mini")
         bot_functions.get_mini()
 
     # check if it's the final hour
@@ -215,7 +218,7 @@ async def auto_post_the_mini():
         df = df[df['game_date'] == mini_dt]
         df['add_rank'] = df.groupby('player_id')['added_ts'].rank().astype(int)
         df = df[df['add_rank'] == 1]
-        print('mini_warning: got most recent mini data...')
+        print(f'{now_txt}: got most recent mini data...')
 
         # get users to warn
         users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
@@ -225,20 +228,16 @@ async def auto_post_the_mini():
         # see who hasn't gone yet
         grouped = combined.groupby('discord_id_nbr')['game_time'].count()
         no_mini_list = grouped.loc[grouped == 0].index.tolist()
-        print(f"test mini list is {no_mini_list}")
+        print(f"{now_txt}: these users haven't done the mini: {no_mini_list}")
 
         # send message and tag users
-        warning_msg = f"""The mini expires at {expiry_time_txt}!
-        The following players have not done the mini today:
-        """
+        warning_msg = inspect.cleandoc(f"""The mini expires at {expiry_time_txt}!
+                        The following players have not done the mini today:
+                        """)
         for user_id in no_mini_list:
             warning_msg += f"<@{user_id}> "
-
-        warning_msg += """
-        To remove this notification, type "/mini_warning remove" (without the quotes)
-        """
-
-        print(f"warning: {warning_msg}")
+        warning_msg += "\n"
+        warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
         await channel.send(warning_msg)
 
     # post it

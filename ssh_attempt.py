@@ -14,7 +14,7 @@ port_nbr = 3306
 with sshtunnel.SSHTunnelForwarder(
         'ssh.pythonanywhere.com',
         ssh_username='matttebbetts',
-        ssh_password='SD7e79+VBAv8#f%',
+        ssh_password='abc', # 'SD7e79+VBAv8#f%', # fix this
         remote_bind_address=('matttebbetts.mysql.pythonanywhere-services.com', port_nbr)
 ) as tunnel:
 
