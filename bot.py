@@ -33,16 +33,10 @@ local_mode = True if socket.gethostname() == "MJT" else False
 print(f"local_mode = {local_mode}")
 
 # set file locations
-if local_mode:
-    img_loc = 'files/images/'
-    user_csv = 'files/users.csv'
-    mini_csv = 'files/mini_history.csv'
-    game_csv = 'files/game_history.csv'
-else:
-    img_loc = '/home/matttebbetts/projects/Crossword_Bot/files/images/'
-    user_csv = '/home/matttebbetts/projects/Crossword_Bot/files/users.csv'
-    mini_csv = '/home/matttebbetts/projects/Crossword_Bot/files/mini_history.csv'
-    game_csv = '/home/matttebbetts/projects/Crossword_Bot/files/game_history.csv'
+img_loc = 'files/images/'
+user_csv = 'files/users.csv' # should get users from sql table
+mini_csv = 'files/mini_history.csv'
+game_csv = 'files/game_history.csv'
 
 
 # accept multiple words in command arguments/parameters?
@@ -194,8 +188,8 @@ async def auto_post_the_mini():
 
     # check what post to make at which minute
     warning_minute = 0
-    fam_minute = 50
-    nerds_minute = 58
+    fam_minute = 55
+    nerds_minute = 59
 
     is_time_to_post = (now_ts.minute == nerds_minute or now_ts.minute == fam_minute)
     is_family_time = (now_ts.minute == fam_minute)
@@ -254,10 +248,12 @@ async def auto_post_the_mini():
 # command to get other leaderboards
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
 async def get(ctx, *, time_frame='daily'):
+
     # clarify request
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
 
+    # only command that works right now is "mini" otherwise this is disabled
     if game_name == 'mini' and time_frame == 'daily':
         disabled = False
     else:
@@ -270,22 +266,8 @@ async def get(ctx, *, time_frame='daily'):
         await ctx.channel.send(temp_msg)
     else:
         print('leaderboard enabled')
-        # if daily mini, just run get_mini
-        if game_name == 'mini' and time_frame == 'daily':
-            my_image = bot_functions.get_mini()
-            await ctx.channel.send(file=discord.File(my_image))
-
-        # otherwise, get the requested leaderboard
-        else:
-            response = bot_functions.get_leaderboard(game_name, time_frame)
-            print('response is: ' + str(response))
-            if response[0]:
-                response_image = response[2]
-                print(f"here's the requested leaderboard...")
-                await ctx.channel.send(file=discord.File(response_image))
-            else:
-                print('no records found')
-                await ctx.channel.send(f"I have no records for {game_name} today")
+        my_image = bot_functions.get_mini()
+        await ctx.channel.send(file=discord.File(my_image))
 
 
 # command to add or remove yourself from mini_warning
