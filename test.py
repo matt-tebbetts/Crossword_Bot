@@ -1,31 +1,20 @@
-from sqlalchemy import create_engine
-from dotenv import load_dotenv
 import pandas as pd
-import os
-import math
+import bot_functions as b
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
-# load env
-load_dotenv()
+# save loc
+my_fil = 'files/images/test.png'
 
-# set mySQL details for NEW database
-sql_host = os.getenv("SQLHOST")
-sql_user = os.getenv("SQLUSER")
-sql_pass = os.getenv("SQLPASS")
-sql_port = os.getenv("SQLPORT")
-database = os.getenv("SQLDATA")
-sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
+# read test csv to dataframe
+df = pd.read_csv('files/mini_history.csv')
+df = df[df['game_date']=='2023-03-15']
+df = df[df['added_ts']=='2023-03-14 22:29:10']
 
-# create engine
-engine = create_engine(sql_addr)
+# render table as figure and save
+fig = b.render_mpl_table(df, chart_title='test').figure
+fig.savefig(my_fil, dpi=300, bbox_inches='tight', pad_inches=0.25)
 
-# read csv to dataframe
-df = pd.read_csv("C:\\Users\\matt_\\Downloads\\users_20230307.csv")
-
-# change formatting of id
-df['discord_id_nbr'] = df['discord_id_nbr'].apply(lambda x: '{:.2f}'.format(x))
-df['discord_id_nbr'] = df['discord_id_nbr'].str.rstrip('.00')
-
-print(df)
-
-# send to sql
-df.to_sql(name='users', con=engine, if_exists='append', index=False)
+image = mpimg.imread(my_fil)
+plt.imshow(image)
+plt.show()
