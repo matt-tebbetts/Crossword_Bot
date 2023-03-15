@@ -20,16 +20,10 @@ load_dotenv()
 crossword_channel_id = 806881904073900042
 
 # set file locations
-if local_mode:
-    img_loc = 'files/images/'
-    user_csv = 'files/users.csv'
-    mini_csv = 'files/mini_history.csv'
-    game_csv = 'files/game_history.csv'
-else:
-    img_loc = '/home/matttebbetts/projects/Crossword_Bot/files/images/'
-    user_csv = '/home/matttebbetts/projects/Crossword_Bot/files/users.csv'
-    mini_csv = '/home/matttebbetts/projects/Crossword_Bot/files/mini_history.csv'
-    game_csv = '/home/matttebbetts/projects/Crossword_Bot/files/game_history.csv'
+img_loc = 'files/images/'
+user_csv = 'files/users.csv'
+mini_csv = 'files/mini_history.csv'
+game_csv = 'files/game_history.csv'
 
 # set mySQL details
 sql_pass = os.getenv("SQLPASS")
@@ -314,89 +308,3 @@ def add_score(game_prefix, discord_id, msg_txt):
     msg_back = [True, 'sent to CSV and SQL']
 
     return msg_back
-
-
-# this creates and sends an image of the requested leaderboard
-def get_leaderboard(game_name, time_frame):
-    print(f'fetching {time_frame} for {game_name}')
-
-    # presets
-    cond1 = False
-    cond2 = False
-
-    # get mini date to know which day is "today" for mini
-    if game_name == 'mini':
-        # get mini date
-        now = datetime.now(pytz.timezone('US/Eastern'))
-        cond1 = (now.weekday() >= 5 and now.hour >= 18)  # weekend night (after 6pm)
-        cond2 = (now.weekday() <= 4 and now.hour >= 22)  # weekday night (after 10pm)
-        if cond1 or cond2:
-            mini_dt = (now + timedelta(days=1)).strftime("%Y-%m-%d")
-        else:
-            mini_dt = now.strftime("%Y-%m-%d")
-
-    # determine the requested timeframe details
-    if time_frame in ['this week', 'current week', 'weekly']:
-        time_category = 'weekly'
-        time_field = 'is_this_week'
-    elif time_frame in ['last week', 'previous week']:
-        time_category = 'weekly'
-        time_field = 'is_last_week'
-    elif time_frame in ['daily', 'today', 'current', 'current day']:
-        time_category = 'daily'
-        if game_name == 'mini' and (cond1 or cond2):
-            time_field = 'current_date("America/New_York")+1'
-        else:
-            time_field = 'current_date("America/New_York")'
-    elif time_frame in ['yesterday', 'previous']:
-        time_category = 'daily'
-        if game_name == 'mini' and (cond1 or cond2):
-            time_field = 'current_date("America/New_York")'
-        else:
-            time_field = 'current_date("America/New_York")-1'
-    else:
-        response = [False, f'Invalid entry {time_frame}', None]
-        return response
-
-    if time_category == 'daily':
-        my_query = """
-            select *
-            from `crossword.all_games`
-            where game_name = '""" + game_name + """'
-            and game_date = """ + time_field + """
-        """
-        df = pd.read_gbq(my_query, project_id=my_project)[
-            ['game_date', 'game_rank', 'player_name', 'game_score', 'points']]
-
-        # get time detail and set columns for nice image
-        time_category_dtl = df['game_date'].unique()[0]
-        img_df = df.loc[:, df.columns != 'game_date'].sort_values(by='game_rank')
-
-    if time_category == 'weekly':
-        my_query = """
-            select *
-            from `crossword.leaders_weekly`
-            where game_name = '""" + game_name + """'
-            and """ + time_field + """
-        """
-
-        # read CSV instead of BQ
-        #df = pd.read_csv(game_csv)
-
-        df = pd.read_gbq(my_query, project_id=my_project)[
-            ['game_week', 'week_rank', 'player_name', 'games', 'wins', 'points']]
-
-        # get time detail and set columns for nice image
-        time_category_dtl = df['game_week'].unique()[0]
-        img_df = df.loc[:, df.columns != 'game_week']
-
-    # create image
-    chart_title = f'{game_name}_{time_category}_{time_category_dtl}'
-    img_save_as = f'{img_loc}{game_name}_{time_category}_{time_category_dtl}.png'
-    fig = render_mpl_table(img_df, chart_title=chart_title).figure
-    fig.savefig(img_save_as, dpi=300, bbox_inches='tight', pad_inches=.5)
-    print(f'printed {time_frame} leaderboard image for {game_name} to {img_save_as}')
-
-    # response is [True/False, Comment, Image Location]
-    response = [True, f'Got {time_category} {game_name} leaderboard for {time_category_dtl}', img_save_as]
-    return response
