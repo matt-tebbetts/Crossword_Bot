@@ -32,32 +32,13 @@ else:
     game_csv = '/home/matttebbetts/projects/Crossword_Bot/files/game_history.csv'
 
 # set mySQL details
-if local_mode:
-    # login (local)
-    sql_pass = os.getenv("MYSQLPASS")
-    sql_user = 'root'
+sql_pass = os.getenv("SQLPASS")
+sql_user = os.getenv("SQLUSER")
+sql_host = os.getenv("SQLHOST")
+sql_port = os.getenv("SQLPORT")
+database = os.getenv("SQLDATA")
+sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 
-    # connection
-    sql_host = 'localhost'
-    sql_port = '3306'
-    database = 'games'
-    sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
-    engine = create_engine(sql_addr)
-
-else:
-    # login (online)
-    sql_pass = "Test123$"
-    sql_user = 'matttebbetts'
-
-    # connection
-    sql_host = 'matttebbetts.mysql.pythonanywhere-services.com'
-    sql_port = '3306'
-    database = 'matttebbetts$crossword'
-    sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
-    engine = create_engine(sql_addr)
-
-
-## ------------------------------------------------------------------------------------------- ##
 
 # print a dataframe nicely
 def tab_df(data):
@@ -101,7 +82,6 @@ def render_mpl_table(data, col_width=2.5, row_height=0.625, font_size=16,
     # end of function is to return the "ax" variable? why not .figure?
     return ax
 
-## ------------------------------------------------------------------------------------------- ##
 
 # save mini dataframe and send image
 def get_mini(is_family=False):
@@ -153,6 +133,9 @@ def get_mini(is_family=False):
     # append to mySQL
     send_to_sql = True
     if send_to_sql:
+
+        # this should now be sent to the custom function we create called like "get_engine" which could return the engine
+        engine = create_engine(sql_addr)
         df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
 
     ## everything below should be within its own separate function
@@ -206,6 +189,7 @@ def get_mini(is_family=False):
     # send image back to discord
     return img_file
     # return [True, img_file, no_mini_list]
+
 
 # add discord scores to database
 def add_score(game_prefix, discord_id, msg_txt):
@@ -324,11 +308,13 @@ def add_score(game_prefix, discord_id, msg_txt):
     # append to mySQL
     send_to_sql = True
     if send_to_sql:
+        engine = create_engine(sql_addr)
         df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
 
     msg_back = [True, 'sent to CSV and SQL']
 
     return msg_back
+
 
 # this creates and sends an image of the requested leaderboard
 def get_leaderboard(game_name, time_frame):
