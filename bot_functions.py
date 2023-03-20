@@ -59,7 +59,7 @@ def render_mpl_table(data, col_width=3.5, row_height=0.625, font_size=16,
         ax.set_title(label=chart_title,
                      fontdict=dict(fontsize=18, verticalalignment='baseline', horizontalalignment='center')
                      )
-
+        
     # this makes the dataframe into the "table" image
     mpl_table = ax.table(cellText=data.values, bbox=bbox, colLabels=data.columns, **kwargs)
 
