@@ -13,6 +13,13 @@ import pytz
 from datetime import datetime, timedelta
 import inspect
 import bot_functions
+import logging
+
+# Configure logging to write messages to a file
+logging.basicConfig(filename='files/bot.log', level=logging.DEBUG)
+
+# Log a message
+logging.info('Bot started')
 
 # connection details
 load_dotenv()
@@ -155,6 +162,7 @@ async def on_message(message):
 # tasks
 @tasks.loop(minutes=1)
 async def auto_post_the_mini():
+
     # check current time
     now_ts = datetime.now(pytz.timezone('US/Eastern'))
     now_txt = now_ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -175,9 +183,8 @@ async def auto_post_the_mini():
         print(f"{now_txt}: Just checking in. Current weekday is {now_ts.weekday()}, mini closes at {cutoff_hour} ({expiry_time_txt})")
 
     # regular run hours of get_mini
-    hours_to_run = [1, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23]
-    minute_to_run = 45
-    if hr in hours_to_run and mn == minute_to_run:
+    minute_to_run = 57
+    if mn == minute_to_run:
         print(f"{now_txt}: it's {the_time}, time to run get_mini")
         bot_functions.get_mini()
 
@@ -207,12 +214,15 @@ async def auto_post_the_mini():
     # send warning
     if is_time_to_warn:
 
+        ## should replace this part... instead get the df from running get_mini
         # find today's saved mini detail
         df = pd.read_csv(mini_csv)
         df = df[df['game_date'] == mini_dt]
         df['add_rank'] = df.groupby('player_id')['added_ts'].rank().astype(int)
         df = df[df['add_rank'] == 1]
         print(f'{now_txt}: got most recent mini data...')
+
+
 
         # get users to warn
         users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
@@ -245,7 +255,7 @@ async def auto_post_the_mini():
         await channel.send(file=discord.File(img))
 
 
-# command to get other leaderboards
+# command to get other leaderboards (only mini is working right now)
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
 async def get(ctx, *, time_frame='daily'):
 
