@@ -16,7 +16,6 @@ from sqlalchemy import create_engine
 local_mode = True if socket.gethostname() == "MJT" else False
 
 # load environment variables
-load_dotenv()
 crossword_channel_id = 806881904073900042
 
 # set file locations
@@ -26,6 +25,7 @@ mini_csv = 'files/mini_history.csv'
 game_csv = 'files/game_history.csv'
 
 # set mySQL details
+load_dotenv()
 sql_pass = os.getenv("SQLPASS")
 sql_user = os.getenv("SQLUSER")
 sql_host = os.getenv("SQLHOST")
@@ -124,21 +124,15 @@ def get_mini(is_family=False):
         no_mini = f'{img_loc}No_Mini_Yet.png'
         return no_mini
 
-    # append to csv history
-    df.to_csv(mini_csv, mode='a', index=False, header=False)
-
     # append to mySQL
-    send_to_sql = True
-    if send_to_sql:
+    engine = create_engine(sql_addr)
+    df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
 
-        # this should now be sent to the custom function we create called like "get_engine" which could return the engine
-        engine = create_engine(sql_addr)
-        df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
+    # get user detail from sql
+    my_query = """select * from users"""
+    users = pd.read_sql(my_query, con=engine)
 
-    ## everything below should be within its own separate function
-
-    # get user detail
-    users = pd.read_csv(user_csv)
+    # merge with users
     img_df = pd.merge(df, users, how='inner', on='player_id')
 
     # determine family or friends list
