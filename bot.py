@@ -20,6 +20,9 @@ logging.basicConfig(filename='files/bot.log', level=logging.DEBUG)
 
 # Log a message
 logging.info('Bot started')
+logging.debug('Debug message'))
+logging.warning('Warning message')
+logging.error('Error message')
 
 # connection details
 load_dotenv()
