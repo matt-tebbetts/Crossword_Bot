@@ -16,14 +16,26 @@ import inspect
 import bot_functions
 import logging
 
-# Configure logging to write messages to a file
-logging.basicConfig(filename='files/bot.log', level=logging.DEBUG)
+# Create a formatter that includes a timestamp
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+# Create a logger and set its log level
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Create a file handler and set its log level and formatter
+file_handler = logging.FileHandler('files/bot.log')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
+
+# Now when you log a message, it will include a timestamp
+logger.debug('This is a debug message')
 
 # Log a message
-logging.info('Bot started')
-logging.debug('Debug message')
-logging.warning('Warning message')
-logging.error('Error message')
+logging.info('Bot started!!!')
 
 # connection details
 load_dotenv()
