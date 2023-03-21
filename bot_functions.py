@@ -20,9 +20,6 @@ crossword_channel_id = 806881904073900042
 
 # set file locations
 img_loc = 'files/images/'
-user_csv = 'files/users.csv'
-mini_csv = 'files/mini_history.csv'
-game_csv = 'files/game_history.csv'
 
 # set mySQL details
 load_dotenv()
@@ -182,7 +179,7 @@ def get_mini(is_family=False):
     # return [True, img_file, no_mini_list]
 
 
-# add discord scores to database
+# add discord scores to database when people paste them to discord chat
 def add_score(game_prefix, discord_id, msg_txt):
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -293,15 +290,10 @@ def add_score(game_prefix, discord_id, msg_txt):
     my_data = [[game_date, game_name, game_score, game_time, discord_id, game_dtl, metric_01, metric_02, metric_03]]
     df = pd.DataFrame(data=my_data, columns=my_cols)
 
-    # send to csv
-    df.to_csv(game_csv, mode='a', index=False, header=False)
-
     # append to mySQL
-    send_to_sql = True
-    if send_to_sql:
-        engine = create_engine(sql_addr)
-        df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
+    engine = create_engine(sql_addr)
+    df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
 
-    msg_back = [True, 'sent to CSV and SQL']
+    msg_back = [True, 'sent to SQL']
 
     return msg_back
