@@ -11,6 +11,14 @@ import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import create_engine
+import logging
+
+# Create a formatter that includes a timestamp
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+# Create a logger and set its log level
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
@@ -79,6 +87,8 @@ def render_mpl_table(data, col_width=3.5, row_height=0.625, font_size=16,
 
 # save mini dataframe and send image
 def get_mini(is_family=False):
+    
+    # load environment
     load_dotenv()
     cookie = os.getenv('NYT_COOKIE')
 
@@ -117,9 +127,8 @@ def get_mini(is_family=False):
 
     # check if anyone did it yet
     if len(df) == 0:
-        print('Nobody did the mini yet')
-        no_mini = f'{img_loc}No_Mini_Yet.png'
-        return no_mini
+        logger.debug('Nobody did the mini yet')
+        return None
 
     # append to mySQL
     engine = create_engine(sql_addr)
@@ -172,7 +181,7 @@ def get_mini(is_family=False):
     img_title = f"The Mini \n {mini_dt} \n \n {tagline} \n"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
-    print('mini: got the mini')
+    logger.debug('mini: got the mini')
 
     # send image back to discord
     return img_file
@@ -230,7 +239,7 @@ def add_score(game_prefix, discord_id, msg_txt):
             if line[4] == '🐸':
                 g5 = 1
         metric_03 = g1 + g2 + g3 + g4 + g5
-        print(f"got {metric_03} green frogs")
+        logger.debug(f"got {metric_03} green frogs")
 
         # get top X% denoting a win
         final_line = lines[-1]
@@ -257,7 +266,7 @@ def add_score(game_prefix, discord_id, msg_txt):
             if line.find(check_mark) >= 0:
                 movies_guessed += 1
 
-        print(f"{movies_guessed} correctly guessed")
+        logger.debug(f"{movies_guessed} correctly guessed")
         metric_01 = movies_guessed
 
     if game_prefix == 'atlantic':
