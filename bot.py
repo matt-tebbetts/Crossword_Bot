@@ -16,6 +16,8 @@ import inspect
 import bot_functions
 import logging
 
+## ------------ set up logging ------------ ##
+
 # Create a formatter that includes a timestamp
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 
@@ -34,8 +36,7 @@ logger.addHandler(file_handler)
 # Now when you log a message, it will include a timestamp
 logger.debug('This is a debug message')
 
-# Log a message
-logging.info('Bot started!!!')
+## ------------ logging ready ------------ ##
 
 # connection details
 load_dotenv()
@@ -53,7 +54,7 @@ game_scores = 1058057309068197989
 
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
-print(f"local_mode = {local_mode}")
+logger.debug(f"local_mode = {local_mode}")
 
 # set file locations
 img_loc = 'files/images/'
@@ -75,10 +76,11 @@ class BracketSeparatedWords(Converter):
 async def on_ready():
     # confirm
     for guild in bot.guilds:
-        print(f"Connected to {guild.name}, id: {guild.id}")
+        logger.debug(f"Connected to {guild.name}, id: {guild.id}")
         for channel in guild.channels:
             if channel.name in ['crossword-corner', 'game-scores', 'bot-test']:
-                print(f"... channel {channel.name} has id: {channel.id}")
+                logger.debug(f"... channel {channel.name} has id: {channel.id}")
+                logger.debug(f"... channel {channel.name} has id: {channel.id}")
 
         refresh_users = False
         if refresh_users:
@@ -90,6 +92,7 @@ async def on_ready():
                 new_row = pd.DataFrame({'id': [member_id], 'nick': [member_nm], 'full': [member_no]})
                 guild_df = pd.concat([guild_df, new_row], ignore_index=True)
             guild_df.to_csv(f'files/users_{guild.name}.csv', mode='w', index=False)
+            logger.debug(f"created csv of users for this guild...")
 
     # ready time
     ready_ts = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
@@ -98,9 +101,9 @@ async def on_ready():
     auto_post_the_mini.start()
 
     # check if local
-    print(f'Local? {local_mode}')
-    print('')
-    print(f"{ready_ts}: {bot.user.name} is ready")
+    logger.debug(f'Local? {local_mode}')
+    logger.debug('')
+    logger.debug(f"{ready_ts}: {bot.user.name} is ready")
 
 
 # messages
@@ -121,17 +124,15 @@ async def on_message(message):
     user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
 
     # print details
-    print(f"""{msg_time}: received message in {message.channel.name}""")
-    print(f"""... {user_id} said: {msg_text}""")
-    print('')
+    logger.debug(f"""{msg_time}: received message in {message.channel.name}""")
+    logger.debug(f"""... {user_id} said: {msg_text}""")
+    logger.debug('')
 
     old_msg = None
     # if they wrote "!add" then replace msg_text with the original message
     if msg_text == "!add":
         if message.reference.resolved:
-            print('this is a reply to a previous message')
             old_msg = await message.channel.fetch_message(message.reference.message_id)
-            print('replacing variables to refer to old message...')
             msg_text = str(old_msg.content)
             user_id = str(old_msg.author.name + "#" + old_msg.author.discriminator)
 
@@ -139,14 +140,14 @@ async def on_message(message):
     pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
     for game_prefix in pref_list:
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
-            print('This looks like a game score for: ' + game_prefix)
+            logger.debug('This looks like a game score for: ' + game_prefix)
 
             if game_prefix in ['Atlantic', 'The Atlantic', 'atlantic']:
                 game_prefix = 'atlantic'
 
             # send to score scraper
             response = bot_functions.add_score(game_prefix, user_id, msg_text)
-            print(response)
+            logger.debug(response)
 
             if not response[0]:
                 emoji = '❌'
@@ -168,11 +169,11 @@ async def on_message(message):
             if old_msg is not None:
                 await old_msg.add_reaction(emoji)
 
-            print('reacted')
+            logger.debug('reacted')
 
     # run the message check
     await bot.process_commands(message)
-    print('')
+    logger.debug('')
 
 
 # tasks
@@ -195,14 +196,14 @@ async def auto_post_the_mini():
         mini_dt = now_ts.strftime("%Y-%m-%d")
 
     # print check
-    if now_ts.minute in [0, 15, 30, 45]:
-        print(f"{now_txt}: Just checking in. Current weekday is {now_ts.weekday()}, mini closes at {cutoff_hour} ({expiry_time_txt})")
-        logging.info(f'{now_txt}: still running.')
+    if now_ts.minute in [0, 30]:
+        logger.debug(f"{now_txt}: Just checking in. Current weekday is {now_ts.weekday()}, mini closes at {cutoff_hour} ({expiry_time_txt})")
+        logger.debug(f'{now_txt}: still running.')
 
     # regular run hours of get_mini
     minute_to_run = 57
     if mn == minute_to_run:
-        print(f"{now_txt}: it's {the_time}, time to run get_mini")
+        logger.debug(f"{now_txt}: it's {the_time}, time to run get_mini")
         bot_functions.get_mini()
 
     # check if it's the final hour
@@ -230,16 +231,16 @@ async def auto_post_the_mini():
 
     # send warning
     if is_time_to_warn:
+            
+        logger.debug(f"{now_txt}: time to warn those who've not completed today's mini")
 
-        ## should replace this part... instead get the df from running get_mini
+        ### should replace this part... instead get the df from running get_mini
         # find today's saved mini detail
         df = pd.read_csv(mini_csv)
         df = df[df['game_date'] == mini_dt]
         df['add_rank'] = df.groupby('player_id')['added_ts'].rank().astype(int)
         df = df[df['add_rank'] == 1]
-        print(f'{now_txt}: got most recent mini data...')
-
-
+        logger.debug(f'{now_txt}: got most recent mini data...')
 
         # get users to warn
         users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
@@ -249,7 +250,7 @@ async def auto_post_the_mini():
         # see who hasn't gone yet
         grouped = combined.groupby('discord_id_nbr')['game_time'].count()
         no_mini_list = grouped.loc[grouped == 0].index.tolist()
-        print(f"{now_txt}: these users haven't done the mini: {no_mini_list}")
+        logger.debug(f"{now_txt}: these users haven't done the mini: {no_mini_list}")
 
         # send message and tag users
         warning_msg = inspect.cleandoc(f"""The mini expires at {expiry_time_txt}!
@@ -263,7 +264,7 @@ async def auto_post_the_mini():
 
     # post it
     if is_time_to_post:
-        print("auto: yes it's time to post")
+        logger.debug("auto: yes it's time to post")
         end_msg = f"The mini expires at {expiry_time_txt}. Here's the final leaderboard:"
         await channel.send(end_msg)
 
@@ -288,11 +289,11 @@ async def get(ctx, *, time_frame='daily'):
 
     # temporarily disable the leaderboard pulls
     if disabled:
-        print('leaderboard disabled')
+        logger.debug('leaderboard disabled')
         temp_msg = "Terribly sorry, but this service is currently disabled"
         await ctx.channel.send(temp_msg)
     else:
-        print('leaderboard enabled')
+        logger.debug('leaderboard enabled')
         my_image = bot_functions.get_mini()
         await ctx.channel.send(file=discord.File(my_image))
 
@@ -348,7 +349,7 @@ async def draft(ctx, thing: BracketSeparatedWords, category: BracketSeparatedWor
     list_of_categories = ['A', 'B', 'C']
 
     if category not in list_of_categories:
-        print('invalid category')
+        logger.debug('invalid category')
 
     # send message
     await ctx.channel.send(confirmation)
@@ -367,7 +368,7 @@ async def get_history(ctx):
     thread_to_find = "Libertine Draft"
 
     if str.lower(ctx.author.display_name) != "matt":
-        print(f"{ctx.author.display_name} tried to call get_history but only Matt can do this")
+        logger.debug(f"{ctx.author.display_name} tried to call get_history but only Matt can do this")
         return
 
     # get a get_channel instance
@@ -375,19 +376,19 @@ async def get_history(ctx):
         for channel in guild.channels:
             if channel.name == channel_to_find:
                 channel_to_scrape = bot.get_channel(channel.id)
-                print(f"found channel id: {channel.id} for {channel.name}")
+                logger.debug(f"found channel id: {channel.id} for {channel.name}")
 
                 # find thread
                 for thread in channel.threads:
                     if thread.name == thread_to_find:
                         thread_to_scrape = bot.get_channel(thread.id)
-                        print(f"found thread id: {thread.id} for {thread.name}")
+                        logger.debug(f"found thread id: {thread.id} for {thread.name}")
 
     # create empty dataframe
     cols = ['msg_id', 'msg_ts', 'char_count', 'word_count', 'uniq_count',
             'swears', 'reacts', 'msg_auth']
     df = pd.DataFrame(columns=cols)
-    print('starting with this dataframe')
+    logger.debug('starting with this dataframe')
     bot_functions.tab_df(df)
 
     # check each message
@@ -430,8 +431,8 @@ async def get_history(ctx):
     bot_functions.tab_df(df)
 
     # done
-    print('get_history complete')
-    print('')
+    logger.debug('get_history complete')
+    logger.debug('')
 
     df.to_csv('test.csv', mode='w', index=False)
 
