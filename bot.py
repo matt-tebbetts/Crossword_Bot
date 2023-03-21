@@ -3,6 +3,7 @@ import os
 import socket
 import discord
 import asyncio
+import time
 
 import random
 import pandas as pd
@@ -182,8 +183,9 @@ async def auto_post_the_mini():
         mini_dt = now_ts.strftime("%Y-%m-%d")
 
     # print check
-    if now_ts.minute in [0]:
+    if now_ts.minute in [0, 15, 30, 45]:
         print(f"{now_txt}: Just checking in. Current weekday is {now_ts.weekday()}, mini closes at {cutoff_hour} ({expiry_time_txt})")
+        logging.info(f'{now_txt}: still running.')
 
     # regular run hours of get_mini
     minute_to_run = 57
