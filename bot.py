@@ -15,11 +15,12 @@ from datetime import datetime, timedelta
 import inspect
 import bot_functions
 import logging
+from sqlalchemy import create_engine
 
-## ------------ set up logging ------------ ##
+### ------------ logging ------------ ###
 
 # Create a formatter that includes a timestamp
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 # Create a logger and set its log level
 logger = logging.getLogger(__name__)
@@ -33,10 +34,7 @@ file_handler.setFormatter(formatter)
 # Add the file handler to the logger
 logger.addHandler(file_handler)
 
-# Now when you log a message, it will include a timestamp
-logger.debug('This is a debug message')
-
-## ------------ logging ready ------------ ##
+### ------------ logging ------------ ###
 
 # connection details
 load_dotenv()
@@ -44,6 +42,14 @@ TOKEN = os.getenv('CROSSWORD_BOT')
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents)
+
+# set mySQL details
+sql_pass = os.getenv("SQLPASS")
+sql_user = os.getenv("SQLUSER")
+sql_host = os.getenv("SQLHOST")
+sql_port = os.getenv("SQLPORT")
+database = os.getenv("SQLDATA")
+sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 
 # guilds and channel_ids
 nerd_city = 672233217985871908
@@ -71,62 +77,41 @@ class BracketSeparatedWords(Converter):
         return argument.split()
 
 
-# confirm ready
+# startup
 @bot.event
 async def on_ready():
-    # confirm
+
+    # check connected guilds and channels
     for guild in bot.guilds:
-        logger.debug(f"Connected to {guild.name}, id: {guild.id}")
+        logger.debug(f"Connected to {guild.name} ({guild.id})")
         for channel in guild.channels:
             if channel.name in ['crossword-corner', 'game-scores', 'bot-test']:
-                logger.debug(f"... channel {channel.name} has id: {channel.id}")
-                logger.debug(f"... channel {channel.name} has id: {channel.id}")
-
-        refresh_users = False
-        if refresh_users:
-            guild_df = pd.DataFrame(columns=['id', 'nick', 'full'])
-            for member in guild.members:
-                member_id = member.id
-                member_nm = member.name
-                member_no = member.name + "#" + member.discriminator
-                new_row = pd.DataFrame({'id': [member_id], 'nick': [member_nm], 'full': [member_no]})
-                guild_df = pd.concat([guild_df, new_row], ignore_index=True)
-            guild_df.to_csv(f'files/users_{guild.name}.csv', mode='w', index=False)
-            logger.debug(f"created csv of users for this guild...")
-
-    # ready time
-    ready_ts = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
+                logger.debug(f"Active channels: {channel.name} ({channel.id})")
 
     # start timed tasks
     auto_post_the_mini.start()
 
-    # check if local
-    logger.debug(f'Local? {local_mode}')
-    logger.debug('')
-    logger.debug(f"{ready_ts}: {bot.user.name} is ready")
+    # confirm
+    logger.debug(f"{bot.user.name} is ready!")
 
 
-# messages
+# read channel messages
 @bot.event
 async def on_message(message):
-    # only comment on certain channel(s)
+    
+    # check channel
     if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test", "game-scores"]:
         return
 
-    # don't respond to self
+    # ignore self
     if message.author == bot.user:
         return
 
-    # get message details
+    # get message detail
     msg_now = datetime.now(pytz.timezone('US/Eastern'))
     msg_time = msg_now.strftime("%Y-%m-%d %H:%M:%S")
     msg_text = str(message.content)
     user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
-
-    # print details
-    logger.debug(f"""{msg_time}: received message in {message.channel.name}""")
-    logger.debug(f"""... {user_id} said: {msg_text}""")
-    logger.debug('')
 
     old_msg = None
     # if they wrote "!add" then replace msg_text with the original message
@@ -140,14 +125,13 @@ async def on_message(message):
     pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
     for game_prefix in pref_list:
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
-            logger.debug('This looks like a game score for: ' + game_prefix)
+            logger.debug(f"{user_id} posted a score for {game_prefix}")
 
             if game_prefix in ['Atlantic', 'The Atlantic', 'atlantic']:
                 game_prefix = 'atlantic'
 
             # send to score scraper
             response = bot_functions.add_score(game_prefix, user_id, msg_text)
-            logger.debug(response)
 
             if not response[0]:
                 emoji = '❌'
@@ -169,11 +153,8 @@ async def on_message(message):
             if old_msg is not None:
                 await old_msg.add_reaction(emoji)
 
-            logger.debug('reacted')
-
     # run the message check
     await bot.process_commands(message)
-    logger.debug('')
 
 
 # tasks
@@ -197,11 +178,10 @@ async def auto_post_the_mini():
 
     # print check
     if now_ts.minute in [0, 30]:
-        logger.debug(f"{now_txt}: Just checking in. Current weekday is {now_ts.weekday()}, mini closes at {cutoff_hour} ({expiry_time_txt})")
-        logger.debug(f'{now_txt}: still running.')
+        logger.debug(f'Still connected.')
 
     # regular run hours of get_mini
-    minute_to_run = 57
+    minute_to_run = 55
     if mn == minute_to_run:
         logger.debug(f"{now_txt}: it's {the_time}, time to run get_mini")
         bot_functions.get_mini()
@@ -213,7 +193,7 @@ async def auto_post_the_mini():
 
     # check what post to make at which minute
     warning_minute = 0
-    fam_minute = 55
+    fam_minute = 45
     nerds_minute = 59
 
     is_time_to_post = (now_ts.minute == nerds_minute or now_ts.minute == fam_minute)
@@ -229,10 +209,19 @@ async def auto_post_the_mini():
         channel = guild.get_channel(crossword_corner)  # bot_test
         is_time_to_warn = (now_ts.minute == warning_minute)
 
+    # post it
+    if is_time_to_post:
+        logger.debug("Posting Final Leaderboard")
+        end_msg = f"The mini expires at {expiry_time_txt}. Here's the final leaderboard:"
+        await channel.send(end_msg)
+
+        # get score and post image
+        img = bot_functions.get_mini(is_family_time)
+        await channel.send(file=discord.File(img))
+
     # send warning
     if is_time_to_warn:
-            
-        logger.debug(f"{now_txt}: time to warn those who've not completed today's mini")
+        logger.debug(f"Posting 1-Hour Warning")
 
         ### should replace this part... instead get the df from running get_mini
         # find today's saved mini detail
@@ -240,37 +229,38 @@ async def auto_post_the_mini():
         df = df[df['game_date'] == mini_dt]
         df['add_rank'] = df.groupby('player_id')['added_ts'].rank().astype(int)
         df = df[df['add_rank'] == 1]
-        logger.debug(f'{now_txt}: got most recent mini data...')
 
         # get users to warn
-        users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
+        # users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
+
+        # get user detail from sql
+        engine = create_engine(sql_addr)
+        my_query = """select * from users"""
+        users = pd.read_sql(my_query, con=engine)  # make sure discord_id_nbr is not scientific notation
         users = users[(users['give_rank'] == True) & (users['mini_warning'] == True)]
         combined = pd.merge(users, df, how='left', on='player_id')
 
         # see who hasn't gone yet
         grouped = combined.groupby('discord_id_nbr')['game_time'].count()
         no_mini_list = grouped.loc[grouped == 0].index.tolist()
-        logger.debug(f"{now_txt}: these users haven't done the mini: {no_mini_list}")
 
-        # send message and tag users
-        warning_msg = inspect.cleandoc(f"""The mini expires at {expiry_time_txt}!
-                        The following players have not done the mini today:
-                        """)
-        for user_id in no_mini_list:
-            warning_msg += f"<@{user_id}> "
-        warning_msg += "\n"
-        warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
-        await channel.send(warning_msg)
+        # check no_mini_list
+        if not no_mini_list:
+            celebration_msg = "Congratulations! Everyone has completed today's crossword puzzle! :tada:\nhttps://giphy.com/gifs/nickelodeon-throwback-all-that-kel-ck5JRWob7folZ7d97I"
+            await channel.send(celebration_msg)
 
-    # post it
-    if is_time_to_post:
-        logger.debug("auto: yes it's time to post")
-        end_msg = f"The mini expires at {expiry_time_txt}. Here's the final leaderboard:"
-        await channel.send(end_msg)
+        else:
+            # send message and tag users
+            warning_msg = inspect.cleandoc(f"""The mini expires at {expiry_time_txt}!
+                            The following players have not done the mini today:
+                            """)
+            for user_id in no_mini_list:
+                warning_msg += f"<@{user_id}> "
+                warning_msg += "\n"
+            
+            warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
 
-        # get score and post image
-        img = bot_functions.get_mini(is_family_time)
-        await channel.send(file=discord.File(img))
+            await channel.send(warning_msg)
 
 
 # command to get other leaderboards (only mini is working right now)
