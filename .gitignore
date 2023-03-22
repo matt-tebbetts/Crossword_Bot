@@ -1,3 +1,4 @@
 # ignored files below
 .env
 bq_key.json
+venv/
