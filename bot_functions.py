@@ -303,6 +303,6 @@ def add_score(game_prefix, discord_id, msg_txt):
     engine = create_engine(sql_addr)
     df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
 
-    msg_back = [True, 'sent to SQL']
+    msg_back = [True, f'Added {game_name} score for {discord_id}']
 
     return msg_back
