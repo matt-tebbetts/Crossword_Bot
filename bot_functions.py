@@ -181,7 +181,7 @@ def get_mini(is_family=False):
     img_title = f"The Mini \n {mini_dt} \n \n {tagline} \n"
     fig = render_mpl_table(img_df, chart_title=img_title).figure
     fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
-    logger.debug('mini: got the mini')
+    logger.debug('Got the mini.')
 
     # send image back to discord
     return img_file
