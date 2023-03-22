@@ -1,15 +1,15 @@
 # main functions and connecting
 import os
+from dotenv import load_dotenv
 import socket
 import discord
-import asyncio
-import time
-
-import random
-import pandas as pd
 from discord.ext import commands, tasks
 from discord.ext.commands import Converter, Context
-from dotenv import load_dotenv
+from discord import Embed
+import asyncio
+import time
+import random
+import pandas as pd
 import pytz
 from datetime import datetime, timedelta
 import inspect
@@ -60,13 +60,10 @@ game_scores = 1058057309068197989
 
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
-logger.debug(f"local_mode = {local_mode}")
+logger.debug(f"Started on: {socket.gethostname()}")
 
 # set file locations
 img_loc = 'files/images/'
-user_csv = 'files/users.csv' # should get users from sql table
-mini_csv = 'files/mini_history.csv'
-game_csv = 'files/game_history.csv'
 
 
 # accept multiple words in command arguments/parameters?
@@ -76,6 +73,10 @@ class BracketSeparatedWords(Converter):
         argument = argument.strip("[]")
         return argument.split()
 
+# if disconnect
+@bot.event
+async def on_disconnect():
+    logger.warning("Bot has been disconnected.")
 
 # startup
 @bot.event
@@ -93,7 +94,6 @@ async def on_ready():
 
     # confirm
     logger.debug(f"{bot.user.name} is ready!")
-
 
 # read channel messages
 @bot.event
@@ -177,13 +177,14 @@ async def auto_post_the_mini():
         mini_dt = now_ts.strftime("%Y-%m-%d")
 
     # print check
-    if now_ts.minute in [0, 30]:
+    interval = 5 if local_mode else 30
+    if now_ts.minute % interval == 0:
         logger.debug(f'Still connected.')
 
     # regular run hours of get_mini
     minute_to_run = 55
     if mn == minute_to_run:
-        logger.debug(f"{now_txt}: it's {the_time}, time to run get_mini")
+        logger.debug(f"Normal time to get the mini (no post)")
         bot_functions.get_mini()
 
     # check if it's the final hour
@@ -215,7 +216,7 @@ async def auto_post_the_mini():
         end_msg = f"The mini expires at {expiry_time_txt}. Here's the final leaderboard:"
         await channel.send(end_msg)
 
-        # get score and post image
+        # get mini and post image
         img = bot_functions.get_mini(is_family_time)
         await channel.send(file=discord.File(img))
 
@@ -223,43 +224,37 @@ async def auto_post_the_mini():
     if is_time_to_warn:
         logger.debug(f"Posting 1-Hour Warning")
 
-        ### should replace this part... instead get the df from running get_mini
-        # find today's saved mini detail
-        df = pd.read_csv(mini_csv)
-        df = df[df['game_date'] == mini_dt]
-        df['add_rank'] = df.groupby('player_id')['added_ts'].rank().astype(int)
-        df = df[df['add_rank'] == 1]
-
-        # get users to warn
-        # users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
-
-        # get user detail from sql
+        # get missing mini report from sql
         engine = create_engine(sql_addr)
-        my_query = """select * from users"""
-        users = pd.read_sql(my_query, con=engine)  # make sure discord_id_nbr is not scientific notation
-        users = users[(users['give_rank'] == True) & (users['mini_warning'] == True)]
-        combined = pd.merge(users, df, how='left', on='player_id')
+        my_query = """select discord_id_nbr from mini_not_completed"""
+        players_missing_mini_score = pd.read_sql(my_query, con=engine)['discord_id_nbr'].tolist()
 
-        # see who hasn't gone yet
-        grouped = combined.groupby('discord_id_nbr')['game_time'].count()
-        no_mini_list = grouped.loc[grouped == 0].index.tolist()
+        # Check if players_missing_mini_score is empty
+        if not players_missing_mini_score:
+            
+            # Celebration message
+            celebration_msg = "No warning today. Everyone did the mini..."
+            
+            # Create an Embed with the GIF URL
+            gif_url = "https://media.giphy.com/media/ck5JRWob7folZ7d97I/giphy.gif"
+            embed = Embed()
+            embed.set_image(url=gif_url)
 
-        # check no_mini_list
-        if not no_mini_list:
-            celebration_msg = "Congratulations! Everyone has completed today's crossword puzzle! :tada:\nhttps://giphy.com/gifs/nickelodeon-throwback-all-that-kel-ck5JRWob7folZ7d97I"
-            await channel.send(celebration_msg)
+            # celebrate
+            await channel.send(celebration_msg, embed=embed)
 
         else:
-            # send message and tag users
+
+            # create warning message
             warning_msg = inspect.cleandoc(f"""The mini expires at {expiry_time_txt}!
-                            The following players have not done the mini today:
+                            The following players have not completed today's puzzle:
                             """)
-            for user_id in no_mini_list:
+            for user_id in players_missing_mini_score:
                 warning_msg += f"<@{user_id}> "
                 warning_msg += "\n"
-            
             warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
 
+            # warn
             await channel.send(warning_msg)
 
 
@@ -298,36 +293,46 @@ async def mini_warning(ctx, *args):
         msg = "Must type 'add' or 'remove' after /mini_warning"
         await ctx.channel.send(msg)
         return
+    
+    # are they turning the warning off or on
+    on_or_off = 0 if action in ['remove', 'off'] else 1
 
-    action_bool = False if action in ['remove', 'off'] else True
-
-    # open and edit the users file
-    users = pd.read_csv(user_csv, converters={'discord_id_nbr': str})
-    users.loc[users['discord_id_nbr'] == user_id, 'mini_warning'] = action_bool
-    users.to_csv(user_csv, index=False)
-
-    list_of_gifs = [
-        "https://tenor.com/view/boring-unimpressed-meh-really-seriously-gif-16279809",
-        "https://giphy.com/gifs/NRXleEopnqL3a",
-        "https://giphy.com/gifs/eye-roll-ryan-reynolds-ugh-54PaD9dWT0go",
-        "https://giphy.com/gifs/iron-man-eye-roll-disgust-qmfpjpAT2fJRK",
-        "https://giphy.com/gifs/transparent-unimpressed-izPhmitdi9oty",
-        "https://giphy.com/gifs/way-morning-dresser-kWp8QC99Z6xFn8bF0v",
-        "https://giphy.com/gifs/tjluV258hamaY",
-        "https://giphy.com/gifs/high-quality-highqualitygifs-8mdUDkUoAPvEpR8ZIl"
-    ]
-
-    reaction_gif = random.choice(list_of_gifs)
-
-    if action in ['add', 'on']:
+    # update sql
+    engine = create_engine(sql_addr)
+    update_query = """
+        update users
+        set mini_warning = {on_or_off}
+        where discord_id_nbr = {user_id}
+    """
+    with engine.connect() as connection:
+        connection.execute(update_query)
+    
+    # reply back (happy or sad)
+    if on_or_off == 1:
         msg = f"Added you back to the warning message"
+        await ctx.channel.send(msg)
+    else:
+        list_of_gifs = [
+            "https://tenor.com/view/boring-unimpressed-meh-really-seriously-gif-16279809",
+            "https://giphy.com/gifs/NRXleEopnqL3a",
+            "https://giphy.com/gifs/cbc-funny-comedy-3ohhwfwxg4d1h82LxS",
+            "https://giphy.com/gifs/oh-yeah-sure-suuure-DFNd1yVyRjmF2",
+            "https://giphy.com/gifs/transparent-unimpressed-izPhmitdi9oty",
+            "https://giphy.com/gifs/way-morning-dresser-kWp8QC99Z6xFn8bF0v",
+            "https://giphy.com/gifs/tjluV258hamaY",
+            "https://giphy.com/gifs/high-quality-highqualitygifs-8mdUDkUoAPvEpR8ZIl",
+            "https://giphy.com/gifs/theoffice-CuERU1w8npNcP0CpP4"
+        ]
 
-    if action in ['remove', 'off']:
-        msg = reaction_gif
+        # pick a gif, wait... then react
+        reaction_gif = random.choice(list_of_gifs)
+        asyncio.sleep(3)  # joke timing
+        await ctx.channel.send(reaction_gif)
 
-    # reply
-    await ctx.channel.send(msg)
 
+##
+## incomplete commands below
+##
 
 # command to draft something # WORK IN PROGRESS
 @bot.command(name='draft')
@@ -421,11 +426,11 @@ async def get_history(ctx):
     bot_functions.tab_df(df)
 
     # done
-    logger.debug('get_history complete')
-    logger.debug('')
-
     df.to_csv('test.csv', mode='w', index=False)
 
+##
+## incomplete commands above
+##
 
-# run
+# run bot
 bot.run(TOKEN)
