@@ -11,52 +11,30 @@ import pytz
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import create_engine
+import logging
+import inspect
 
-# create image of dataframe
-def render_mpl_table(data, col_width=3.5, row_height=0.625, font_size=16,
-                     header_color='#2c2f33', row_colors=['#3c3f41', '#3c3f41'], edge_color='w',
-                     bbox=[0, 0, 1, 1], header_columns=0, chart_title='Title',
-                     ax=None, fig_bg_color='#23272a', **kwargs):
-    if ax is None:
-        size = (np.array(data.shape[::-1]) + np.array([0, 1])) * np.array([col_width, row_height])
-        fig, ax = plt.subplots(figsize=size)
+# set mySQL details
+load_dotenv()
+sql_pass = os.getenv("SQLPASS")
+sql_user = os.getenv("SQLUSER")
+sql_host = os.getenv("SQLHOST")
+sql_port = os.getenv("SQLPORT")
+database = os.getenv("SQLDATA")
+sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 
-        # set facecolors
-        ax.set_facecolor(fig_bg_color)
-        fig.set_facecolor(fig_bg_color)
-        
-        ax.axis('off')
+# get missing mini report from sql
+engine = create_engine(sql_addr)
+my_query = """select discord_id_nbr from mini_not_completed"""
+players_missing_mini_score = pd.read_sql(my_query, con=engine)['discord_id_nbr'].tolist()
 
-        ax.set_title(label=chart_title,
-                     fontdict=dict(fontsize=18, verticalalignment='baseline', horizontalalignment='center', color='w')
-                     )
-    
-    # set the data
-    mpl_table = ax.table(cellText=data.values, bbox=bbox, colLabels=data.columns, **kwargs)
+# create warning message
+warning_msg = inspect.cleandoc(f"""The mini expires [soon] !
+                The following players have not completed today's puzzle:
+                """)
+for user_id in players_missing_mini_score:
+    warning_msg += f"<@{user_id}> "
+    warning_msg += "\n"
+warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
 
-    # set font size?
-    mpl_table.auto_set_font_size(False)
-    mpl_table.set_fontsize(font_size)
-
-    # format the cells
-    for k, cell in six.iteritems(mpl_table._cells):
-        cell.set_edgecolor(edge_color)
-        if k[0] == 0 or k[1] < header_columns:
-            cell.set_text_props(weight='bold', color='w')
-            cell.set_facecolor(header_color)
-        else:
-            cell.set_text_props(color='w')
-            cell.set_facecolor(row_colors[k[0] % len(row_colors)])
-
-    return ax
-
-
-# get dataframe
-df = pd.read_csv('files/mini_dark.csv')
-
-# create image of dataframe
-img_file = f'files/images/mini_dark.png'
-img_title = f"The Mini dark mode test"
-fig = render_mpl_table(df, chart_title=img_title, fig_bg_color='#23272a').figure
-fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5, facecolor=fig.get_facecolor())
-
+print(warning_msg)

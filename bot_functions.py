@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import six
 import pytz
 from datetime import datetime, timedelta
-from tabulate import tabulate
 from sqlalchemy import create_engine
 import logging
+import bot_camera
 
 # Create a formatter that includes a timestamp
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -29,7 +29,7 @@ crossword_channel_id = 806881904073900042
 # set file locations
 img_loc = 'files/images/'
 
-# set mySQL details
+# get secrets
 load_dotenv()
 sql_pass = os.getenv("SQLPASS")
 sql_user = os.getenv("SQLUSER")
@@ -37,67 +37,16 @@ sql_host = os.getenv("SQLHOST")
 sql_port = os.getenv("SQLPORT")
 database = os.getenv("SQLDATA")
 sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
-
-
-# print a dataframe nicely
-def tab_df(data):
-    return print(tabulate(data, headers='keys', tablefmt='psql'))
-
-
-# create image of dataframe
-def render_mpl_table(data, col_width=3.5, row_height=0.625, font_size=16,
-                     header_color='#40466e', row_colors=['#f1f1f2', 'w'], edge_color='w',
-                     bbox=[0, 0, 1, 1], header_columns=0, chart_title='Title',
-                     ax=None, **kwargs):
-    if ax is None:
-        # set size of image?
-        size = (np.array(data.shape[::-1]) + np.array([0, 1])) * np.array([col_width, row_height])
-        fig, ax = plt.subplots(figsize=size)
-
-        # set color
-        ax.set_facecolor('#747264')
-        
-        # set axis on or off?
-        ax.axis('off')
-
-        # set title
-        ax.set_title(label=chart_title,
-                     fontdict=dict(fontsize=18, verticalalignment='baseline', horizontalalignment='center')
-                     )
-        
-    # this makes the dataframe into the "table" image
-    mpl_table = ax.table(cellText=data.values, bbox=bbox, colLabels=data.columns, **kwargs)
-
-    # table details (font size?)
-    mpl_table.auto_set_font_size(False)
-    mpl_table.set_fontsize(font_size)
-
-    # format the lines and edges?
-    for k, cell in six.iteritems(mpl_table._cells):
-        cell.set_edgecolor(edge_color)
-        if k[0] == 0 or k[1] < header_columns:
-            cell.set_text_props(weight='bold', color='w')
-            cell.set_facecolor(header_color)
-        else:
-            cell.set_facecolor(row_colors[k[0] % len(row_colors)])
-
-    # end of function is to return the "ax" variable? why not .figure?
-    return ax
+cookie = os.getenv('NYT_COOKIE')
 
 
 # save mini dataframe and send image
 def get_mini(is_family=False):
-    
-    # load environment
-    load_dotenv()
-    cookie = os.getenv('NYT_COOKIE')
 
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
     now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-
-    # if we're past cutoff_hour, mini is on tomorrow's date
     if now.hour > cutoff_hour:
         mini_dt = (now + timedelta(days=1)).strftime("%Y-%m-%d")
     else:
@@ -125,7 +74,7 @@ def get_mini(is_family=False):
     df.insert(0, 'game_date', mini_dt)
     df['added_ts'] = now_ts
 
-    # check if anyone did it yet
+    # if empty
     if len(df) == 0:
         logger.debug('Nobody did the mini yet')
         return None
@@ -156,7 +105,7 @@ def get_mini(is_family=False):
     # find winner(s) and create tagline for subtitle
     winners = img_df.loc[img_df['game_rank'] == 1]['player_name'].unique()
 
-    # if we're past the nightly cutoff time, or before the cutoff hour:
+    # get custom taglines
     if now.hour < cutoff_hour:
         tagline = "It ain't over til it's over"
     elif len(winners) > 1:
@@ -168,19 +117,17 @@ def get_mini(is_family=False):
         elif winner == 'Zach':
             tagline = "We've been Throoped!"
         elif winner == 'Matt':
-            tagline = "Yeah baby, yeah!"
+            tagline = "It's me. Hi."
         elif winner == 'Aaron':
-            tagline = "Well look who decided to play today!"
-        elif winner == 'Samantha':
-            tagline = "Slammin' Sammy!"
+            tagline = "Well look who decided to play today."
         else:
             tagline = f"A wild {winner} appeared!"
 
-    # create image
+    # image creation
+    img_df.rename(columns={'game_rank':'rank', 'player_name':'player', 'game_time':'time'}) # forgot POINTS
     img_file = f'{img_loc}daily_mini.png'
     img_title = f"The Mini \n {mini_dt} \n \n {tagline} \n"
-    fig = render_mpl_table(img_df, chart_title=img_title).figure
-    fig.savefig(img_file, dpi=300, bbox_inches='tight', pad_inches=.5)
+    bot_camera.dataframe_to_image_dark_mode(img_df, chart_title=img_title).figure
     logger.debug('Got the mini.')
 
     # send image back to discord

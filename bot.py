@@ -65,7 +65,6 @@ logger.debug(f"Started on: {socket.gethostname()}")
 # set file locations
 img_loc = 'files/images/'
 
-
 # accept multiple words in command arguments/parameters?
 class BracketSeparatedWords(Converter):
     async def convert(self, ctx: Context, argument: str) -> list:
@@ -88,6 +87,21 @@ async def on_ready():
         for channel in guild.channels:
             if channel.name in ['crossword-corner', 'game-scores', 'bot-test']:
                 logger.debug(f"Active channels: {channel.name} ({channel.id})")
+
+        # get all the members in the guild
+        members = guild.members
+        member_data = []
+        for member in members:
+            member_id = member.id
+            member_name = str(member)
+            member_nickname = member.nick if member.nick is not None else ""
+
+            # add the member data to the list
+            member_data.append([member_id, member_name, member_nickname])
+
+        # create a pandas DataFrame with the member data
+        users_df = pd.DataFrame(member_data, columns=["id_nbr", "discord_name", "nickname"])
+        users_df.to_csv('files/user_dtl.csv')
 
     # start timed tasks
     auto_post_the_mini.start()
