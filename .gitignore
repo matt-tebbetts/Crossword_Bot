@@ -2,3 +2,4 @@
 .env
 bq_key.json
 venv/
+files/bot.log
