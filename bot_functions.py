@@ -124,15 +124,12 @@ def get_mini(is_family=False):
             tagline = f"A wild {winner} appeared!"
 
     # image creation
-    img_df.rename(columns={'game_rank':'rank', 'player_name':'player', 'game_time':'time'}) # forgot POINTS
-    img_file = f'{img_loc}daily_mini.png'
-    img_title = f"The Mini \n {mini_dt} \n \n {tagline} \n"
-    bot_camera.dataframe_to_image_dark_mode(img_df, chart_title=img_title).figure
+    img_df.rename(columns={'game_rank':'rank', 'player_name':'player', 'game_time':'time'}, inplace=True) # forgot POINTS
+    img_title = f"Mini: {mini_dt}"
+    img = bot_camera.dataframe_to_image_dark_mode(img_df, img_title=img_title)
     logger.debug('Got the mini.')
 
-    # send image back to discord
-    return img_file
-    # return [True, img_file, no_mini_list]
+    return img
 
 
 # add discord scores to database when people paste them to discord chat

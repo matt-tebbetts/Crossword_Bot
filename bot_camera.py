@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 def dataframe_to_image_dark_mode(df, 
                                  img_filepath='files/images/mini_dark.png', 
                                  img_title="Today's Mini", 
-                                 right_aligned_columns=['rank','player','time','points'], 
+                                 right_aligned_columns=['rank','time'], 
                                  font_path='arial.ttf', 
                                  font_size=14):
     # Set colors
@@ -69,3 +69,5 @@ def dataframe_to_image_dark_mode(df,
         y += row_height
 
     img.save(img_filepath)
+
+    return img_filepath
