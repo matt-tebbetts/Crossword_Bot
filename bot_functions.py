@@ -102,35 +102,46 @@ def get_mini(is_family=False):
     game_rank = img_df['game_time'].rank(method='dense').astype(int)
     img_df.insert(0, 'game_rank', game_rank)
 
-    # find winner(s) and create tagline for subtitle
-    winners = img_df.loc[img_df['game_rank'] == 1]['player_name'].unique()
-
-    # get custom taglines
-    if now.hour < cutoff_hour:
-        tagline = "It ain't over til it's over"
-    elif len(winners) > 1:
-        tagline = "It's a tie!"
-    else:
-        winner = winners[0]
-        if winner == 'Brice':
-            tagline = "Mooooooooo"
-        elif winner == 'Zach':
-            tagline = "We've been Throoped!"
-        elif winner == 'Matt':
-            tagline = "It's me. Hi."
-        elif winner == 'Aaron':
-            tagline = "Well look who decided to play today."
-        else:
-            tagline = f"A wild {winner} appeared!"
-
-    # image creation
+    # count number of players divided by 18
+    players_left = 17 - len(img_df)
+    
+    # get the date like "March 23rd"
+    mini_dt_obj = datetime.strptime(mini_dt, '%Y-%m-%d')
+    day = mini_dt_obj.day
+    suffix = "th" if 11 <= day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+    mini_dt_str = mini_dt_obj.strftime('%A, %b %d') + suffix
+    
+    # create image of dataframe
     img_df.rename(columns={'game_rank':'rank', 'player_name':'player', 'game_time':'time'}, inplace=True) # forgot POINTS
-    img_title = f"Mini: {mini_dt}"
-    img = bot_camera.dataframe_to_image_dark_mode(img_df, img_title=img_title)
+    my_subtitle = f"{players_left} players remaining"
+    my_title = f"Mini: {mini_dt_str}"
+    img = bot_camera.dataframe_to_image_dark_mode(img_df, img_title=my_title, img_subtitle=my_subtitle)
     logger.debug('Got the mini.')
 
     return img
 
+def get_leaderboard(game_name):
+    engine = create_engine(sql_addr)
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    query = f"""
+        SELECT 
+            game_rank,
+            player_name as player,
+            game_score as score,
+            points
+        FROM game_view
+        WHERE game_name = %s AND game_date = %s
+        ORDER BY game_rank;
+    """
+
+    df = pd.read_sql(query, con=engine, params=[game_name, today])
+    df.rename(columns={'game_rank':'rank'}, inplace=True)
+    img = bot_camera.dataframe_to_image_dark_mode(df, 
+                                                img_title=f"{game_name} Leaderboard",
+                                                img_subtitle=f"{today}")
+    logger.debug(f'Got the {game_name}.')
+    return img
 
 # add discord scores to database when people paste them to discord chat
 def add_score(game_prefix, discord_id, msg_txt):
