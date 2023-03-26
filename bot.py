@@ -60,7 +60,6 @@ game_scores = 1058057309068197989
 
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
-logger.debug(f"Started on: {socket.gethostname()}")
 
 # set file locations
 img_loc = 'files/images/'
@@ -72,10 +71,15 @@ class BracketSeparatedWords(Converter):
         argument = argument.strip("[]")
         return argument.split()
 
+# connect
+@bot.event
+async def on_connect():
+    logger.info(f"Bot has been reconnected to {socket.gethostname()}")
+
 # if disconnect
 @bot.event
 async def on_disconnect():
-    logger.warning("Bot has been disconnected.")
+    logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
 
 # startup
 @bot.event
@@ -101,7 +105,7 @@ async def on_ready():
 
         # create a pandas DataFrame with the member data
         users_df = pd.DataFrame(member_data, columns=["id_nbr", "discord_name", "nickname"])
-        users_df.to_csv('files/user_dtl.csv')
+        users_df.to_csv('files/user_dtl.csv', index=False)
 
     # start timed tasks
     auto_post_the_mini.start()
@@ -277,24 +281,24 @@ async def auto_post_the_mini():
 async def get(ctx, *, time_frame='daily'):
 
     # clarify request
+    user_id = ctx.author.name
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
 
-    # only command that works right now is "mini" otherwise this is disabled
-    if game_name == 'mini' and time_frame == 'daily':
-        disabled = False
-    else:
-        disabled = True
+    # print
+    logger.debug(f"{user_id} requested {time_frame} {game_name} leaderboard.")
 
-    # temporarily disable the leaderboard pulls
-    if disabled:
-        logger.debug('leaderboard disabled')
-        temp_msg = "Terribly sorry, but this service is currently disabled"
-        await ctx.channel.send(temp_msg)
+    # only daily available right now
+    if time_frame != 'daily':
+        return await ctx.channel.send("Sorry, but only daily leaderboards are available right now.")
+
+    # only command that works right now is "mini" otherwise this is disabled
+    if game_name == 'mini':
+        img = bot_functions.get_mini()
+        await ctx.channel.send(file=discord.File(img))
     else:
-        logger.debug('leaderboard enabled')
-        my_image = bot_functions.get_mini()
-        await ctx.channel.send(file=discord.File(my_image))
+        img = bot_functions.get_leaderboard(game_name)
+        await ctx.channel.send(file=discord.File(img))       
 
 
 # command to add or remove yourself from mini_warning
