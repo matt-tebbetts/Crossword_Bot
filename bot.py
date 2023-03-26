@@ -280,6 +280,11 @@ async def auto_post_the_mini():
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
 async def get(ctx, *, time_frame='daily'):
 
+    # temporarily disabled when not local
+    if not local_mode:
+        await ctx.channel.send("Sorry, but this command is temporarily disabled.")
+        return
+    
     # clarify request
     user_id = ctx.author.name
     time_frame = str.lower(time_frame)
