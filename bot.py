@@ -6,8 +6,10 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Converter, Context
 from discord import Embed
+import numpy as np
 import asyncio
 import time
+from tabulate import tabulate
 import random
 import pandas as pd
 import pytz
@@ -88,24 +90,39 @@ async def on_ready():
     # check connected guilds and channels
     for guild in bot.guilds:
         logger.debug(f"Connected to {guild.name} ({guild.id})")
-        for channel in guild.channels:
-            if channel.name in ['crossword-corner', 'game-scores', 'bot-test']:
-                logger.debug(f"Active channels: {channel.name} ({channel.id})")
+        print(f"Connected to {guild.name} ({guild.id})")
+        
+        # """
 
-        # get all the members in the guild
+        # get user list
         members = guild.members
         member_data = []
         for member in members:
-            member_id = member.id
-            member_name = str(member)
-            member_nickname = member.nick if member.nick is not None else ""
+            member_nbr = member.id
+            member_nm = str(member)
+            member_data.append([member_nm, member_nbr])
+        new_users = pd.DataFrame(member_data, columns=["name", "new_number"])
 
-            # add the member data to the list
-            member_data.append([member_id, member_name, member_nickname])
+        # fetch old users
+        query = """
+            select distinct
+                discord_id as name, 
+                discord_id_nbr as old_number
+            from users
+        """
+        old_users = pd.read_sql(query, sql_addr)
+        
+        # merge the two by discord name (discord_id)
+        merged = old_users.merge(new_users, how='inner', on='name')
+        merged['new_number'] = pd.to_numeric(merged['new_number'], errors='coerce')
+        merged['old_number'] = pd.to_numeric(merged['old_number'], errors='coerce')
+        merged['changed'] = np.where(merged['new_number'] == merged['old_number'], 0, 1)
+        merged['difference'] = merged['new_number'] - merged['old_number']
 
-        # create a pandas DataFrame with the member data
-        users_df = pd.DataFrame(member_data, columns=["id_nbr", "discord_name", "nickname"])
-        users_df.to_csv('files/user_dtl.csv', index=False)
+        merged.to_csv('files/user_dtl.csv', index=False)
+        print(tabulate(merged, headers='keys', tablefmt='psql'))
+
+        # """
 
     # start timed tasks
     auto_post_the_mini.start()
