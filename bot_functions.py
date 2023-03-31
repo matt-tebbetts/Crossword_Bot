@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import six
 import pytz
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import logging
 import bot_camera
 
@@ -136,7 +136,7 @@ def get_leaderboard(game_name):
         ORDER BY game_rank;
     """
 
-    result = connection.execute(query, game_name=game_name, game_date=today)
+    result = connection.execute(text(query), game_name=game_name, game_date=today)
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
