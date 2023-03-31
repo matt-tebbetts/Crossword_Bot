@@ -113,7 +113,7 @@ async def on_ready():
         guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
         all_users = pd.concat([all_users, guild_users], ignore_index=True)
 
-    # save to database
+    # save users to database
     engine = create_engine(sql_addr)
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
