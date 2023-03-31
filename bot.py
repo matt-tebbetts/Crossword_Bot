@@ -306,6 +306,7 @@ async def get(ctx, *, time_frame='daily'):
 
     # get the data
     try:
+        logger.debug(f'Entering the Try statement')
         if game_name == 'mini':
             img = bot_functions.get_mini()
             await ctx.channel.send(file=discord.File(img))
