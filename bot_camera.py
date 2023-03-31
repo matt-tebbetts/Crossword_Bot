@@ -7,7 +7,7 @@ def dataframe_to_image_dark_mode(df,
                                  img_subtitle="Nerd City",
                                  right_aligned_columns=['rank','time','score','points'], 
                                  font_path='arial.ttf', 
-                                 font_size=14):
+                                 font_size=16):
     # Set colors
     header_bg_color = '#4a4e53'
     row_bg_color = '#2c2f33'
