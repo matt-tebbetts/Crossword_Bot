@@ -123,6 +123,8 @@ def get_mini(is_family=False):
 def get_leaderboard(game_name):
     engine = create_engine(sql_addr)
     connection = engine.connect()
+    logger.debug(f'Connected to database using {sql_addr}')
+
     today = datetime.now().strftime("%Y-%m-%d")
     
     query = f"""
@@ -136,16 +138,19 @@ def get_leaderboard(game_name):
         ORDER BY game_rank;
     """
 
-    result = connection.execute(text(query), game_name=game_name, game_date=today)
+    result = connection.execute(text(query), {"game_name": game_name, "game_date": today})
+    logger.debug(f'Executed query: {query}')
     rows = result.fetchall()
+    logger.debug(f'Fetched rows')
     connection.close()
     df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
+    logger.debug(f'Created dataframe')
 
     # df = pd.read_sql(query, con=engine, params=[game_name, today])
     img = bot_camera.dataframe_to_image_dark_mode(df, 
                                                 img_title=f"{game_name} Leaderboard",
                                                 img_subtitle=f"{today}")
-    logger.debug(f'Got the {game_name}.')
+    logger.debug(f'Created image of dataframe for {game_name} leaderboard.')
     return img
 
 # add discord scores to database when people paste them to discord chat
