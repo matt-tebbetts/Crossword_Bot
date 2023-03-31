@@ -18,6 +18,10 @@ import logging
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
+# set global variables
+host_nm = socket.gethostname()
+local_mode = True if host_nm == "MJT" else False
+
 # Create a formatter that includes a timestamp
 formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
@@ -26,7 +30,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Create a file handler
-file_handler = logging.FileHandler('files/bot.log')
+file_handler = logging.FileHandler(f"files/bot_{host_nm}.log")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -54,9 +58,6 @@ crossword_corner = 806881904073900042
 bot_test = 813831098312294490
 tebbetts_server = 349702892631883778
 game_scores = 1058057309068197989
-
-# set global variables
-local_mode = True if socket.gethostname() == "MJT" else False
 
 # accept multiple words in command arguments/parameters?
 class BracketSeparatedWords(Converter):
