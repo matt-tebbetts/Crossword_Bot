@@ -136,7 +136,7 @@ def get_leaderboard(game_name):
         ORDER BY game_rank;
     """
 
-    result = connection.execute(query, (game_name, today))
+    result = connection.execute(query, [(game_name, today)])
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
