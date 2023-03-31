@@ -8,8 +8,6 @@ from discord.ext.commands import Converter, Context
 from discord import Embed
 import numpy as np
 import asyncio
-import time
-from tabulate import tabulate
 import random
 import pandas as pd
 import pytz
@@ -17,32 +15,29 @@ from datetime import datetime, timedelta
 import inspect
 import bot_functions
 import logging
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-
-### ------------ logging ------------ ###
 
 # Create a formatter that includes a timestamp
 formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
-# Create a logger and set its log level
+# Create a logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Create a file handler and set its log level and formatter
+# Create a file handler
 file_handler = logging.FileHandler('files/bot.log')
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
-
-# Add the file handler to the logger
 logger.addHandler(file_handler)
-
-### ------------ logging ------------ ###
 
 # connection details
 load_dotenv()
 TOKEN = os.getenv('CROSSWORD_BOT')
 my_intents = discord.Intents.all()
 my_intents.message_content = True
+
+# bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
 
 # set mySQL details
@@ -63,9 +58,6 @@ game_scores = 1058057309068197989
 # set global variables
 local_mode = True if socket.gethostname() == "MJT" else False
 
-# set file locations
-img_loc = 'files/images/'
-
 # accept multiple words in command arguments/parameters?
 class BracketSeparatedWords(Converter):
     async def convert(self, ctx: Context, argument: str) -> list:
@@ -73,62 +65,64 @@ class BracketSeparatedWords(Converter):
         argument = argument.strip("[]")
         return argument.split()
 
+# emoji map for confirming game scores
+emoji_map = {
+            'worldle': '🌎',
+            '#Worldle': '🌎',
+            'Factle.app': '📈',
+            'Wordle': '📚',
+            'boxofficega.me': '🎥'
+        }
+
+
 # connect
 @bot.event
 async def on_connect():
     logger.info(f"Bot has been reconnected to {socket.gethostname()}")
 
-# if disconnect
+
+# disconnect
 @bot.event
 async def on_disconnect():
     logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
+
 
 # startup
 @bot.event
 async def on_ready():
 
-    # check connected guilds and channels
-    for guild in bot.guilds:
-        logger.debug(f"Connected to {guild.name} ({guild.id})")
-        print(f"Connected to {guild.name} ({guild.id})")
-        
-        # """
+    # get time
+    now_txt = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
 
-        # get user list
+    # Initialize empty all_users dataframe
+    all_users = pd.DataFrame(columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
+
+    # add all users to dataframe
+    for guild in bot.guilds:
+        logger.debug(f"Connected to {guild.name}")
+
+        # get user list into csv
         members = guild.members
         member_data = []
         for member in members:
-            member_nbr = member.id
+            guild_id = guild.id
+            guild_nm = guild.name
+            member_id = member.id
             member_nm = str(member)
-            member_data.append([member_nm, member_nbr])
-        new_users = pd.DataFrame(member_data, columns=["name", "new_number"])
+            member_data.append([guild_id, guild_nm, member_id, member_nm, now_txt])
+        guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
+        all_users = pd.concat([all_users, guild_users], ignore_index=True)
 
-        # fetch old users
-        query = """
-            select distinct
-                discord_id as name, 
-                discord_id_nbr as old_number
-            from users
-        """
-        old_users = pd.read_sql(query, sql_addr)
-        
-        # merge the two by discord name (discord_id)
-        merged = old_users.merge(new_users, how='inner', on='name')
-        merged['new_number'] = pd.to_numeric(merged['new_number'], errors='coerce')
-        merged['old_number'] = pd.to_numeric(merged['old_number'], errors='coerce')
-        merged['changed'] = np.where(merged['new_number'] == merged['old_number'], 0, 1)
-        merged['difference'] = merged['new_number'] - merged['old_number']
-
-        merged.to_csv('files/user_dtl.csv', index=False)
-        print(tabulate(merged, headers='keys', tablefmt='psql'))
-
-        # """
+    # save to database
+    engine = create_engine(sql_addr)
+    all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
     # start timed tasks
     auto_post_the_mini.start()
 
     # confirm
     logger.debug(f"{bot.user.name} is ready!")
+
 
 # read channel messages
 @bot.event
@@ -296,11 +290,6 @@ async def auto_post_the_mini():
 # command to get other leaderboards (only mini is working right now)
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
 async def get(ctx, *, time_frame='daily'):
-
-    # temporarily disabled when not local
-    if not local_mode:
-        await ctx.channel.send("Sorry, but this command is temporarily disabled.")
-        return
     
     # clarify request
     user_id = ctx.author.name
@@ -314,14 +303,17 @@ async def get(ctx, *, time_frame='daily'):
     if time_frame != 'daily':
         return await ctx.channel.send("Sorry, but only daily leaderboards are available right now.")
 
-    # only command that works right now is "mini" otherwise this is disabled
-    if game_name == 'mini':
-        img = bot_functions.get_mini()
-        await ctx.channel.send(file=discord.File(img))
-    else:
-        img = bot_functions.get_leaderboard(game_name)
-        await ctx.channel.send(file=discord.File(img))       
-
+    # get the data
+    try:
+        if game_name == 'mini':
+            img = bot_functions.get_mini()
+            await ctx.channel.send(file=discord.File(img))
+        else:
+            img = bot_functions.get_leaderboard(game_name)
+            await ctx.channel.send(file=discord.File(img))       
+    except Exception as e:
+        error_message = f"Error getting {game_name} leaderboard: {str(e)}"
+        await ctx.channel.send(error_message)
 
 # command to add or remove yourself from mini_warning
 @bot.command(name='mini_warning')
@@ -370,107 +362,69 @@ async def mini_warning(ctx, *args):
         await ctx.channel.send(reaction_gif)
 
 
-##
-## incomplete commands below
-##
-
-# command to draft something # WORK IN PROGRESS
-@bot.command(name='draft')
-async def draft(ctx, thing: BracketSeparatedWords, category: BracketSeparatedWords):
-    # read command details
-    user_id = ctx.author.display_name
-    confirmation = f"Looks like {user_id} selected '{thing}' from '{category}'"
-
-    list_of_categories = ['A', 'B', 'C']
-
-    if category not in list_of_categories:
-        logger.debug('invalid category')
-
-    # send message
-    await ctx.channel.send(confirmation)
-
-
-# command to get history # WORK IN PROGRESS
-@bot.command(name='get_history')
-async def get_history(ctx):
-    # set limits
+# getting missed scores
+@bot.command(name='rescan', description="Rescan the past X days of messages for missed scores")
+async def rescan(ctx):
+    user_id = ctx.author.name + "#" + ctx.author.discriminator
     days = 30
-    msgs = 10000
-    min_date = datetime.utcnow() - timedelta(days=days)
+    print(f"User {user_id} requested rescan of {days} days")
+    await process_missed_scores(ctx, days)
 
-    # find channel to scrape
-    channel_to_find = "things-we-watch"
-    thread_to_find = "Libertine Draft"
 
-    if str.lower(ctx.author.display_name) != "matt":
-        logger.debug(f"{ctx.author.display_name} tried to call get_history but only Matt can do this")
-        return
+# actually getting them
+async def process_missed_scores(ctx, days):
+    today = datetime.utcnow()
+    since = today - timedelta(days=days)
+    
+    # keep track
+    missing_scores_added = 0
+    
+    # scan messages
+    async for message in ctx.channel.history(before=today):  # after=since):
+        
+        # ignore bot messages
+        if message.author == bot.user:
+            continue
+        
+        # ignore other channels
+        if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test", "game-scores"]:
+            continue
+        
+        # get message text
+        msg_text = str(message.content)
+        user_id = message.author.name + "#" + message.author.discriminator
+        msg_ts = message.created_at
 
-    # get a get_channel instance
-    for guild in bot.guilds:
-        for channel in guild.channels:
-            if channel.name == channel_to_find:
-                channel_to_scrape = bot.get_channel(channel.id)
-                logger.debug(f"found channel id: {channel.id} for {channel.name}")
+        # Check to see if this is a game score and get the matching game prefix
+        pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
+        game_prefix = next((p for p in pref_list if str.lower(msg_text).startswith(str.lower(p))), None)
+        if game_prefix is None:
+            continue
+        
+        print(f"Found game prefix: {game_prefix}")
+        # see if it's already been added
+        score_already_added = False
+        for reaction in message.reactions:
+            if reaction.me:
+                score_already_added = True
+                break
+    
+        if score_already_added:
+            continue
 
-                # find thread
-                for thread in channel.threads:
-                    if thread.name == thread_to_find:
-                        thread_to_scrape = bot.get_channel(thread.id)
-                        logger.debug(f"found thread id: {thread.id} for {thread.name}")
+        # else
+        print(f"Found score not added from {user_id} on {message.channel.name}. Message sent at: {msg_ts}. Text is: {msg_text}")
 
-    # create empty dataframe
-    cols = ['msg_id', 'msg_ts', 'char_count', 'word_count', 'uniq_count',
-            'swears', 'reacts', 'msg_auth']
-    df = pd.DataFrame(columns=cols)
-    logger.debug('starting with this dataframe')
-    bot_functions.tab_df(df)
+        # add the score
+        response = bot_functions.add_score(game_prefix, user_id, msg_text)
+        missing_scores_added += 1
 
-    # check each message
-    msg_id = 0
-    async for message in thread_to_scrape.history(limit=msgs, oldest_first=True, after=min_date):
+        # determine response emoji if response is not True
+        emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
+        await message.add_reaction(emoji)
 
-        # msg_hdr
-        msg_id += 1
-        msg_ts = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        msg_auth = str(message.author.display_name)
-        msg_char_count = len(message.content)
-        msg_word_count = len(message.content.split())
+    await ctx.send(f"Rescanned messages from the last {days} days. Added {missing_scores_added} missing scores.")
 
-        # msg_dtl
-        msg_uniq_words = set(message.content.split())
-        msg_uniq_count = len(msg_uniq_words)
-
-        # check for curse words
-        swears = 0
-        swear_words = ['fuck', 'shit', 'damn', 'dammit', 'fucking', 'shitting', 'asshole', 'assholes', 'bitch']
-        for word in message.content.split():
-            if word in swear_words:
-                swears += 1
-
-        # check for emojis
-        emojis = 0
-        reacts = 0
-        # emojis_used = []
-        if message.reactions:
-            for reaction in message.reactions:
-                # emojis_used += reaction.emoji.name
-                reacts += 1
-
-        # put it all in a row
-        my_data = [msg_id, msg_ts, msg_char_count, msg_word_count, msg_uniq_count, swears, reacts, msg_auth]
-
-        # append new row to dataframe here??
-        df = pd.concat([df, pd.DataFrame([my_data], columns=cols)], ignore_index=True)
-
-    bot_functions.tab_df(df)
-
-    # done
-    df.to_csv('test.csv', mode='w', index=False)
-
-##
-## incomplete commands above
-##
 
 # run bot
 bot.run(TOKEN)

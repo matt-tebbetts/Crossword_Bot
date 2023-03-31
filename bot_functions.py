@@ -122,11 +122,12 @@ def get_mini(is_family=False):
 
 def get_leaderboard(game_name):
     engine = create_engine(sql_addr)
+    connection = engine.connect()
     today = datetime.now().strftime("%Y-%m-%d")
     
     query = f"""
         SELECT 
-            game_rank,
+            game_rank as rank,
             player_name as player,
             game_score as score,
             points
@@ -135,8 +136,12 @@ def get_leaderboard(game_name):
         ORDER BY game_rank;
     """
 
-    df = pd.read_sql(query, con=engine, params=[game_name, today])
-    df.rename(columns={'game_rank':'rank'}, inplace=True)
+    result = connection.execute(query, (game_name, today))
+    rows = result.fetchall()
+    connection.close()
+    df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
+
+    # df = pd.read_sql(query, con=engine, params=[game_name, today])
     img = bot_camera.dataframe_to_image_dark_mode(df, 
                                                 img_title=f"{game_name} Leaderboard",
                                                 img_subtitle=f"{today}")
