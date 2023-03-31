@@ -132,11 +132,11 @@ def get_leaderboard(game_name):
             game_score as score,
             points
         FROM game_view
-        WHERE game_name = %s AND game_date = %s
+        WHERE game_name = :game_name AND game_date = :game_date
         ORDER BY game_rank;
     """
 
-    result = connection.execute(query, [(game_name, today)])
+    result = connection.execute(query, game_name=game_name, game_date=today)
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
