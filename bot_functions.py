@@ -129,7 +129,7 @@ def get_leaderboard(game_name):
     
     query = f"""
         SELECT 
-            game_rank as rank,
+            game_rank,
             player_name as player,
             game_score as score,
             points
@@ -144,6 +144,7 @@ def get_leaderboard(game_name):
     logger.debug(f'Fetched rows')
     connection.close()
     df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
+    df.rename(columns={'game_rank':'rank'}, inplace=True)
     logger.debug(f'Created dataframe')
 
     # df = pd.read_sql(query, con=engine, params=[game_name, today])
