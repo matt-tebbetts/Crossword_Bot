@@ -4,3 +4,6 @@ bq_key.json
 venv/
 files/bot.log
 files/images/leaderboard.png
+__pycache__/bot_camera.cpython-39.pyc
+__pycache__/bot_functions.cpython-38.pyc
+__pycache__/bot_functions.cpython-39.pyc
