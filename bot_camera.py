@@ -1,13 +1,15 @@
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
+import socket
+
+host_nm = socket.gethostname()
 
 def dataframe_to_image_dark_mode(df, 
                                  img_filepath='files/images/leaderboard.png', 
                                  img_title="Today's Mini", 
                                  img_subtitle="Nerd City",
-                                 right_aligned_columns=['rank','time','score','points'], 
-                                 font_path='/usr/share/fonts/truetype/ARIAL.TTF', 
-                                 font_size=16):
+                                 right_aligned_columns=['rank','time','score','points']):
+    
     # Set colors
     header_bg_color = '#4a4e53'
     row_bg_color = '#2c2f33'
@@ -18,6 +20,8 @@ def dataframe_to_image_dark_mode(df,
     padding = 8
 
     # Load font
+    font_path = 'C:/Windows/Fonts/arial.ttf' if host_nm == "MJT" else '/usr/share/fonts/truetype/ARIAL.TTF'
+    font_size = 16
     font = ImageFont.truetype(font_path, font_size)
 
     # Temporary image and draw object for calculating column widths
