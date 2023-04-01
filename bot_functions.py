@@ -41,7 +41,7 @@ cookie = os.getenv('NYT_COOKIE')
 
 
 # save mini dataframe and send image
-def get_mini(is_family=False):
+def get_mini():
 
     # get mini date
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -82,43 +82,8 @@ def get_mini(is_family=False):
     # append to mySQL
     engine = create_engine(sql_addr)
     df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
-
-    # get user detail from sql
-    my_query = """select * from users"""
-    users = pd.read_sql(my_query, con=engine)
-
-    # merge with users
-    img_df = pd.merge(df, users, how='inner', on='player_id')
-
-    # determine family or friends list
-    if is_family:
-        img_df = img_df[(img_df['give_rank'] == False) | (img_df['player_name'] == 'Matt')][
-            ['player_name', 'game_time']].reset_index(drop=True)
-    else:
-        img_df = img_df[img_df['give_rank'] == True][
-            ['player_name', 'game_time']].reset_index(drop=True)
-
-    # create rank
-    game_rank = img_df['game_time'].rank(method='dense').astype(int)
-    img_df.insert(0, 'game_rank', game_rank)
-
-    # count number of players divided by 18
-    players_left = 17 - len(img_df)
     
-    # get the date like "March 23rd"
-    mini_dt_obj = datetime.strptime(mini_dt, '%Y-%m-%d')
-    day = mini_dt_obj.day
-    suffix = "th" if 11 <= day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
-    mini_dt_str = mini_dt_obj.strftime('%A, %b %d') + suffix
-    
-    # create image of dataframe
-    img_df.rename(columns={'game_rank':'rank', 'player_name':'player', 'game_time':'time'}, inplace=True) # forgot POINTS
-    my_subtitle = f"{players_left} players remaining"
-    my_title = f"Mini: {mini_dt_str}"
-    img = bot_camera.dataframe_to_image_dark_mode(img_df, img_title=my_title, img_subtitle=my_subtitle)
-    logger.debug('Got the mini.')
-
-    return img
+    return "Got mini and saved to database"
 
 def get_leaderboard(game_name):
     engine = create_engine(sql_addr)
@@ -130,27 +95,27 @@ def get_leaderboard(game_name):
     query = f"""
         SELECT 
             game_rank,
-            player_name as player,
-            game_score as score,
+            player_name,
+            game_score,
             points
         FROM game_view
-        WHERE game_name = :game_name AND game_date = :game_date
+        WHERE game_name = :game_name 
+        AND game_date = :game_date
         ORDER BY game_rank;
     """
 
     result = connection.execute(text(query), {"game_name": game_name, "game_date": today})
-    logger.debug(f'Executed query: {query}')
     rows = result.fetchall()
-    logger.debug(f'Fetched rows')
     connection.close()
-    df = pd.DataFrame(rows, columns=['game_rank', 'player_name', 'game_score', 'points'])
-    df.rename(columns={'game_rank':'rank'}, inplace=True)
-    logger.debug(f'Created dataframe')
+    df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
+    mini_players_left = 17 - len(df)
+    my_title = f"{game_name.capitalize()}: {today}"
+    my_subtitle = f"{mini_players_left} players remaining" if game_name == 'mini' else f"{today}"
 
     # df = pd.read_sql(query, con=engine, params=[game_name, today])
     img = bot_camera.dataframe_to_image_dark_mode(df, 
-                                                img_title=f"{game_name} Leaderboard",
-                                                img_subtitle=f"{today}")
+                                                img_title=my_title,
+                                                img_subtitle=my_subtitle)
     logger.debug(f'Created image of dataframe for {game_name} leaderboard.')
     return img
 

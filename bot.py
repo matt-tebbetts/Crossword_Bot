@@ -224,21 +224,13 @@ async def auto_post_the_mini():
 
     # check what post to make at which minute
     warning_minute = 0
-    fam_minute = 45
     nerds_minute = 59
-
-    is_time_to_post = (now_ts.minute == nerds_minute or now_ts.minute == fam_minute)
-    is_family_time = (now_ts.minute == fam_minute)
+    is_time_to_post = (now_ts.minute == nerds_minute)
 
     # get correct channel
-    if is_family_time:
-        guild = bot.get_guild(tebbetts_server)
-        channel = guild.get_channel(game_scores)
-        is_time_to_warn = False
-    else:
-        guild = bot.get_guild(nerd_city)
-        channel = guild.get_channel(crossword_corner)  # bot_test
-        is_time_to_warn = (now_ts.minute == warning_minute)
+    guild = bot.get_guild(nerd_city)
+    channel = guild.get_channel(crossword_corner)  # bot_test
+    is_time_to_warn = (now_ts.minute == warning_minute)
 
     # post it
     if is_time_to_post:
@@ -247,12 +239,14 @@ async def auto_post_the_mini():
         await channel.send(end_msg)
 
         # get mini and post image
-        img = bot_functions.get_mini(is_family_time)
+        img = bot_functions.get_mini()
         await channel.send(file=discord.File(img))
 
     # send warning
     if is_time_to_warn:
-        logger.debug(f"Posting 1-Hour Warning")
+        logger.debug(f"Time for 1-Hour Warning but currently this is disabled")
+        await channel.send("The mini expires in 1 hour. If you cared, you would have already done it. I'm going on break.")
+        return
 
         # get missing mini report from sql
         engine = create_engine(sql_addr)
@@ -306,7 +300,6 @@ async def get(ctx, *, time_frame='daily'):
 
     # get the data
     try:
-        logger.debug(f'Entering the Try statement')
         if game_name == 'mini':
             img = bot_functions.get_mini()
             await ctx.channel.send(file=discord.File(img))
