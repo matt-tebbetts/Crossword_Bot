@@ -300,12 +300,8 @@ async def get(ctx, *, time_frame='daily'):
 
     # get the data
     try:
-        if game_name == 'mini':
-            img = bot_functions.get_mini()
-            await ctx.channel.send(file=discord.File(img))
-        else:
-            img = bot_functions.get_leaderboard(game_name)
-            await ctx.channel.send(file=discord.File(img))       
+        img = bot_functions.get_leaderboard(game_name)
+        await ctx.channel.send(file=discord.File(img))       
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
