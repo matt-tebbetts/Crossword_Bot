@@ -4,7 +4,7 @@ bq_key.json
 venv/
 files/bot.log
 files/bot_MJT.log
-files/mattbot1.log
+files/bot_mattbot1.log
 files/images/leaderboard.png
 __pycache__/bot_camera.cpython-39.pyc
 __pycache__/bot_functions.cpython-38.pyc
