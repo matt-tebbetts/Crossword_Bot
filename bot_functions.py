@@ -85,7 +85,7 @@ def get_mini():
     
     return "Got mini and saved to database"
 
-def get_leaderboard(game_name):
+def get_leaderboard(guild_nm, game_name):
     engine = create_engine(sql_addr)
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
@@ -94,17 +94,19 @@ def get_leaderboard(game_name):
     
     query = f"""
         SELECT 
+            guild_nm,
             game_rank,
             player_name,
             game_score,
             points
         FROM game_view
-        WHERE game_name = :game_name 
+        WHERE guild_nm = :guild_nm
+        and game_name = :game_name 
         AND game_date = :game_date
         ORDER BY game_rank;
     """
 
-    result = connection.execute(text(query), {"game_name": game_name, "game_date": today})
+    result = connection.execute(text(query), {"guild_nm": guild_nm,"game_name": game_name, "game_date": today})
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
