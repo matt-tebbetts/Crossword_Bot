@@ -94,7 +94,6 @@ def get_leaderboard(guild_nm, game_name):
     
     query = f"""
         SELECT 
-            guild_nm,
             game_rank,
             player_name,
             game_score,
