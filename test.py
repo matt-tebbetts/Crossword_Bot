@@ -1,4 +1,6 @@
-import socket
-import bot_functions
+from tabulate import tabulate
+import pandas as pd
 
-img = bot_functions.get_leaderboard('mini')
+df = pd.read_csv('files/archive/users.csv')
+
+print(tabulate(df, headers='keys', tablefmt='psql'))

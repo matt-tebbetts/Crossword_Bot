@@ -288,6 +288,7 @@ async def get(ctx, *, time_frame='daily'):
     
     # clarify request
     user_id = ctx.author.name
+    guild_nm = ctx.guild.name
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
 
@@ -300,7 +301,7 @@ async def get(ctx, *, time_frame='daily'):
 
     # get the data
     try:
-        img = bot_functions.get_leaderboard(game_name)
+        img = bot_functions.get_leaderboard(guild_nm, game_name)
         await ctx.channel.send(file=discord.File(img))       
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
