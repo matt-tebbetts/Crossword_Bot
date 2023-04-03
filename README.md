@@ -1,7 +1,3 @@
-# Crossword_Bot_Test
+# Crossword_Bot
 
-This bot will be used to test out the main Crossword_Bot that is hosted on PythonAnywhere.
-
-Next step is to actually clone it from here, so that it works there. But for that, we'd have to have a switch to flip to redirect certain files to the PythonAnywhere address, rather than the local address. However, if everything is under one directory (Crossword_Bot) then it should work seamlessly.
-
-This is a test update.
+This is a discord bot that tracks game scores including Wordle, Worldle, Factle, BoxOfficeGa.me, Atlantic, and also the NYT Mini Crossword.
