@@ -115,10 +115,6 @@ async def on_ready():
     engine = create_engine(sql_addr)
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
-    # start timed tasks
-    if not auto_post_the_mini.is_running():
-        auto_post_the_mini.start()
-
     # confirm
     logger.debug(f"{bot.user.name} is ready!")
 
