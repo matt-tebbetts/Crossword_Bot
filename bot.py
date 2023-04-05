@@ -218,7 +218,6 @@ async def cron_recap_weekends():
 # every 5 minutes check for mini
 @tasks.loop(minutes=2)
 async def auto_fetch_the_mini():
-    logger.debug("auto_fetch loop started")
 
     # run get_mini
     response = bot_functions.get_mini()
