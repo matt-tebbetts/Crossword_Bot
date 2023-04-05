@@ -1,35 +1,37 @@
-# main functions and connecting
+# connections and local python files
 import os
 from dotenv import load_dotenv
 import socket
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+import bot_functions
+
+# discord
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Converter, Context
 from discord import Embed
+
+# standard
+import logging
 import numpy as np
-import asyncio
-import random
 import pandas as pd
 import pytz
 from datetime import datetime, timedelta
-import inspect
-import bot_functions
-import logging
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
 
-# set global variables
+# timing and scheduling
+import aiocron
+import asyncio
+from asyncio import Lock
+
+# check host
 host_nm = socket.gethostname()
 local_mode = True if host_nm == "MJT" else False
 
-# Create a formatter that includes a timestamp
+# create logger
 formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-
-# Create a logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-# Create a file handler
 file_handler = logging.FileHandler(f"files/bot_{host_nm}.log")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
@@ -44,6 +46,8 @@ my_intents.message_content = True
 # bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
 
+active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
+
 # set mySQL details
 sql_pass = os.getenv("SQLPASS")
 sql_user = os.getenv("SQLUSER")
@@ -52,12 +56,8 @@ sql_port = os.getenv("SQLPORT")
 database = os.getenv("SQLDATA")
 sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 
-# guilds and channel_ids
-nerd_city = 672233217985871908
-crossword_corner = 806881904073900042
-bot_test = 813831098312294490
-tebbetts_server = 349702892631883778
-game_scores = 1058057309068197989
+# helps lock tasks?
+task_lock = Lock()
 
 # accept multiple words in command arguments/parameters?
 class BracketSeparatedWords(Converter):
@@ -75,18 +75,15 @@ emoji_map = {
             'boxofficega.me': '🎥'
         }
 
-
 # connect
 @bot.event
 async def on_connect():
     logger.info(f"Bot has been reconnected to {socket.gethostname()}")
 
-
 # disconnect
 @bot.event
 async def on_disconnect():
     logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
-
 
 # startup
 @bot.event
@@ -119,18 +116,18 @@ async def on_ready():
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
     # start timed tasks
-    auto_post_the_mini.start()
+    if not auto_post_the_mini.is_running():
+        auto_post_the_mini.start()
 
     # confirm
     logger.debug(f"{bot.user.name} is ready!")
-
 
 # read channel messages
 @bot.event
 async def on_message(message):
     
     # check channel
-    if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test", "game-scores"]:
+    if message.channel.name not in active_channel_names:
         return
 
     # ignore self
@@ -142,14 +139,6 @@ async def on_message(message):
     msg_time = msg_now.strftime("%Y-%m-%d %H:%M:%S")
     msg_text = str(message.content)
     user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
-
-    old_msg = None
-    # if they wrote "!add" then replace msg_text with the original message
-    if msg_text == "!add":
-        if message.reference.resolved:
-            old_msg = await message.channel.fetch_message(message.reference.message_id)
-            msg_text = str(old_msg.content)
-            user_id = str(old_msg.author.name + "#" + old_msg.author.discriminator)
 
     # check all potential score posts
     pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
@@ -163,124 +152,81 @@ async def on_message(message):
             # send to score scraper
             response = bot_functions.add_score(game_prefix, user_id, msg_text)
 
-            if not response[0]:
-                emoji = '❌'
-
-            else:
-                if game_prefix in ['worldle', "#Worldle"]:
-                    emoji = '🌎'
-                elif game_prefix in ['Factle.app']:
-                    emoji = '📈'
-                elif game_prefix in ['Wordle']:
-                    emoji = '📚'
-                elif game_prefix in ['boxofficega.me']:
-                    emoji = '🎥'
-                else:
-                    emoji = '✅'
-
-            # finally, react with proper emoji
+            # react with proper emoji
+            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
             await message.add_reaction(emoji)
-            if old_msg is not None:
-                await old_msg.add_reaction(emoji)
 
     # run the message check
     await bot.process_commands(message)
 
+# ****************************************************************************** #
+# automatic posting
+# ****************************************************************************** #
 
-# tasks
-@tasks.loop(minutes=1)
-async def auto_post_the_mini():
+# post daily mini warning
+async def post_warning():
+    async with task_lock:
+        await asyncio.sleep(5)
 
-    # check current time
-    now_ts = datetime.now(pytz.timezone('US/Eastern'))
-    now_txt = now_ts.strftime("%Y-%m-%d %H:%M:%S")
-    hr = now_ts.hour
-    mn = now_ts.minute
-    the_time = str(now_ts.hour).zfill(2) + ':' + str(now_ts.minute).zfill(2)
+        # post warning in each active channel for each guild
+        for guild in bot.guilds:
+            logger.debug(f"Posting Mini Warning for {guild.name}")
+            for channel in guild.channels:
+                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+                    await channel.send(f""" Mini expires soon (test) """)
 
-    # get mini_date and cutoff hour
-    cutoff_hour = 17 if now_ts.weekday() in [5, 6] else 21
-    expiry_time_txt = "6:00PM" if now_ts.weekday() in [5, 6] else "10:00PM"
-    if now_ts.hour > cutoff_hour:
-        mini_dt = (now_ts + timedelta(days=1)).strftime("%Y-%m-%d")
-    else:
-        mini_dt = now_ts.strftime("%Y-%m-%d")
+# weekday warning
+@aiocron.crontab('0 21 * * 1-5')
+async def cron_warning_weekdays():
+    await post_warning()
 
-    # print check
-    interval = 5 if local_mode else 30
-    if now_ts.minute % interval == 0:
-        logger.debug(f'Still connected.')
+# weekend warning
+@aiocron.crontab('0 17 * * 6,7')
+async def cron_warning_weekends():
+    await post_warning()
 
-    # regular run hours of get_mini
-    minute_to_run = 55
-    if mn == minute_to_run:
-        logger.debug(f"Normal time to get the mini (no post)")
-        bot_functions.get_mini()
+# post daily mini final
+async def post_mini():
+    async with task_lock:
+        await asyncio.sleep(5)
+        game_name = 'mini' # later we'll add other automatic posting
 
-    # check if it's the final hour
-    in_final_hour = now_ts.hour == cutoff_hour
-    if not in_final_hour:
-        return
+        # post warning in each guild
+        for guild in bot.guilds:
+            logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
+            img = bot_functions.get_leaderboard(guild_nm=guild.name, game_name=game_name)
+            for channel in guild.channels:
+                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+                    await channel.send(f""" Positng the final {game_name.capitalize()} Leaderboard now...""")
+                    await asyncio.sleep(5)
+                    await channel.send(file=discord.File(img))
 
-    # check what post to make at which minute
-    warning_minute = 0
-    nerds_minute = 59
-    is_time_to_post = (now_ts.minute == nerds_minute)
+# weekday final post
+@aiocron.crontab('0 22 * * 1-5')
+async def cron_recap_weekdays():
+    await post_mini()
 
-    # get correct channel
-    guild = bot.get_guild(nerd_city)
-    channel = guild.get_channel(crossword_corner)  # bot_test
-    is_time_to_warn = (now_ts.minute == warning_minute)
+# weekend final post
+@aiocron.crontab('0 18 * * 6,7')
+async def cron_recap_weekends():
+    await post_mini()
 
-    # post it
-    if is_time_to_post:
-        logger.debug("Posting Final Leaderboard")
-        end_msg = f"The mini expires at {expiry_time_txt}. Here's the final leaderboard:"
-        await channel.send(end_msg)
+# ****************************************************************************** #
+# end automatic posting
+# ****************************************************************************** #
 
-        # get mini and post image
-        img = bot_functions.get_mini()
-        await channel.send(file=discord.File(img))
+# every 5 minutes check for mini
+@tasks.loop(minutes=5)
+async def auto_fetch_the_mini():
 
-    # send warning
-    if is_time_to_warn:
-        logger.debug(f"Time for 1-Hour Warning but currently this is disabled")
-        await channel.send("The mini expires in 1 hour. If you cared, you would have already done it. I'm going on break.")
-        return
+    # run get_mini
+    response = bot_functions.get_mini()
 
-        # get missing mini report from sql
-        engine = create_engine(sql_addr)
-        my_query = """select discord_id_nbr from mini_not_completed"""
-        players_missing_mini_score = pd.read_sql(my_query, con=engine)['discord_id_nbr'].tolist()
+    # if no mini yet, don't do anything
+    if not response[0]:
+        pass
 
-        # Check if players_missing_mini_score is empty
-        if not players_missing_mini_score:
-            
-            # Celebration message
-            celebration_msg = "No warning today. Everyone did the mini..."
-            
-            # Create an Embed with the GIF URL
-            gif_url = "https://media.giphy.com/media/ck5JRWob7folZ7d97I/giphy.gif"
-            embed = Embed()
-            embed.set_image(url=gif_url)
-
-            # celebrate
-            await channel.send(celebration_msg, embed=embed)
-
-        else:
-
-            # create warning message
-            warning_msg = inspect.cleandoc(f"""The mini expires at {expiry_time_txt}!
-                            The following players have not completed today's puzzle:
-                            """)
-            for user_id in players_missing_mini_score:
-                warning_msg += f"<@{user_id}> "
-                warning_msg += "\n"
-            warning_msg += "To remove this notification, type '/mini_warning remove' (without the quotes)"
-
-            # warn
-            await channel.send(warning_msg)
-
+    logger.debug("Got mini.")
 
 # command to get other leaderboards (only mini is working right now)
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
@@ -306,52 +252,6 @@ async def get(ctx, *, time_frame='daily'):
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
-
-# command to add or remove yourself from mini_warning
-@bot.command(name='mini_warning')
-async def mini_warning(ctx, *args):
-    user_id = str(ctx.author.id)
-    action = str.lower(args[0])
-
-    if action not in ['add', 'remove', 'on', 'off']:
-        msg = "Must type 'add' or 'remove' after /mini_warning"
-        await ctx.channel.send(msg)
-        return
-    
-    # are they turning the warning off or on
-    on_or_off = 0 if action in ['remove', 'off'] else 1
-
-    # update sql
-    engine = create_engine(sql_addr)
-    update_query = """
-        update users
-        set mini_warning = {on_or_off}
-        where discord_id_nbr = {user_id}
-    """
-    with engine.connect() as connection:
-        connection.execute(update_query)
-    
-    # reply back (happy or sad)
-    if on_or_off == 1:
-        msg = f"Added you back to the warning message"
-        await ctx.channel.send(msg)
-    else:
-        list_of_gifs = [
-            "https://tenor.com/view/boring-unimpressed-meh-really-seriously-gif-16279809",
-            "https://giphy.com/gifs/NRXleEopnqL3a",
-            "https://giphy.com/gifs/cbc-funny-comedy-3ohhwfwxg4d1h82LxS",
-            "https://giphy.com/gifs/oh-yeah-sure-suuure-DFNd1yVyRjmF2",
-            "https://giphy.com/gifs/transparent-unimpressed-izPhmitdi9oty",
-            "https://giphy.com/gifs/way-morning-dresser-kWp8QC99Z6xFn8bF0v",
-            "https://giphy.com/gifs/tjluV258hamaY",
-            "https://giphy.com/gifs/high-quality-highqualitygifs-8mdUDkUoAPvEpR8ZIl",
-            "https://giphy.com/gifs/theoffice-CuERU1w8npNcP0CpP4"
-        ]
-
-        # pick a gif, wait... then react
-        reaction_gif = random.choice(list_of_gifs)
-        asyncio.sleep(3)  # joke timing
-        await ctx.channel.send(reaction_gif)
 
 
 # getting missed scores
@@ -379,7 +279,7 @@ async def process_missed_scores(ctx, days):
             continue
         
         # ignore other channels
-        if message.channel.name not in ["crossword", "crossword-corner", "bot_tester", "bot-test", "game-scores"]:
+        if message.channel.name not in active_channel_names:
             continue
         
         # get message text

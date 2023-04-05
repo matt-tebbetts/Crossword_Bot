@@ -13,21 +13,10 @@ from sqlalchemy import create_engine, text
 import logging
 import bot_camera
 
-# Create a formatter that includes a timestamp
+# set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-
-# Create a logger and set its log level
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-# set global variables
-local_mode = True if socket.gethostname() == "MJT" else False
-
-# load environment variables
-crossword_channel_id = 806881904073900042
-
-# set file locations
-img_loc = 'files/images/'
 
 # get secrets
 load_dotenv()
@@ -39,18 +28,17 @@ database = os.getenv("SQLDATA")
 sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 cookie = os.getenv('NYT_COOKIE')
 
-
-# save mini dataframe and send image
-def get_mini():
-
-    # get mini date
+# get mini date
+def get_mini_date():
     now = datetime.now(pytz.timezone('US/Eastern'))
-    now_ts = now.strftime("%Y-%m-%d %H:%M:%S")
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
     if now.hour > cutoff_hour:
-        mini_dt = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+        return (now + timedelta(days=1)).strftime("%Y-%m-%d")
     else:
-        mini_dt = now.strftime("%Y-%m-%d")
+        return now.strftime("%Y-%m-%d")
+
+# save mini to database
+def get_mini():
 
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
@@ -71,20 +59,18 @@ def get_mini():
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
     df['player_id'] = df['player_id'].str.lower()
-    df.insert(0, 'game_date', mini_dt)
-    df['added_ts'] = now_ts
+    df.insert(0, 'game_date', get_mini_date())
+    df['added_ts'] = get_mini_date().strftime("%Y-%m-%d %H:%M:%S")
 
-    # if empty
+    # send to database
     if len(df) == 0:
-        logger.debug('Nobody did the mini yet')
-        return None
+        return [False, "Nobody did the mini yet"]
+    else:
+        engine = create_engine(sql_addr)
+        df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
+        return [True, "Got mini and saved to database"]
 
-    # append to mySQL
-    engine = create_engine(sql_addr)
-    df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
-    
-    return "Got mini and saved to database"
-
+# returns two things image of any game leaderboard
 def get_leaderboard(guild_nm, game_name):
     engine = create_engine(sql_addr)
     connection = engine.connect()
@@ -109,6 +95,7 @@ def get_leaderboard(guild_nm, game_name):
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
+
     mini_players_left = 17 - len(df)
     my_title = f"{game_name.capitalize()}: {today}"
     my_subtitle = f"{mini_players_left} players remaining" if game_name == 'mini' else f"{today}"
