@@ -216,17 +216,14 @@ async def cron_recap_weekends():
 # ****************************************************************************** #
 
 # every 5 minutes check for mini
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=2)
 async def auto_fetch_the_mini():
+    logger.debug("auto_fetch loop started")
 
     # run get_mini
     response = bot_functions.get_mini()
 
-    # if no mini yet, don't do anything
-    if not response[0]:
-        pass
-
-    logger.debug("Got mini.")
+    logger.debug("Got mini")
 
 # command to get other leaderboards (only mini is working right now)
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
@@ -293,7 +290,6 @@ async def process_missed_scores(ctx, days):
         if game_prefix is None:
             continue
         
-        print(f"Found game prefix: {game_prefix}")
         # see if it's already been added
         score_already_added = False
         for reaction in message.reactions:
