@@ -60,7 +60,7 @@ def get_mini():
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
     df['player_id'] = df['player_id'].str.lower()
     df.insert(0, 'game_date', get_mini_date())
-    df['added_ts'] = get_mini_date().strftime("%Y-%m-%d %H:%M:%S")
+    df['added_ts'] = get_mini_date()
 
     # send to database
     if len(df) == 0:
