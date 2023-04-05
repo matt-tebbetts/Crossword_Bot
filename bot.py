@@ -173,7 +173,7 @@ async def post_warning():
             logger.debug(f"Posting Mini Warning for {guild.name}")
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f""" Mini expires soon (test) """)
+                    await channel.send(f""" Mini expires in one hour! """)
 
 # weekday warning
 @aiocron.crontab('0 21 * * 1-5')
@@ -189,7 +189,9 @@ async def cron_warning_weekends():
 async def post_mini():
     async with task_lock:
         await asyncio.sleep(5)
-        game_name = 'mini' # later we'll add other automatic posting
+
+        # only one game
+        game_name = 'mini'
 
         # post warning in each guild
         for guild in bot.guilds:
@@ -197,7 +199,7 @@ async def post_mini():
             img = bot_functions.get_leaderboard(guild_nm=guild.name, game_name=game_name)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f""" Positng the final {game_name.capitalize()} Leaderboard now...""")
+                    await channel.send(f"""Positng the final {game_name.capitalize()} Leaderboard now...""")
                     await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 
@@ -221,7 +223,7 @@ async def auto_fetch_the_mini():
 
     # run get_mini
     response = bot_functions.get_mini()
-
+    
     logger.debug("Got mini")
 
 # command to get other leaderboards (only mini is working right now)
