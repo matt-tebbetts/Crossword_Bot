@@ -215,8 +215,8 @@ async def cron_recap_weekends():
 # end automatic posting
 # ****************************************************************************** #
 
-# every 5 minutes check for mini
-@tasks.loop(minutes=2)
+# every few minutes check for mini (set to 30 for now)
+@tasks.loop(minutes=30)
 async def auto_fetch_the_mini():
 
     # run get_mini
