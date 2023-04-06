@@ -43,9 +43,10 @@ def get_bot_channels():
 
     bot_channels = {}
     for row in rows:
+        row_dict = dict(zip(result.keys(), row)) # convert row to dict
         bot_channels[row["guild_id"]] = {
-            "channel_id": row["channel_id"],
-            "channel_id_int": int(row["channel_id"]),
+            "channel_id": row_dict["channel_id"],
+            "channel_id_int": int(row_dict["channel_id"]),
         }
 
     return bot_channels
