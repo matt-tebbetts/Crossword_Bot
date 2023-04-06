@@ -28,6 +28,28 @@ database = os.getenv("SQLDATA")
 sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 cookie = os.getenv('NYT_COOKIE')
 
+# find main channel id for each guild
+def get_bot_channels():
+    engine = create_engine(sql_addr)
+    connection = engine.connect()
+    query = f"""
+        SELECT guild_id, channel_id, guild_channel_category
+        FROM discord_connections
+        WHERE guild_channel_category = 'main'
+    """
+    result = connection.execute(text(query))
+    rows = result.fetchall()
+    connection.close()
+
+    bot_channels = {}
+    for row in rows:
+        bot_channels[row["guild_id"]] = {
+            "channel_id": row["channel_id"],
+            "channel_id_int": int(row["channel_id"]),
+        }
+
+    return bot_channels
+
 # get mini date
 def get_mini_date():
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -71,7 +93,7 @@ def get_mini():
         return [True, "Got mini and saved to database"]
 
 # returns two things image of any game leaderboard
-def get_leaderboard(guild_nm, game_name):
+def get_leaderboard(guild_id, game_name):
     engine = create_engine(sql_addr)
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
@@ -85,13 +107,13 @@ def get_leaderboard(guild_nm, game_name):
             game_score,
             points
         FROM game_view
-        WHERE guild_nm = :guild_nm
+        WHERE guild_id = :guild_id
         and game_name = :game_name 
         AND game_date = :game_date
         ORDER BY game_rank;
     """
 
-    result = connection.execute(text(query), {"guild_nm": guild_nm,"game_name": game_name, "game_date": today})
+    result = connection.execute(text(query), {"guild_id": guild_id,"game_name": game_name, "game_date": today})
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
@@ -225,3 +247,24 @@ def add_score(game_prefix, discord_id, msg_txt):
     msg_back = [True, f'Added {game_name} score for {discord_id}']
 
     return msg_back
+
+# check for leader changes
+def mini_leader_changed(guild_id):
+    engine = create_engine(sql_addr)
+    connection = engine.connect()
+    query = f"""
+        SELECT guild_id, winners_changed
+        FROM mini_leader_changed
+        WHERE guild_nm = :guild_id AND winners_changed = 1
+    """
+
+    try:
+        result = connection.execute(text(query), {"guild_nm": guild_id})
+        row = result.fetchone()
+
+        if row:
+            return True
+        else:
+            return False
+    finally:
+        connection.close()
