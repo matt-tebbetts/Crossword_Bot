@@ -219,6 +219,18 @@ async def auto_fetch():
     bot_functions.get_mini()
     logger.debug("Got mini")
 
+# test task
+@tasks.loop(minutes=1)
+async def auto_test():
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    test_hour = 0
+    if now.minute == 0 and now.hour == test_hour:
+        logger.debug("Midnight test activated")
+        for guild in bot.guilds:
+            for channel in guild.channels:
+                if channel.name == "bot-test" and isinstance(channel, discord.TextChannel):
+                    await channel.send(f"""Midnight test activated. Yay, it worked!""")
+
 # ****************************************************************************** #
 # end tasks
 # ****************************************************************************** #
