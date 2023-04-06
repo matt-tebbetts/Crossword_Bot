@@ -1,6 +1,4 @@
-from tabulate import tabulate
-import pandas as pd
+import bot_functions
 
-df = pd.read_csv('files/archive/users.csv')
-
-print(tabulate(df, headers='keys', tablefmt='psql'))
+x = bot_functions.get_main_channels()
+print(x)

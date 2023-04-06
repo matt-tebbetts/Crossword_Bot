@@ -2,7 +2,7 @@
 import os
 import socket
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import bot_functions
 
 # discord
@@ -37,11 +37,6 @@ TOKEN = os.getenv('CROSSWORD_BOT')
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 
-# bot setup
-bot = commands.Bot(command_prefix="/", intents=my_intents)
-
-active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
-
 # set mySQL details
 sql_pass = os.getenv("SQLPASS")
 sql_user = os.getenv("SQLUSER")
@@ -49,6 +44,16 @@ sql_host = os.getenv("SQLHOST")
 sql_port = os.getenv("SQLPORT")
 database = os.getenv("SQLDATA")
 sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
+
+# bot setup
+bot = commands.Bot(command_prefix="/", intents=my_intents)
+bot_channels = bot_functions.get_bot_channels()
+
+
+# remove this!!!!
+active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
+
+
 
 # helps lock tasks?
 task_lock = Lock()
@@ -159,6 +164,25 @@ async def on_message(message):
 # tasks
 # ****************************************************************************** #
 
+# every few minutes check for mini (set to 15 for now)
+@tasks.loop(minutes=5)
+async def auto_fetch():
+
+    # get new mini and save to database
+    bot_functions.get_mini()
+    logger.debug("Got latest mini scores from NYT")
+
+    # for each guild, see if the mini leader has changed since the last run
+    for guild in bot.guilds:
+        changed = bot_functions.mini_leader_changed(guild.id)
+
+        # if changed, post new leaderboard to main games channel
+        if changed:
+            img = bot_functions.get_leaderboard(guild_id=guild.id, game_name='mini')
+            main_channel = bot_channels.get(str(guild.id))
+            send_channel = bot.get_channel(main_channel['channel_id_int'])
+            await send_channel.send(file=discord.File(img))
+
 # post daily mini warning
 async def post_warning():
     async with task_lock:
@@ -206,24 +230,6 @@ async def auto_post():
     if now.minute == 0 and now.hour == post_hour:
         logger.debug("Time to post final!")
         await post_mini()
-
-# every few minutes check for mini (set to 15 for now)
-@tasks.loop(minutes=15)
-async def auto_fetch():
-    bot_functions.get_mini()
-    logger.debug("Got mini")
-
-# test task
-@tasks.loop(minutes=1)
-async def auto_test():
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    test_hour = 0
-    if now.minute == 0 and now.hour == test_hour:
-        logger.debug("Midnight test activated")
-        for guild in bot.guilds:
-            for channel in guild.channels:
-                if channel.name == "bot-test" and isinstance(channel, discord.TextChannel):
-                    await channel.send(f"""Midnight test activated. Yay, it worked!""")
 
 # ****************************************************************************** #
 # end tasks
