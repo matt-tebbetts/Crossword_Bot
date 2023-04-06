@@ -1,8 +1,7 @@
 # connections and local python files
 import os
-from dotenv import load_dotenv
 import socket
-from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import bot_functions
 
@@ -20,19 +19,14 @@ import pytz
 from datetime import datetime, timedelta
 
 # timing and scheduling
-import aiocron
 import asyncio
 from asyncio import Lock
-
-# check host
-host_nm = socket.gethostname()
-local_mode = True if host_nm == "MJT" else False
 
 # create logger
 formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(f"files/bot_{host_nm}.log")
+file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -115,9 +109,17 @@ async def on_ready():
     engine = create_engine(sql_addr)
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
-     # start timed tasks
-    if not auto_fetch_the_mini.is_running():
-        auto_fetch_the_mini.start()
+    # start timed tasks
+    if not auto_fetch.is_running():
+        auto_fetch.start()
+
+    # start timed tasks
+    if not auto_warn.is_running():
+        auto_warn.start()
+
+    # start timed tasks
+    if not auto_post.is_running():
+        auto_post.start()
 
     # confirm
     logger.debug(f"{bot.user.name} is ready!")
@@ -160,7 +162,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 # ****************************************************************************** #
-# automatic posting
+# tasks
 # ****************************************************************************** #
 
 # post daily mini warning
@@ -174,16 +176,6 @@ async def post_warning():
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f""" Mini expires in one hour! """)
-
-# weekday warning
-@aiocron.crontab('0 21 * * 1-5')
-async def cron_warning_weekdays():
-    await post_warning()
-
-# weekend warning
-@aiocron.crontab('0 17 * * 6,7')
-async def cron_warning_weekends():
-    await post_warning()
 
 # post daily mini final
 async def post_mini():
@@ -203,28 +195,33 @@ async def post_mini():
                     await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 
-# weekday final post
-@aiocron.crontab('0 22 * * 1-5')
-async def cron_recap_weekdays():
-    await post_mini()
+# timer for warning
+@tasks.loop(minutes=1)
+async def auto_warn():
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
+    if now.minute == 0 and now.hour == cutoff_hour:
+        logger.debug("Time to warn!")
+        await post_warning()
 
-# weekend final post
-@aiocron.crontab('0 18 * * 6,7')
-async def cron_recap_weekends():
-    await post_mini()
+# timer for final post
+@tasks.loop(minutes=1)
+async def auto_post():
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    post_hour = 18 if now.weekday() in [5, 6] else 22
+    if now.minute == 0 and now.hour == post_hour:
+        logger.debug("Time to post final!")
+        await post_mini()
 
-# ****************************************************************************** #
-# end automatic posting
-# ****************************************************************************** #
-
-# every few minutes check for mini (set to 30 for now)
-@tasks.loop(minutes=30)
-async def auto_fetch_the_mini():
-
-    # run get_mini
-    response = bot_functions.get_mini()
-    
+# every few minutes check for mini (set to 15 for now)
+@tasks.loop(minutes=15)
+async def auto_fetch():
+    bot_functions.get_mini()
     logger.debug("Got mini")
+
+# ****************************************************************************** #
+# end tasks
+# ****************************************************************************** #
 
 # command to get other leaderboards (only mini is working right now)
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
