@@ -178,7 +178,7 @@ async def auto_fetch():
 
         # if changed, post new leaderboard to main games channel
         if changed:
-            img = bot_functions.get_leaderboard(guild_id=guild.id, game_name='mini')
+            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
             main_channel = bot_channels.get(str(guild.id))
             send_channel = bot.get_channel(main_channel['channel_id_int'])
             await send_channel.send(file=discord.File(img))
