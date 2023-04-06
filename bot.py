@@ -109,17 +109,11 @@ async def on_ready():
     engine = create_engine(sql_addr)
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
-    # start timed tasks
-    if not auto_fetch.is_running():
-        auto_fetch.start()
-
-    # start timed tasks
-    if not auto_warn.is_running():
-        auto_warn.start()
-
-    # start timed tasks
-    if not auto_post.is_running():
-        auto_post.start()
+    # Start timed tasks
+    tasks_to_start = [auto_fetch, auto_warn, auto_post, auto_test]
+    for task in tasks_to_start:
+        if not task.is_running():
+            task.start()
 
     # confirm
     logger.debug(f"{bot.user.name} is ready!")
