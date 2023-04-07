@@ -115,7 +115,7 @@ async def on_ready():
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
     # Start timed tasks
-    tasks_to_start = [auto_fetch, auto_warn, auto_post, auto_test]
+    tasks_to_start = [auto_fetch, auto_warn, auto_post]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
@@ -165,7 +165,7 @@ async def on_message(message):
 # ****************************************************************************** #
 
 # every few minutes check for mini (set to 15 for now)
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=1)
 async def auto_fetch():
 
     # get new mini and save to database
@@ -241,6 +241,7 @@ async def get(ctx, *, time_frame='daily'):
     
     # clarify request
     user_id = ctx.author.name
+    guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
@@ -254,7 +255,7 @@ async def get(ctx, *, time_frame='daily'):
 
     # get the data
     try:
-        img = bot_functions.get_leaderboard(guild_nm, game_name)
+        img = bot_functions.get_leaderboard(guild_id, game_name)
         await ctx.channel.send(file=discord.File(img))       
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
