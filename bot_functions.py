@@ -95,8 +95,9 @@ def get_leaderboard(guild_id, game_name):
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    mini_dt = get_mini_date()
     
+    # get dataframe
     query = f"""
         SELECT 
             game_rank,
@@ -109,17 +110,15 @@ def get_leaderboard(guild_id, game_name):
         AND game_date = :game_date
         ORDER BY game_rank;
     """
-
-    result = connection.execute(text(query), {"guild_id": guild_id,"game_name": game_name, "game_date": today})
+    result = connection.execute(text(query), {"guild_id": guild_id,"game_name": game_name, "game_date": mini_dt})
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
 
+    # create image
     mini_players_left = 17 - len(df)
-    my_title = f"{game_name.capitalize()}: {today}"
-    my_subtitle = f"{mini_players_left} players remaining" if game_name == 'mini' else f"{today}"
-
-    # df = pd.read_sql(query, con=engine, params=[game_name, today])
+    my_title = f"{game_name.capitalize()}: {mini_dt}"
+    my_subtitle = f"{mini_players_left} players remaining" if game_name == 'mini' else f"Today"
     img = bot_camera.dataframe_to_image_dark_mode(df, 
                                                 img_title=my_title,
                                                 img_subtitle=my_subtitle)
