@@ -256,11 +256,11 @@ def mini_leader_changed(guild_id):
     query = f"""
         SELECT guild_id, winners_changed
         FROM mini_leader_changed
-        WHERE guild_nm = :guild_id AND winners_changed = 1
+        WHERE guild_id = :guild_id AND winners_changed = 1
     """
 
     try:
-        result = connection.execute(text(query), {"guild_nm": guild_id})
+        result = connection.execute(text(query), {"guild_id": guild_id})
         row = result.fetchone()
 
         if row:
