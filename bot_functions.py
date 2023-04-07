@@ -20,9 +20,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # get secrets
-list_of_known_envs = ['NYT_COOKIE']
-for env_nm in list_of_known_envs:
-    globals()[env_nm] = credentials[env_nm]
+load_dotenv()
+NYT_COOKIE = os.getenv('NYT_COOKIE')
 
 # find main channel id for each guild
 def get_bot_channels():
