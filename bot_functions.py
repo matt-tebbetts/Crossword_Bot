@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
 import logging
 import bot_camera
+from config import credentials, sql_addr
 
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -19,14 +20,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # get secrets
-load_dotenv()
-sql_pass = os.getenv("SQLPASS")
-sql_user = os.getenv("SQLUSER")
-sql_host = os.getenv("SQLHOST")
-sql_port = os.getenv("SQLPORT")
-database = os.getenv("SQLDATA")
-sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
-cookie = os.getenv('NYT_COOKIE')
+list_of_known_envs = ['NYT_COOKIE']
+for env_nm in list_of_known_envs:
+    globals()[env_nm] = credentials[env_nm]
 
 # find main channel id for each guild
 def get_bot_channels():
@@ -65,7 +61,7 @@ def get_mini():
 
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
-    html = requests.get(leaderboard_url, cookies={'NYT-S': cookie})
+    html = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
 
     # find scores in the html
     soup = BeautifulSoup(html.text, features='lxml')

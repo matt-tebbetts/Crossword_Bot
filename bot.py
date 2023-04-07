@@ -4,6 +4,7 @@ import socket
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 import bot_functions
+from config import credentials, sql_addr
 
 # discord
 import discord
@@ -22,6 +23,10 @@ from datetime import datetime, timedelta
 import asyncio
 from asyncio import Lock
 
+# environment variables
+load_dotenv()
+TOKEN = os.getenv('CROSSWORD_BOT')
+
 # create logger
 formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger(__name__)
@@ -31,19 +36,9 @@ file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-# connection details
-load_dotenv()
-TOKEN = os.getenv('CROSSWORD_BOT')
+# discord connection details
 my_intents = discord.Intents.all()
 my_intents.message_content = True
-
-# set mySQL details
-sql_pass = os.getenv("SQLPASS")
-sql_user = os.getenv("SQLUSER")
-sql_host = os.getenv("SQLHOST")
-sql_port = os.getenv("SQLPORT")
-database = os.getenv("SQLDATA")
-sql_addr = f"mysql+pymysql://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{database}"
 
 # bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
@@ -94,7 +89,7 @@ async def on_ready():
     # Initialize empty all_users dataframe
     all_users = pd.DataFrame(columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
 
-    # add all users to dataframe
+    # get latest user list
     for guild in bot.guilds:
         logger.debug(f"Connected to {guild.name}")
 
@@ -109,8 +104,6 @@ async def on_ready():
             member_data.append([guild_id, guild_nm, member_id, member_nm, now_txt])
         guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
         all_users = pd.concat([all_users, guild_users], ignore_index=True)
-
-    # save users to database
     engine = create_engine(sql_addr)
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
@@ -206,7 +199,7 @@ async def post_mini():
         # post warning in each guild
         for guild in bot.guilds:
             logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
-            img = bot_functions.get_leaderboard(guild_nm=guild.name, game_name=game_name)
+            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f"""Positng the final {game_name.capitalize()} Leaderboard now...""")
