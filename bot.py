@@ -174,6 +174,8 @@ async def auto_fetch():
             img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
             main_channel = bot_channels.get(str(guild.id))
             send_channel = bot.get_channel(main_channel['channel_id_int'])
+
+            await send_channel.send("Someone else took the lead!")
             await send_channel.send(file=discord.File(img))
 
 # post daily mini warning
@@ -304,9 +306,6 @@ async def process_missed_scores(ctx, days):
         if score_already_added:
             continue
 
-        # else
-        print(f"Found score not added from {user_id} on {message.channel.name}. Message sent at: {msg_ts}. Text is: {msg_text}")
-
         # add the score
         response = bot_functions.add_score(game_prefix, user_id, msg_text)
         missing_scores_added += 1
@@ -315,7 +314,7 @@ async def process_missed_scores(ctx, days):
         emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
         await message.add_reaction(emoji)
 
-    await ctx.send(f"Rescanned messages from the last {days} days. Added {missing_scores_added} missing scores.")
+    await ctx.send(f"Added {missing_scores_added} missing scores.")
 
 
 # run bot
