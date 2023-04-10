@@ -173,10 +173,14 @@ async def auto_fetch():
         if changed:
             img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
             main_channel = bot_channels.get(str(guild.id))
-            send_channel = bot.get_channel(main_channel['channel_id_int'])
 
-            await send_channel.send("Someone else took the lead!")
-            await send_channel.send(file=discord.File(img))
+            # post to main channel
+            if main_channel and main_channel['channel_id_int'] in [channel.id for channel in guild.channels]:
+                send_channel = bot.get_channel(main_channel['channel_id_int'])
+                
+                # send message
+                await send_channel.send("Someone else took the lead!")
+                await send_channel.send(file=discord.File(img))
 
 # post daily mini warning
 async def post_warning():
@@ -258,11 +262,11 @@ async def get(ctx, *, time_frame='daily'):
 
 
 # getting missed scores
-@bot.command(name='rescan', description="Rescan the past X days of messages for missed scores")
+@bot.command(name='rescan', description="Rescan the past 30 days of messages for missed scores")
 async def rescan(ctx):
     user_id = ctx.author.name + "#" + ctx.author.discriminator
     days = 30
-    print(f"User {user_id} requested rescan of {days} days")
+    logger.debug(f"User {user_id} requested rescan in channel {ctx.channel.name}")
     await process_missed_scores(ctx, days)
 
 
