@@ -240,12 +240,13 @@ async def get(ctx, *, time_frame=None):
     # clarify request
     user_id = ctx.author.name
     guild_id = str(ctx.guild.id)
-    time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
     
     # default time_frame to 'today' if not provided
     if time_frame is None:
         time_frame = 'today'
+
+    time_frame = str.lower(time_frame)
 
     # print
     logger.debug(f"{user_id} requested {game_name} leaderboard for {time_frame}.")
@@ -301,7 +302,7 @@ async def process_missed_scores(ctx, days):
         if game_prefix is None:
             continue
         
-        # see if it's already been added
+        # see if it's already been added ## SHOULD EDIT THIS AND ADD EVEN IF IT'S BEEN REACTED TO
         score_already_added = False
         for reaction in message.reactions:
             if reaction.me:
