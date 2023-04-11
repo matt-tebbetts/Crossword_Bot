@@ -1,14 +1,14 @@
 import bot_functions
 import os
+from PIL import Image
 
-game_name = 'wordle'
-time_frame = 'this month'
+game_name = 'mini'
+time_frame = 'this year'
 
 
 # get the min_date and max_date based on the user's input
 date_range = bot_functions.get_date_range(time_frame)
 min_date, max_date = date_range
-print(date_range)
 
 # get image
 img_path = bot_functions.get_leaderboard(
@@ -18,5 +18,4 @@ img_path = bot_functions.get_leaderboard(
                                         max_date=max_date)
 
 
-# open image
-os.startfile(r"C:\Users\matt_\OneDrive\OneDrive Documents\Python Projects\Tebbetts_Bot\files\images\leaderboard.png")
+Image.open(img_path).show()
