@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import six
 import pytz
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from sqlalchemy import create_engine, text
 import logging
 import bot_camera
@@ -88,8 +88,45 @@ def get_mini():
         df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
         return [True, "Got mini and saved to database"]
 
+# translate date range based on text
+def get_date_range(user_input):
+    today = date.today()
+
+    if user_input == 'yesterday':
+        min_date = max_date = today - timedelta(days=1)
+    elif user_input == 'last_week':
+        min_date = today - timedelta(days=today.weekday(), weeks=1)
+        max_date = min_date + timedelta(days=6)
+    elif user_input == 'this_week':
+        min_date = today - timedelta(days=today.weekday())
+        max_date = min_date + timedelta(days=6)
+    elif user_input == 'this_month':
+        min_date = today.replace(day=1)
+        max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
+    elif user_input == 'last_month':
+        min_date = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+        max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
+    elif user_input == 'this_year':
+        min_date = today.replace(month=1, day=1)
+        max_date = today.replace(month=12, day=31)
+    elif user_input == 'last_year':
+        min_date = today.replace(year=today.year - 1, month=1, day=1)
+        max_date = today.replace(year=today.year - 1, month=12, day=31)
+    elif user_input == 'all_time':
+        min_date = date.min
+        max_date = date.max
+    else:
+        try:
+            # Try to parse user input as a date range in format "YYYY-MM-DD:YYYY-MM-DD"
+            min_date, max_date = [datetime.strptime(d.strip(), "%Y-%m-%d").date() for d in user_input.split(':')]
+        except ValueError:
+            # If input is invalid, return None
+            return None
+
+    return min_date, max_date
+
 # returns two things image of any game leaderboard
-def get_leaderboard(guild_id, game_name):
+def get_leaderboard(guild_id, game_name, min_date, max_date):
     engine = create_engine(sql_addr)
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
@@ -105,11 +142,11 @@ def get_leaderboard(guild_id, game_name):
             points
         FROM game_view
         WHERE guild_id = :guild_id
-        and game_name = :game_name 
-        AND game_date = :game_date
+        AND game_name = :game_name 
+        AND game_date BETWEEN :min_date AND :max_date
         ORDER BY game_rank;
     """
-    result = connection.execute(text(query), {"guild_id": guild_id,"game_name": game_name, "game_date": mini_dt})
+    result = connection.execute(text(query), {"guild_id": guild_id, "game_name": game_name, "min_date": min_date, "max_date": max_date})
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
