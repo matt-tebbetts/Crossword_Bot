@@ -278,8 +278,7 @@ async def rescan(ctx):
 
 # actually getting them
 async def process_missed_scores(ctx, days):
-    today = datetime.utcnow()
-    since = today - timedelta(days=days)
+    today = datetime.now(pytz.timezone('US/Eastern'))
     
     # keep track
     missing_scores_added = 0
@@ -316,7 +315,7 @@ async def process_missed_scores(ctx, days):
         user_id = message.author.name + "#" + message.author.discriminator
         game_date = message.created_at.strftime('%Y-%m-%d')
         response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
-        logger.debug(response)
+        logger.debug(f"Added score for {user_id} in {game_prefix} on {game_date}")
         missing_scores_added += 1
 
         # determine response emoji if response is not True

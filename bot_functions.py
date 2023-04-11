@@ -92,7 +92,9 @@ def get_mini():
 def get_date_range(user_input):
     today = datetime.now(pytz.timezone('US/Eastern'))
 
-    if user_input == 'yesterday':
+    if user_input == 'today':
+        min_date = max_date = today
+    elif user_input == 'yesterday':
         min_date = max_date = today - timedelta(days=1)
     elif user_input == 'last week':
         min_date = today - timedelta(days=today.weekday(), weeks=1)
