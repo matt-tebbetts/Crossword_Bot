@@ -241,21 +241,23 @@ async def get(ctx, *, time_frame='daily'):
     # clarify request
     user_id = ctx.author.name
     guild_id = str(ctx.guild.id)
-    guild_nm = ctx.guild.name
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
 
     # print
     logger.debug(f"{user_id} requested {time_frame} {game_name} leaderboard.")
 
-    # only daily available right now
-    if time_frame != 'daily':
-        return await ctx.channel.send("Sorry, but only daily leaderboards are available right now.")
+    # get the min_date and max_date based on the user's input
+    date_range = bot_functions.get_date_range(time_frame)
+    if date_range is None:
+        return await ctx.channel.send("Invalid date range or format. Please try again with a valid date range or keyword (e.g., 'yesterday', 'last week', 'this month', etc.).")
+
+    min_date, max_date = date_range
 
     # get the data
     try:
-        img = bot_functions.get_leaderboard(guild_id, game_name)
-        await ctx.channel.send(file=discord.File(img))       
+        img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date)
+        await ctx.channel.send(file=discord.File(img))
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
