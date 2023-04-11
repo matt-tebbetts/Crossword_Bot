@@ -94,25 +94,25 @@ def get_date_range(user_input):
 
     if user_input == 'yesterday':
         min_date = max_date = today - timedelta(days=1)
-    elif user_input == 'last_week':
+    elif user_input == 'last week':
         min_date = today - timedelta(days=today.weekday(), weeks=1)
         max_date = min_date + timedelta(days=6)
-    elif user_input == 'this_week':
+    elif user_input == 'this week':
         min_date = today - timedelta(days=today.weekday())
         max_date = min_date + timedelta(days=6)
-    elif user_input == 'this_month':
+    elif user_input == 'this month':
         min_date = today.replace(day=1)
         max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
-    elif user_input == 'last_month':
+    elif user_input == 'last month':
         min_date = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
         max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
-    elif user_input == 'this_year':
+    elif user_input == 'this year':
         min_date = today.replace(month=1, day=1)
         max_date = today.replace(month=12, day=31)
-    elif user_input == 'last_year':
+    elif user_input == 'last year':
         min_date = today.replace(year=today.year - 1, month=1, day=1)
         max_date = today.replace(year=today.year - 1, month=12, day=31)
-    elif user_input == 'all_time':
+    elif user_input == 'all time':
         min_date = date.min
         max_date = date.max
     else:
@@ -131,7 +131,11 @@ def get_leaderboard(guild_id, game_name, min_date, max_date):
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
 
-    mini_dt = get_mini_date()
+    # get date range to print on subtitle
+    if min_date == max_date:
+        title_date = get_mini_date() if game_name == 'mini' else min_date.strftime("%Y-%m-%d")
+    else:
+        title_date = f"{min_date} - {max_date}"
     
     # get dataframe
     query = f"""
@@ -156,12 +160,9 @@ def get_leaderboard(guild_id, game_name, min_date, max_date):
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
 
     # create image
-    mini_players_left = 17 - len(df)
-    my_title = f"{game_name.capitalize()}: {mini_dt}"
-    my_subtitle = f"{mini_players_left} players remaining" if game_name == 'mini' else f"Today"
-    img = bot_camera.dataframe_to_image_dark_mode(df, 
-                                                img_title=my_title,
-                                                img_subtitle=my_subtitle)
+    my_title = f"{game_name.capitalize()}"
+    my_subtitle = f"{title_date}"
+    img = bot_camera.dataframe_to_image_dark_mode(df, img_title=my_title, img_subtitle=my_subtitle)
     logger.debug(f'Created image of dataframe for {game_name} leaderboard.')
     return img
 
