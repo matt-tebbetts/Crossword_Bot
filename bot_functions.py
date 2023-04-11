@@ -125,7 +125,7 @@ def get_date_range(user_input):
 
     return min_date, max_date
 
-# returns two things image of any game leaderboard
+# returns image location of leaderboard
 def get_leaderboard(guild_id, game_name, min_date, max_date):
     engine = create_engine(sql_addr)
     connection = engine.connect()
@@ -146,7 +146,11 @@ def get_leaderboard(guild_id, game_name, min_date, max_date):
         AND game_date BETWEEN :min_date AND :max_date
         ORDER BY game_rank;
     """
-    result = connection.execute(text(query), {"guild_id": guild_id, "game_name": game_name, "min_date": min_date, "max_date": max_date})
+    result = connection.execute(text(query), 
+                                            {"guild_id": guild_id, 
+                                            "game_name": game_name, 
+                                            "min_date": min_date, 
+                                            "max_date": max_date})
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
@@ -162,11 +166,11 @@ def get_leaderboard(guild_id, game_name, min_date, max_date):
     return img
 
 # add discord scores to database when people paste them to discord chat
-def add_score(game_prefix, discord_id, msg_txt):
+def add_score(game_prefix, game_date, discord_id, msg_txt):
+
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
-    game_date = now.strftime("%Y-%m-%d")
-    game_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    added_ts = now.strftime("%Y-%m-%d %H:%M:%S")
 
     # set these up
     game_name = None
@@ -269,7 +273,7 @@ def add_score(game_prefix, discord_id, msg_txt):
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
-    my_data = [[game_date, game_name, game_score, game_time, discord_id, game_dtl, metric_01, metric_02, metric_03]]
+    my_data = [[game_date, game_name, game_score, added_ts, discord_id, game_dtl, metric_01, metric_02, metric_03]]
     df = pd.DataFrame(data=my_data, columns=my_cols)
 
     # append to mySQL
