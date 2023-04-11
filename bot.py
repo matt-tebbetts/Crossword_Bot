@@ -17,7 +17,7 @@ import logging
 import numpy as np
 import pandas as pd
 import pytz
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 # timing and scheduling
 import asyncio
@@ -129,8 +129,7 @@ async def on_message(message):
         return
 
     # get message detail
-    msg_now = datetime.now(pytz.timezone('US/Eastern'))
-    msg_time = msg_now.strftime("%Y-%m-%d %H:%M:%S")
+    game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
     msg_text = str(message.content)
     user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
 
@@ -144,7 +143,7 @@ async def on_message(message):
                 game_prefix = 'atlantic'
 
             # send to score scraper
-            response = bot_functions.add_score(game_prefix, user_id, msg_text)
+            response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
             emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
@@ -295,12 +294,8 @@ async def process_missed_scores(ctx, days):
         if message.channel.name not in active_channel_names:
             continue
         
-        # get message text
+        # check to see if it's a game score
         msg_text = str(message.content)
-        user_id = message.author.name + "#" + message.author.discriminator
-        msg_ts = message.created_at
-
-        # Check to see if this is a game score and get the matching game prefix
         pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
         game_prefix = next((p for p in pref_list if str.lower(msg_text).startswith(str.lower(p))), None)
         if game_prefix is None:
@@ -317,8 +312,10 @@ async def process_missed_scores(ctx, days):
             continue
 
         # add the score
-        game_date = msg_ts.strftime('%Y-%m-%d')
+        user_id = message.author.name + "#" + message.author.discriminator
+        game_date = message.created_at.strftime('%Y-%m-%d')
         response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+        logger.debug(response)
         missing_scores_added += 1
 
         # determine response emoji if response is not True

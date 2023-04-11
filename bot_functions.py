@@ -90,7 +90,7 @@ def get_mini():
 
 # translate date range based on text
 def get_date_range(user_input):
-    today = date.today()
+    today = datetime.now(pytz.timezone('US/Eastern'))
 
     if user_input == 'yesterday':
         min_date = max_date = today - timedelta(days=1)
@@ -127,10 +127,15 @@ def get_date_range(user_input):
     return min_date, max_date
 
 # returns image location of leaderboard
-def get_leaderboard(guild_id, game_name, min_date, max_date):
+def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
     engine = create_engine(sql_addr)
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
+    today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
+
+    # if no date range, use default
+    if min_date is None and max_date is None:
+        min_date, max_date = today, today
 
     # get date range to print on subtitle
     if min_date == max_date:
@@ -309,7 +314,7 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
     engine = create_engine(sql_addr)
     df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
 
-    msg_back = [True, f'Added {game_name} score for {discord_id}']
+    msg_back = f"Added {game_name} for {discord_id} on {game_date} with score {game_score}"
 
     return msg_back
 
