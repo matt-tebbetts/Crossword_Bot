@@ -9,7 +9,7 @@ def dataframe_to_image_dark_mode(df,
                                  img_filepath='files/images/leaderboard.png', 
                                  img_title="Today's Mini", 
                                  img_subtitle="Nerd City",
-                                 right_aligned_columns=['rank','time','score','points']):
+                                 right_aligned_columns=['rank','time','score','best','points']):
     
     # Set colors
     header_bg_color = '#4a4e53'

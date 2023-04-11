@@ -108,7 +108,8 @@ def get_date_range(user_input):
         max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
     elif user_input == 'this year':
         min_date = today.replace(month=1, day=1)
-        max_date = today.replace(month=12, day=31)
+        next_month = today.replace(day=28) + timedelta(days=4)
+        max_date = next_month - timedelta(days=next_month.day)
     elif user_input == 'last year':
         min_date = today.replace(year=today.year - 1, month=1, day=1)
         max_date = today.replace(year=today.year - 1, month=12, day=31)
@@ -137,19 +138,46 @@ def get_leaderboard(guild_id, game_name, min_date, max_date):
     else:
         title_date = f"{min_date} - {max_date}"
     
-    # get dataframe
-    query = f"""
-        SELECT 
-            game_rank,
-            player_name,
-            game_score,
-            points
-        FROM game_view
-        WHERE guild_id = :guild_id
-        AND game_name = :game_name 
-        AND game_date BETWEEN :min_date AND :max_date
-        ORDER BY game_rank;
-    """
+    # decide which query to run
+    if min_date == max_date:
+        
+        # single date
+        cols = ['rank', 'player', 'score', 'points']
+        query = f"""
+            SELECT 
+                game_rank,
+                player_name,
+                game_score,
+                points
+            FROM game_view
+            WHERE guild_id = :guild_id
+            AND game_name = :game_name 
+            AND game_date BETWEEN :min_date AND :max_date
+            ORDER BY game_rank;
+        """
+    else:
+        
+        # date range
+        cols = ['rank', 'player', 'best', 'points']
+        query = f"""
+        SELECT
+            DENSE_RANK() OVER(ORDER BY X.points DESC) as game_rank,
+            X.*
+        FROM
+                (
+                SELECT 
+                    player_name,
+                    min(game_score) as best_score,
+                    sum(points) as points
+                FROM game_view
+                WHERE guild_id = :guild_id
+                AND game_name = :game_name 
+                AND game_date BETWEEN :min_date AND :max_date
+                GROUP BY 1
+                ) X
+        """
+    
+    # run the query
     result = connection.execute(text(query), 
                                             {"guild_id": guild_id, 
                                             "game_name": game_name, 
@@ -157,7 +185,7 @@ def get_leaderboard(guild_id, game_name, min_date, max_date):
                                             "max_date": max_date})
     rows = result.fetchall()
     connection.close()
-    df = pd.DataFrame(rows, columns=['rank', 'player', 'score', 'points'])
+    df = pd.DataFrame(rows, columns=cols)
 
     # create image
     my_title = f"{game_name.capitalize()}"
