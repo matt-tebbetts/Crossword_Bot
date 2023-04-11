@@ -236,16 +236,20 @@ async def auto_post():
 
 # command to get other leaderboards (only mini is working right now)
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
-async def get(ctx, *, time_frame='daily'):
+async def get(ctx, *, time_frame=None):
     
     # clarify request
     user_id = ctx.author.name
     guild_id = str(ctx.guild.id)
     time_frame = str.lower(time_frame)
     game_name = ctx.invoked_with
+    
+    # default time_frame to 'today' if not provided
+    if time_frame is None:
+        time_frame = 'today'
 
     # print
-    logger.debug(f"{user_id} requested {time_frame} {game_name} leaderboard.")
+    logger.debug(f"{user_id} requested {game_name} leaderboard for {time_frame}.")
 
     # get the min_date and max_date based on the user's input
     date_range = bot_functions.get_date_range(time_frame)
@@ -313,7 +317,8 @@ async def process_missed_scores(ctx, days):
             continue
 
         # add the score
-        response = bot_functions.add_score(game_prefix, user_id, msg_text)
+        game_date = msg_ts.strftime('%Y-%m-%d')
+        response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
         missing_scores_added += 1
 
         # determine response emoji if response is not True

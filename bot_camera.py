@@ -4,6 +4,7 @@ import socket
 
 host_nm = socket.gethostname()
 
+# returns the image filepath
 def dataframe_to_image_dark_mode(df, 
                                  img_filepath='files/images/leaderboard.png', 
                                  img_title="Today's Mini", 
