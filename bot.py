@@ -164,6 +164,11 @@ async def auto_fetch():
     bot_functions.get_mini()
     logger.debug("Got latest mini scores from NYT")
 
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
+    if now > cutoff_hour or now < 7:
+        return
+
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
         changed = bot_functions.mini_leader_changed(guild.id)
@@ -207,7 +212,7 @@ async def post_mini():
             img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f"""Positng the final {game_name.capitalize()} Leaderboard now...""")
+                    await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
                     await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 

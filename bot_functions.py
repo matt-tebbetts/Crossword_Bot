@@ -90,7 +90,7 @@ def get_mini():
 
 # translate date range based on text
 def get_date_range(user_input):
-    today = datetime.now(pytz.timezone('US/Eastern'))
+    today = datetime.now(pytz.timezone('US/Eastern')).date()
 
     if user_input == 'today':
         min_date = max_date = today
