@@ -1,18 +1,16 @@
 import os
-import socket
 import requests
 import pandas as pd
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-import numpy as np
-import matplotlib.pyplot as plt
-import six
 import pytz
 from datetime import date, datetime, timedelta
 from sqlalchemy import create_engine, text
 import logging
 import bot_camera
 from config import credentials, sql_addr
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -112,40 +110,47 @@ def get_mini():
 def get_date_range(user_input):
     today = datetime.now(pytz.timezone('US/Eastern')).date()
 
-    if user_input == 'today':
-        min_date = max_date = today
-    elif user_input == 'yesterday':
-        min_date = max_date = today - timedelta(days=1)
-    elif user_input == 'last week':
-        min_date = today - timedelta(days=today.weekday(), weeks=1)
-        max_date = min_date + timedelta(days=6)
-    elif user_input == 'this week':
-        min_date = today - timedelta(days=today.weekday())
-        max_date = min_date + timedelta(days=6)
-    elif user_input == 'this month':
-        min_date = today.replace(day=1)
-        max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
-    elif user_input == 'last month':
-        min_date = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
-        max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
-    elif user_input == 'this year':
-        min_date = today.replace(month=1, day=1)
-        next_month = today.replace(day=28) + timedelta(days=4)
-        max_date = next_month - timedelta(days=next_month.day)
-    elif user_input == 'last year':
-        min_date = today.replace(year=today.year - 1, month=1, day=1)
-        max_date = today.replace(year=today.year - 1, month=12, day=31)
-    elif user_input == 'all time':
-        min_date = date.min
-        max_date = date.max
-    else:
-        try:
-            # Try to parse user input as a date range in format "YYYY-MM-DD:YYYY-MM-DD"
-            min_date, max_date = [datetime.strptime(d.strip(), "%Y-%m-%d").date() for d in user_input.split(':')]
-        except ValueError:
-            # If input is invalid, return None
-            return None
+    # Helper function to parse date string and set year to current year if not provided
+    def parse_date(date_str, default_year=today.year):
+        date_obj = parse(date_str)
+        if date_obj.year == 1900:  # dateutil's default year is 1900 when not provided
+            date_obj = date_obj.replace(year=default_year)
+        return date_obj.date()
 
+    try:
+        if user_input == 'today':
+            min_date = max_date = today
+        elif user_input == 'yesterday':
+            min_date = max_date = today - timedelta(days=1)
+        elif user_input == 'last week':
+            min_date = today - timedelta(days=today.weekday(), weeks=1)
+            max_date = min_date + timedelta(days=6)
+        elif user_input == 'this week':
+            min_date = today - timedelta(days=today.weekday())
+            max_date = min_date + timedelta(days=6)
+        elif user_input == 'this month':
+            min_date = today.replace(day=1)
+            max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
+        elif user_input == 'last month':
+            min_date = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+            max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
+        elif user_input == 'this year':
+            min_date = today.replace(month=1, day=1)
+            next_month = today.replace(day=28) + timedelta(days=4)
+            max_date = next_month - timedelta(days=next_month.day)
+        elif user_input == 'last year':
+            min_date = today.replace(year=today.year - 1, month=1, day=1)
+            max_date = today.replace(year=today.year - 1, month=12, day=31)
+        elif user_input == 'all time':
+            min_date = date.min
+            max_date = date.max
+        else:
+            dates = [parse_date(d.strip()) for d in user_input.split(':')]
+            min_date, max_date = (dates[0], dates[-1]) if len(dates) > 1 else (dates[0], dates[0])
+
+    except(ValueError, TypeError):
+        return None
+    
     return min_date, max_date
 
 # returns image location of leaderboard
@@ -163,7 +168,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
     if min_date == max_date:
         title_date = get_mini_date() if game_name == 'mini' else min_date.strftime("%Y-%m-%d")
     else:
-        title_date = f"{min_date} - {max_date}"
+        title_date = f"{min_date} through {max_date}"
     
     # decide which query to run
     if min_date == max_date:
@@ -184,7 +189,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
         """
     else:
         
-        # date range
+        # date range THIS SHOULD BE A BETTER LEADERBOARD TABLE
         cols = ['rank', 'player', 'best', 'points']
         query = f"""
         SELECT

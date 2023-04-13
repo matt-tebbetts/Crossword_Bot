@@ -28,12 +28,11 @@ load_dotenv()
 TOKEN = os.getenv('CROSSWORD_BOT')
 
 # create logger
-formatter = logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
 file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
+file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
 logger.addHandler(file_handler)
 
 # discord connection details
@@ -318,12 +317,14 @@ async def process_missed_scores(ctx, days):
         user_id = message.author.name + "#" + message.author.discriminator
         game_date = message.created_at.strftime('%Y-%m-%d')
         response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
-        logger.debug(f"Added score for {user_id} in {game_prefix} on {game_date}")
+        logger.debug(f"Added score from {game_date}, {game_prefix}, {user_id}")
         missing_scores_added += 1
 
         # determine response emoji if response is not True
         emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
         await message.add_reaction(emoji)
+
+        asyncio.sleep(1)
 
     await ctx.send(f"Added {missing_scores_added} missing scores.")
 
