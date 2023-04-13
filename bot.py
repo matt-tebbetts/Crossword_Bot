@@ -44,11 +44,8 @@ my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents)
 bot_channels = bot_functions.get_bot_channels()
 
-
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
-
-
 
 # helps lock tasks?
 task_lock = Lock()
@@ -166,25 +163,26 @@ async def auto_fetch():
 
     now = datetime.now(pytz.timezone('US/Eastern'))
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now > cutoff_hour or now < 7:
+    if now.hour > cutoff_hour or now.hour < 7:
         return
 
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
         changed = bot_functions.mini_leader_changed(guild.id)
 
-        # if changed, post new leaderboard to main games channel
+        # if changed, post new leaderboard to games channel for that guild
         if changed:
+            
+            # get leaderboard image
             img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
-            main_channel = bot_channels.get(str(guild.id))
 
-            # post to main channel
-            if main_channel and main_channel['channel_id_int'] in [channel.id for channel in guild.channels]:
-                send_channel = bot.get_channel(main_channel['channel_id_int'])
-                
-                # send message
-                await send_channel.send("Someone else took the lead!")
-                await send_channel.send(file=discord.File(img))
+            # get channel to post to
+            main_channel_id = bot_functions.get_main_channel_for_guild(str(guild.id))
+            send_channel = bot.get_channel(main_channel_id)
+
+            # send message
+            await send_channel.send("Someone else took the lead!")
+            await send_channel.send(file=discord.File(img))
 
 # post daily mini warning
 async def post_warning():
