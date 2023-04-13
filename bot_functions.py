@@ -23,7 +23,27 @@ logger.setLevel(logging.DEBUG)
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
 
-# find main channel id for each guild
+# get main channel for each guild (improved)
+def get_main_channel_for_guild(guild_id):
+    engine = create_engine(sql_addr)
+    connection = engine.connect()
+    query = f"""
+        SELECT channel_id
+        FROM discord_connections
+        WHERE guild_channel_category = 'main'
+        AND guild_id = :guild_id
+    """
+    result = connection.execute(text(query), {"guild_id": guild_id})
+    row = result.fetchone()
+    connection.close()
+
+    if row:
+        return int(row[0])
+    else:
+        return None
+
+
+# find main channel id for each guild (old)
 def get_bot_channels():
     engine = create_engine(sql_addr)
     connection = engine.connect()
@@ -323,20 +343,11 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 # check for leader changes
 def mini_leader_changed(guild_id):
     engine = create_engine(sql_addr)
-    connection = engine.connect()
     query = f"""
-        SELECT guild_id, winners_changed
-        FROM mini_leader_changed
-        WHERE guild_id = :guild_id AND winners_changed = 1
+        SELECT guild_id FROM mini_leader_changed
+        WHERE guild_id = :guild_id
     """
-
-    try:
+    with engine.connect() as connection:
         result = connection.execute(text(query), {"guild_id": guild_id})
         row = result.fetchone()
-
-        if row:
-            return True
-        else:
-            return False
-    finally:
-        connection.close()
+        return bool(row)
