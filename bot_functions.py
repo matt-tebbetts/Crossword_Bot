@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import create_engine, text
 import logging
 import bot_camera
+import bot_queries
 from config import credentials, sql_addr
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
@@ -153,7 +154,7 @@ def get_date_range(user_input):
     return min_date, max_date
 
 # returns image location of leaderboard
-def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
+def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
     engine = create_engine(sql_addr)
     connection = engine.connect()
     logger.debug(f'Connected to database using {sql_addr}')
@@ -170,68 +171,22 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
         title_date = f"{min_date} through {max_date}"
     
     # determine leaderboard query to run
-    if game_name == 'winners':  # winners only
-        cols = ['game', 'winner', 'score']
-        query = f"""
-            SELECT 
-                game_name,
-                player_name,
-                game_score
-            FROM game_view
-            WHERE game_rank = 1
-            AND guild_id = :guild_id
-            AND game_date = :min_date
-            ORDER BY game_rank;
-        """
-
-    elif min_date == max_date:  # single date leaderboard
-        
-        cols = ['rank', 'player', 'score', 'points']
-        query = f"""
-            SELECT 
-                game_rank,
-                player_name,
-                game_score,
-                points
-            FROM game_view
-            WHERE guild_id = :guild_id
-            AND game_date = :min_date
-            ORDER BY game_rank;
-        """
-
-    else:  # date range leaderboard
-        cols = ['rank', 'player', 'points']
-        query = f"""
-        SELECT
-            DENSE_RANK() OVER(ORDER BY X.points DESC) as game_rank,
-            X.*
-        FROM
-                (
-                SELECT 
-                    player_name,
-                    sum(points) as points
-                FROM game_view
-                WHERE guild_id = :guild_id
-                AND game_name = :game_name 
-                AND game_date BETWEEN :min_date AND :max_date
-                GROUP BY 1
-                ) X
-        """
+    cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
         
     # run the query
     result = connection.execute(text(query), 
                                             {"guild_id": guild_id, 
                                             "game_name": game_name, 
                                             "min_date": min_date, 
-                                            "max_date": max_date})
+                                            "max_date": max_date,
+                                            "user_nm": user_nm})
     rows = result.fetchall()
     connection.close()
     df = pd.DataFrame(rows, columns=cols)
 
     # create image
-    my_title = f"{game_name.capitalize()}"
-    my_subtitle = f"{title_date}"
-    img = bot_camera.dataframe_to_image_dark_mode(df, img_title=my_title, img_subtitle=my_subtitle)
+    img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm
+    img = bot_camera.dataframe_to_image_dark_mode(df, img_title=img_title, img_subtitle=title_date)
     logger.debug(f'Created image of dataframe for {game_name} leaderboard.')
     return img
 
