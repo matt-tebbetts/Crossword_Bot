@@ -57,16 +57,16 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     else:  
         cols = ['Rank', 'Player', 'Points', 'Wins', 'Top 3', 'Played']
         query = f"""
-            select
+            SELECT
                 dense_rank() over(order by points desc) as overall_rank,
                 x.player_name,
                 x.points,
                 x.wins,
                 x.top_3,
                 x.games_played / max(x.games_played) over() as participation
-            from
+            FROM
                     (
-                    select 
+                    SELECT 
                         game_name,
                         player_name,
                         sum(points) as points,
@@ -74,13 +74,11 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         sum(case when game_rank <= 3 then 1 else 0 end) / sum(1.0) as top_3,
                         sum(case when game_rank <= 5 then 1 else 0 end) / sum(1.0) as top_5,
                         sum(1) as games_played
-                    from game_view
-                    where year(game_date) = 2023
-                    and month(game_date) = 4
-                    and game_date < date_add(current_date, interval 1 day)
-                    and guild_nm = 'nerd city'
-                    and game_name = 'mini'
-                    group by 1,2
+                    FROM game_view
+                    WHERE {guild_condition}
+                    AND {date_condition}
+                    AND {game_condition}
+                    GROUP BY 1,2
                     ) x
         """
 
