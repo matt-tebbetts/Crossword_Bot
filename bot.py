@@ -268,7 +268,6 @@ async def get(ctx, *, time_frame=None):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
-
 # getting missed scores
 @bot.command(name='rescan', description="Rescan the past 30 days of messages for missed scores")
 async def rescan(ctx):
