@@ -240,7 +240,7 @@ async def auto_post():
 async def get(ctx, *, time_frame=None):
     
     # clarify request
-    user_nm = ctx.author.name
+    user_nm = ctx.author.name + "#" + ctx.author.discriminator
     guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
@@ -258,7 +258,6 @@ async def get(ctx, *, time_frame=None):
     date_range = bot_functions.get_date_range(time_frame)
     if date_range is None:
         return await ctx.channel.send("Invalid date range or format. Please try again with a valid date range or keyword (e.g., 'yesterday', 'last week', 'this month', etc.).")
-
     min_date, max_date = date_range
 
     # get the data
