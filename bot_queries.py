@@ -62,8 +62,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 x.player_name,
                 x.points,
                 x.wins,
-                x.top_3,
-                x.games_played / max(x.games_played) over() as participation
+                CONCAT(ROUND(x.top_3 * 100, 1), '%') as top_3,
+                CONCAT(ROUND((x.games_played / max(x.games_played) over()) * 100, 1), '%') as participation
             FROM
                     (
                     SELECT 
