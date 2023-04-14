@@ -168,7 +168,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
         title_date = get_mini_date() if game_name == 'mini' else min_date.strftime("%Y-%m-%d")
     else:
         title_date = f"{min_date} through {max_date}"
-    
+
     # determine leaderboard query to run
     cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
 
@@ -184,13 +184,12 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     df = pd.DataFrame(rows, columns=cols)
 
     # clean the rank column
-    df['rank'] = df['rank'].fillna('').astype(str)
-    df['rank'] = df['rank'].apply(lambda x: x.rstrip('.0') if x != '' else x)
+    df['Rank'] = df['Rank'].fillna('').astype(str)
+    df['Rank'] = df['Rank'].apply(lambda x: x.rstrip('.0') if x != '' else x)
 
     # create image
     img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm
     img = bot_camera.dataframe_to_image_dark_mode(df, img_title=img_title, img_subtitle=title_date)
-    logger.debug(f'Created image of dataframe for {game_name} leaderboard.')
     return img
 
 # add discord scores to database when people paste them to discord chat
@@ -244,7 +243,6 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             if line[4] == '🐸':
                 g5 = 1
         metric_03 = g1 + g2 + g3 + g4 + g5
-        logger.debug(f"got {metric_03} green frogs")
 
         # get top X% denoting a win
         final_line = lines[-1]
@@ -271,7 +269,6 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             if line.find(check_mark) >= 0:
                 movies_guessed += 1
 
-        logger.debug(f"{movies_guessed} correctly guessed")
         metric_01 = movies_guessed
 
     if game_prefix == 'atlantic':

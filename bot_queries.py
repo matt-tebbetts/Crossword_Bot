@@ -7,7 +7,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
 
     # all games: winners only
     if game_name == 'winners':
-        cols = ['game', 'date', 'winner', 'score']
+        cols = ['Game', 'Date', 'Winner', 'Score']
         query = f"""
             SELECT 
                 game_name,
@@ -23,7 +23,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
     # all games: single user, single date ## technically this will run with multiple dates FIX IT
     elif game_name == 'my_scores':
-        cols = ['game', 'player', 'score', 'rank']
+        cols = ['Game', 'Player', 'Score', 'Rank']
         query = f"""
             SELECT 
                 game_name,
@@ -46,7 +46,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
     # specific game: single date
     elif min_date == max_date:  
-        cols = ['rank', 'player', 'score', 'points']
+        cols = ['Rank', 'Player', 'Score', 'Points']
         query = f"""
             SELECT 
                 game_rank,
