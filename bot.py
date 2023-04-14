@@ -236,12 +236,13 @@ async def auto_post():
 # ****************************************************************************** #
 
 # command to get other leaderboards (only mini is working right now)
-@bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice'])
+@bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners'])
 async def get(ctx, *, time_frame=None):
     
     # clarify request
     user_id = ctx.author.name
     guild_id = str(ctx.guild.id)
+    guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
     
     # default time_frame to 'today' if not provided
@@ -251,7 +252,7 @@ async def get(ctx, *, time_frame=None):
     time_frame = str.lower(time_frame)
 
     # print
-    logger.debug(f"{user_id} requested {game_name} leaderboard for {time_frame}.")
+    logger.debug(f"{guild_nm} user {user_id} requested {game_name} leaderboard for {time_frame}.")
 
     # get the min_date and max_date based on the user's input
     date_range = bot_functions.get_date_range(time_frame)

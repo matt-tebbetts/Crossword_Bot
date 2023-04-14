@@ -40,7 +40,6 @@ def get_main_channel_for_guild(guild_id):
     else:
         return None
 
-
 # find main channel id for each guild (old)
 def get_bot_channels():
     engine = create_engine(sql_addr)
@@ -170,10 +169,23 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
     else:
         title_date = f"{min_date} through {max_date}"
     
-    # decide which query to run
-    if min_date == max_date:
+    # determine leaderboard query to run
+    if game_name == 'winners':  # winners only
+        cols = ['game', 'winner', 'score']
+        query = f"""
+            SELECT 
+                game_name,
+                player_name,
+                game_score
+            FROM game_view
+            WHERE game_rank = 1
+            AND guild_id = :guild_id
+            AND game_date = :min_date
+            ORDER BY game_rank;
+        """
+
+    elif min_date == max_date:  # single date leaderboard
         
-        # single date
         cols = ['rank', 'player', 'score', 'points']
         query = f"""
             SELECT 
@@ -183,14 +195,12 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
                 points
             FROM game_view
             WHERE guild_id = :guild_id
-            AND game_name = :game_name 
-            AND game_date BETWEEN :min_date AND :max_date
+            AND game_date = :min_date
             ORDER BY game_rank;
         """
-    else:
-        
-        # date range THIS SHOULD BE A BETTER LEADERBOARD TABLE
-        cols = ['rank', 'player', 'best', 'points']
+
+    else:  # date range leaderboard
+        cols = ['rank', 'player', 'points']
         query = f"""
         SELECT
             DENSE_RANK() OVER(ORDER BY X.points DESC) as game_rank,
@@ -199,7 +209,6 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
                 (
                 SELECT 
                     player_name,
-                    min(game_score) as best_score,
                     sum(points) as points
                 FROM game_view
                 WHERE guild_id = :guild_id
@@ -208,7 +217,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None):
                 GROUP BY 1
                 ) X
         """
-    
+        
     # run the query
     result = connection.execute(text(query), 
                                             {"guild_id": guild_id, 
