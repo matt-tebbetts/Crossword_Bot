@@ -22,7 +22,7 @@ def dataframe_to_image_dark_mode(df,
 
     # Load font
     font_path = 'C:/Windows/Fonts/arial.ttf' if host_nm == "MJT" else '/usr/share/fonts/truetype/ARIAL.TTF'
-    font_size = 16
+    font_size = 18
     font = ImageFont.truetype(font_path, font_size)
 
     # Temporary image and draw object for calculating column widths

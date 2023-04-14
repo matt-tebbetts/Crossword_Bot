@@ -1,22 +1,69 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+import os
+import re
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
+import pytz
+from io import StringIO
+from config import credentials, sql_addr
+from sqlalchemy import create_engine
 
-options = Options()
-options.headless = True
-options.add_argument("--window-size=1920,1200")
+# The URL to be scraped
+url = "http://nyt.aromatt.net/times/"
 
-# Change the path to the Chrome webdriver on your system
-driver_path = "C:/Users/matt_/chromedriver.exe"
-service = Service(executable_path=driver_path)
-driver = webdriver.Chrome(service=service, options=options)
+# Fetch the HTML content using requests
+response = requests.get(url)
 
-url = "https://public.tableau.com/app/profile/matthew.tebbetts/viz/Mini_16795384393570/Leaderboard?publish=yes"
-driver.get(url)
+# Initialize an empty DataFrame to store the data
+combined_df = pd.DataFrame()
 
-# Give some time for the Tableau Public page to load
-driver.implicitly_wait(60)
+if response.status_code == 200:
+    # Parse the HTML content using Beautiful Soup
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    # Find all 'a' tags with an href attribute containing '.csv'
+    csv_links = soup.find_all('a', href=re.compile(r'\.csv'))
 
-screenshot_path = "files/images/tableau_screenshot.png"
-driver.save_screenshot(screenshot_path)
-driver.quit()
+    # Iterate through the CSV links
+    for link in csv_links:
+        # Extract the CSV URL and file name
+        csv_url = os.path.join(url, link['href'])
+        file_name = link['href']
+
+        # Extract the date from the file name
+        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', file_name)
+        game_date = date_match.group(1) if date_match else None
+
+        # Download the CSV and read it into a DataFrame
+        csv_response = requests.get(csv_url)
+        csv_content = csv_response.content.decode('utf-8')
+
+        # Create a DataFrame from the CSV content
+        df = pd.read_csv(StringIO(csv_content))
+
+        # Add a 'game_date' column
+        df['game_date'] = game_date
+
+        # Convert the current time to Eastern Time and add an 'added_ts' column
+        eastern = pytz.timezone('US/Eastern')
+        added_ts = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Rename and reorder columns
+        df = df.rename(columns={'name': 'player_id', 'time': 'game_time'})
+        df['player_id'] = df['player_id'].str.lower()
+        df = df[['game_date', 'player_id', 'game_time']]
+
+        # Append the DataFrame to the combined DataFrame
+        combined_df = pd.concat([combined_df, df], ignore_index=True)
+
+    # add timestamp
+    combined_df['added_ts'] = added_ts
+    combined_df.to_csv('files/test.csv', index=False)
+
+    engine = create_engine(sql_addr)
+    combined_df.to_sql('mini_history', engine, if_exists='append', index=False)
+
+    print("ok, done")
+else:
+    print(f"Failed to fetch the URL. Status code: {response.status_code}")
