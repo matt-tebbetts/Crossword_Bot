@@ -236,11 +236,11 @@ async def auto_post():
 # ****************************************************************************** #
 
 # command to get other leaderboards (only mini is working right now)
-@bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners'])
+@bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
 async def get(ctx, *, time_frame=None):
     
     # clarify request
-    user_id = ctx.author.name
+    user_nm = ctx.author.name
     guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
@@ -252,7 +252,7 @@ async def get(ctx, *, time_frame=None):
     time_frame = str.lower(time_frame)
 
     # print
-    logger.debug(f"{guild_nm} user {user_id} requested {game_name} leaderboard for {time_frame}.")
+    logger.debug(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
 
     # get the min_date and max_date based on the user's input
     date_range = bot_functions.get_date_range(time_frame)
@@ -263,7 +263,7 @@ async def get(ctx, *, time_frame=None):
 
     # get the data
     try:
-        img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date)
+        img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
         await ctx.channel.send(file=discord.File(img))
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
