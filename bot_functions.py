@@ -159,13 +159,18 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     logger.debug(f'Connected to database using {sql_addr}')
     today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
 
+
     # if no date range, use default
     if min_date is None and max_date is None:
         min_date, max_date = today, today
 
     # get date range to print on subtitle
     if min_date == max_date:
-        title_date = get_mini_date() if game_name == 'mini' else min_date.strftime("%Y-%m-%d")
+        if game_name == 'mini':
+            min_date = max_date = get_mini_date()
+            title_date = get_mini_date().strftime("%Y-%m-%d")
+        else:
+            title_date = min_date.strftime("%Y-%m-%d")
     else:
         title_date = f"{min_date} through {max_date}"
 

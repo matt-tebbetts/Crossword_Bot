@@ -4,7 +4,7 @@ import socket
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 import bot_functions
-from config import credentials, sql_addr
+from config import sql_addr
 
 # discord
 import discord
@@ -12,16 +12,16 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Converter, Context
 from discord import Embed
 
-# standard
+# data processing
 import logging
 import numpy as np
 import pandas as pd
 import pytz
-from datetime import date, datetime, timedelta
+import json
 
 # timing and scheduling
+from datetime import date, datetime, timedelta
 import asyncio
-from asyncio import Lock
 
 # environment variables
 load_dotenv()
@@ -39,15 +39,13 @@ logger.addHandler(file_handler)
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 
+
 # bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
 bot_channels = bot_functions.get_bot_channels()
 
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
-
-# helps lock tasks?
-task_lock = Lock()
 
 # accept multiple words in command arguments/parameters?
 class BracketSeparatedWords(Converter):
@@ -180,7 +178,7 @@ async def auto_fetch():
 
 # post daily mini warning
 async def post_warning():
-    async with task_lock:
+    async with asyncio.Lock():
         await asyncio.sleep(5)
 
         # post warning in each active channel for each guild
@@ -192,7 +190,7 @@ async def post_warning():
 
 # post daily mini final
 async def post_mini():
-    async with task_lock:
+    async with asyncio.Lock():
         await asyncio.sleep(5)
 
         # only one game
