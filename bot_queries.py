@@ -18,7 +18,14 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
             WHERE {guild_condition}
             AND {date_condition}
             and game_rank = 1
-            ORDER BY game_name, game_date desc;
+            ORDER BY 
+                case    when game_name = 'mini'      then 1
+                        when game_name = 'boxoffice' then 2
+                        when game_name = 'worldle'   then 3
+                        when game_name = 'wordle'    then 4
+                        when game_name = 'factle'    then 5
+                        else 9
+                end asc, game_date desc;
         """
     
     # all games: single user, single date ## technically this will run with multiple dates FIX IT
@@ -36,8 +43,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
             AND {user_condition}
             ORDER BY 
                 case    when game_name = 'mini'      then 1
-                        when game_name = 'worldle'   then 2
-                        when game_name = 'boxoffice' then 3
+                        when game_name = 'boxoffice' then 2
+                        when game_name = 'worldle'   then 3
                         when game_name = 'wordle'    then 4
                         when game_name = 'factle'    then 5
                         else 9

@@ -184,8 +184,8 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     df = pd.DataFrame(rows, columns=cols)
 
     # clean the rank column
-    df['Rank'] = df['Rank'].fillna('').astype(str)
-    df['Rank'] = df['Rank'].apply(lambda x: x.rstrip('.0') if x != '' else x)
+    if 'Rank' in df.columns:
+        df['Rank'] = df['Rank'].fillna('').astype(str).apply(lambda x: x.rstrip('.0') if '.' in x and x != '' else x)
 
     # create image
     img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm
