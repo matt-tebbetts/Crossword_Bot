@@ -160,11 +160,6 @@ async def auto_fetch():
     bot_functions.get_mini()
     logger.debug("Got latest mini scores from NYT")
 
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now.hour > cutoff_hour or now.hour < 7:
-        return
-
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
         changed = bot_functions.mini_leader_changed(guild.id)
@@ -235,7 +230,7 @@ async def auto_post():
 # end tasks
 # ****************************************************************************** #
 
-# command to get other leaderboards (only mini is working right now)
+# get leaderboards
 @bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
 async def get(ctx, *, time_frame=None):
     
