@@ -39,7 +39,6 @@ logger.addHandler(file_handler)
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 
-
 # bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
 bot_channels = bot_functions.get_bot_channels()

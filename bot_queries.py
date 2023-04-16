@@ -5,13 +5,12 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     game_condition = "game_name = :game_name"
     user_condition = "discord_id = :user_nm"
 
-    # all games: winners only
-    if game_name == 'winners':
-        cols = ['Game', 'Date', 'Winner', 'Score']
+    # all games, winners only, single date
+    if game_name == 'winners' and min_date == max_date:
+        cols = ['Game', 'Winner', 'Score']
         query = f"""
             SELECT 
                 game_name,
-                game_date,
                 player_name,
                 game_score
             FROM game_view
@@ -28,6 +27,46 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 end asc, game_date desc;
         """
     
+    # all games, winners only, range of dates
+    elif game_name == 'winners' and min_date != max_date:
+        cols = ['Game', 'Leader', 'Points', 'Wins', 'Top 3', 'Played']
+        query = f"""
+            SELECT 
+	            game_name,
+                player_name,
+                points,
+                wins,
+                top_3,
+                participation
+            FROM
+                    (
+                    SELECT
+                        x.game_name,
+                        dense_rank() over(partition by game_name order by points desc) as overall_rank,
+                        x.player_name,
+                        x.points,
+                        x.wins,
+                        CONCAT(ROUND(x.top_3 * 100), '%') as top_3,
+                        CONCAT(ROUND((x.games_played / max(x.games_played) over()) * 100), '%') as participation
+                    FROM
+                            (
+                            SELECT 
+                                game_name,
+                                player_name,
+                                sum(points) as points,
+                                sum(case when game_rank = 1 then 1 else 0 end) as wins,
+                                sum(case when game_rank <= 3 then 1 else 0 end) / sum(1.0) as top_3,
+                                sum(case when game_rank <= 5 then 1 else 0 end) / sum(1.0) as top_5,
+                                sum(1) as games_played
+                            FROM game_view
+                            WHERE {guild_condition}
+                            AND {date_condition}
+                            GROUP BY 1,2
+                            ) x
+                    ) z
+            where z.overall_rank = 1
+        """
+
     # all games: single user, single date ## technically this will run with multiple dates FIX IT
     elif game_name == 'my_scores':
         cols = ['Game', 'Player', 'Score', 'Rank']
