@@ -14,21 +14,8 @@ YOUTUBE_URL_REGEX = r'(https?://)?(www\.)?(youtube\.com|youtu\.?be)/\S+'
 
 
 def youtube_auth():
-    if os.path.exists(CREDENTIALS_FILE):
-        # Load the stored credentials from the file
-        credentials = Credentials.from_authorized_user_file(CREDENTIALS_FILE)
-    else:
-        # Prompt the user for authorization
-        flow = InstalledAppFlow.from_client_info(json.loads(YOUTUBE_CLIENT_SECRET), SCOPES)
-        credentials = flow.run_local_server(port=0)
-        
-        # Save the credentials to the file for future use
-        with open(CREDENTIALS_FILE, 'w') as credentials_file:
-            credentials_file.write(credentials.to_json())
-        print(f"Credentials saved to {CREDENTIALS_FILE}")
-
-    return credentials
-
+    flow = InstalledAppFlow.from_client_config(YOUTUBE_CLIENT_SECRET, YOUTUBE_SCOPES)
+    return flow.run_console()
 
 
 def create_youtube_playlist(youtube, title, description):
