@@ -69,9 +69,9 @@ def get_mini_date():
     now = datetime.now(pytz.timezone('US/Eastern'))
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
     if now.hour > cutoff_hour:
-        return (now + timedelta(days=1)).strftime("%Y-%m-%d")
+        return (now + timedelta(days=1)).date()
     else:
-        return now.strftime("%Y-%m-%d")
+        return now.date()
 
 # save mini to database
 def get_mini():
@@ -95,7 +95,7 @@ def get_mini():
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
     df['player_id'] = df['player_id'].str.lower()
-    df.insert(0, 'game_date', get_mini_date())
+    df.insert(0, 'game_date', get_mini_date().strftime("%Y-%m-%d"))
     df['added_ts'] = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
 
     # send to database
