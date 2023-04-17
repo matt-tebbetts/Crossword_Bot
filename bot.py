@@ -254,12 +254,18 @@ async def get(ctx, *, time_frame=None):
 
     # get the data
     try:
-        # run mini first, since it's the only one that needs to be run
+        
+        # run new mini before pulling leaderboard
         if game_name == 'mini':
-            mini_response = bot_functions.get_mini()
+            bot_functions.get_mini()
             logger.debug(f"Got latest mini scores from NYT")
-            img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
+        
+        # pull leaderboard
+        img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
+        
+        # send it
         await ctx.channel.send(file=discord.File(img))
+
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
