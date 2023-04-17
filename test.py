@@ -1,39 +1,29 @@
-import os
-import discord
-from discord import Intents
-from dotenv import load_dotenv
-from playlist_creator import create_playlist_from_discord_history
+# test.py
+import bot
+import bot_functions
 import asyncio
-
-load_dotenv()
-
-DISCORD_TOKEN = os.getenv('CROSSWORD_BOT')
-THREAD_ID = 1072246720580296736
-
-intents = Intents.all()
-intents.typing = False
-intents.presences = False
-
-client = discord.Client(intents=intents)
+import discord
+import os
+from types import SimpleNamespace
 
 async def main():
-    await client.start(DISCORD_TOKEN)
+    # Create a mock context object with the required attributes
+    ctx = SimpleNamespace()
+    ctx.author = SimpleNamespace(name="JohnDoe", discriminator="1234")
+    ctx.guild = SimpleNamespace(id=672233217985871908, name="ExampleGuild")
+    ctx.invoked_with = "mini"
 
-@client.event
-async def on_ready():
-    print(f'Logged in as {client.user}')
+    # Set the time_frame for the /mini command
+    time_frame = "today"
 
-    # Get the thread using the hardcoded ID
-    thread = await client.fetch_channel(THREAD_ID)
+    # Call the get function
+    await bot.get(ctx, time_frame=time_frame)
 
-    if thread:
-        # Call the create_playlist_from_discord_history function
-        await create_playlist_from_discord_history(thread, "Test Playlist 2", "Test playlist created from Discord chat history")
-        print("Playlist creation process completed.")
-    else:
-        print(f"Thread with ID '{THREAD_ID}' not found.")
+    # Save the output image to a file
+    image_path = os.path.join("files", "images", "leaderboard.png")
+    img = bot_functions.get_leaderboard(ctx.guild.id, ctx.invoked_with, min_date, max_date, None)
+    img.save(image_path)
+    print(f"Image saved to {image_path}")
 
-    # Close the Discord connection
-    await client.close()
-
+# Run the main function using asyncio
 asyncio.run(main())
