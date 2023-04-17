@@ -29,7 +29,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
     # all games, winners only, range of dates
     elif game_name == 'winners' and min_date != max_date:
-        cols = ['Game', 'Leader', 'Points', 'Wins', 'Top 3', 'Played']
+        cols = ['Game', 'Leader', 'Points', 'Wins', 'Top 3', 'Games', 'Played']
         query = f"""
             SELECT 
 	            game_name,
@@ -47,6 +47,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         x.points,
                         x.wins,
                         CONCAT(ROUND(x.top_3 * 100), '%') as top_3,
+                        max(x.games_played) over(partition by x.game_name) as total_games,
                         CONCAT(ROUND((x.games_played / max(x.games_played) over(partition by x.game_name)) * 100), '%') as participation
                     FROM
                             (
