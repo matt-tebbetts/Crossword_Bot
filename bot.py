@@ -241,7 +241,6 @@ async def get(ctx, *, time_frame=None):
     # default time_frame to 'today' if not provided
     if time_frame is None:
         time_frame = 'today'
-
     time_frame = str.lower(time_frame)
 
     # print
@@ -255,7 +254,11 @@ async def get(ctx, *, time_frame=None):
 
     # get the data
     try:
-        img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
+        # run mini first, since it's the only one that needs to be run
+        if game_name == 'mini':
+            mini_response = bot_functions.get_mini()
+            logger.debug(f"Got latest mini scores from NYT")
+            img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
         await ctx.channel.send(file=discord.File(img))
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
@@ -295,7 +298,7 @@ async def process_missed_scores(ctx, days):
         if game_prefix is None:
             continue
         
-        # see if it's already been added ## SHOULD EDIT THIS AND ADD EVEN IF IT'S BEEN REACTED TO
+        # see if it's already been added
         score_already_added = False
         for reaction in message.reactions:
             if reaction.me:
@@ -316,7 +319,8 @@ async def process_missed_scores(ctx, days):
         emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
         await message.add_reaction(emoji)
 
-        asyncio.sleep(1)
+        # wait a second
+        await asyncio.sleep(1)
 
     await ctx.send(f"Added {missing_scores_added} missing scores.")
 

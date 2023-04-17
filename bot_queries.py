@@ -37,6 +37,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 points,
                 wins,
                 top_3,
+                total_games,
                 participation
             FROM
                     (
