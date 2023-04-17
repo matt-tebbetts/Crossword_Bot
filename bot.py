@@ -11,6 +11,7 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Converter, Context
 from discord import Embed
+from discord import app_commands  # trying new method
 
 # data processing
 import logging
