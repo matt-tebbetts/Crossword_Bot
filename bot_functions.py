@@ -146,7 +146,7 @@ def get_date_range(user_input):
         else:
             dates = [parse_date(d.strip()) for d in user_input.split(':')]
             min_date, max_date = (dates[0], dates[-1]) if len(dates) > 1 else (dates[0], dates[0])
-
+# if you find this comment, you win a prize!
     except(ValueError, TypeError):
         return None
     
