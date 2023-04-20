@@ -5,6 +5,9 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     game_condition = "game_name = :game_name"
     user_condition = "discord_id = :user_nm"
 
+    # check for date range first
+    # has_date_range = (min_date != max_date)
+
     # all games, winners only, single date
     if game_name == 'winners' and min_date == max_date:
         cols = ['Game', 'Winner', 'Score']
@@ -110,14 +113,16 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
 
     # specific game: date range
     else:  
-        cols = ['Rank', 'Player', 'Points', 'Wins', 'Top 3', 'Played']
+        cols = ['Rank', 'Player', 'Points', 'Wins', 'Top 3', 'Games', 'Played']
         query = f"""
             SELECT
                 dense_rank() over(order by points desc) as overall_rank,
                 x.player_name,
                 x.points,
                 x.wins,
+                x.games_played,
                 CONCAT(ROUND(x.top_3 * 100), '%') as top_3,
+                max(x.games_played) over(partition by x.game_name) as total_games,
                 CONCAT(ROUND((x.games_played / max(x.games_played) over()) * 100), '%') as participation
             FROM
                     (

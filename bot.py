@@ -63,6 +63,10 @@ emoji_map = {
             'boxofficega.me': '🎥'
         }
 
+# ****************************************************************************** #
+# connecting
+# ****************************************************************************** #
+
 # connect
 @bot.event
 async def on_connect():
@@ -199,7 +203,10 @@ async def post_mini():
         # post warning in each guild
         for guild in bot.guilds:
             logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
-            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name)
+
+            last_mini_date = bot_functions.get_mini_date() - timedelta(days=1)
+
+            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=last_mini_date, max_date=last_mini_date)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
@@ -257,9 +264,11 @@ async def get(ctx, *, time_frame=None):
         
         # run new mini before pulling leaderboard
         if game_name == 'mini':
-            bot_functions.get_mini()
+            mini_response = bot_functions.get_mini()
             logger.debug(f"Got latest mini scores from NYT")
         
+        asyncio.sleep(1) # wait a second before running query
+
         # pull leaderboard
         img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
         
@@ -277,7 +286,6 @@ async def rescan(ctx):
     days = 30
     logger.debug(f"User {user_id} requested rescan in channel {ctx.channel.name}")
     await process_missed_scores(ctx, days)
-
 
 # actually getting them
 async def process_missed_scores(ctx, days):
@@ -329,7 +337,6 @@ async def process_missed_scores(ctx, days):
         await asyncio.sleep(1)
 
     await ctx.send(f"Added {missing_scores_added} missing scores.")
-
 
 # run bot
 bot.run(TOKEN)
