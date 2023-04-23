@@ -204,9 +204,9 @@ async def post_mini():
         for guild in bot.guilds:
             logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
 
-            last_mini_date = bot_functions.get_mini_date() - timedelta(days=1)
+            today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
 
-            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=last_mini_date, max_date=last_mini_date)
+            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
