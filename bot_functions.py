@@ -161,17 +161,16 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
 
     # if no date range, use default
     if min_date is None and max_date is None:
-        min_date, max_date = today, today
+        if game_name == 'mini':
+            min_date = max_date = get_mini_date().strftime("%Y-%m-%d")
+        else:
+            min_date, max_date = today, today
     else:
         # Convert min_date and max_date to strings if they are not None
         if min_date is not None:
             min_date = min_date.strftime("%Y-%m-%d")
         if max_date is not None:
             max_date = max_date.strftime("%Y-%m-%d")
-
-    # if today mini, find proper date
-    if game_name == 'mini' and (min_date is None or min_date == today):
-        min_date = max_date = get_mini_date().strftime("%Y-%m-%d")
     
     # format the title
     if min_date == max_date:
