@@ -154,7 +154,7 @@ async def on_message(message):
 # tasks
 # ****************************************************************************** #
 
-# every few minutes check for mini (set to 15 for now)
+# check nyt mini leaderboard every minute
 @tasks.loop(minutes=1)
 async def auto_fetch():
 
