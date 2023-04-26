@@ -204,7 +204,7 @@ async def post_mini():
         for guild in bot.guilds:
             logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
 
-            today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
+            today = datetime.now(pytz.timezone('US/Eastern'))
 
             img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
             for channel in guild.channels:
