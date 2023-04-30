@@ -3,7 +3,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     guild_condition = "guild_id = :guild_id"
     date_condition = "game_date BETWEEN :min_date AND :max_date"
     game_condition = "game_name = :game_name"
-    user_condition = "discord_id = :user_nm"
+    user_condition = "member_nm = :user_nm"
 
     # check for date range first
     # has_date_range = (min_date != max_date)
