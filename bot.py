@@ -4,6 +4,7 @@ import socket
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 import bot_functions
+from bot_camera import dataframe_to_image_dark_mode
 from config import sql_addr
 
 # discord
@@ -53,6 +54,17 @@ class BracketSeparatedWords(Converter):
         # return argument.split("[")[1].split("]")[0].split()
         argument = argument.strip("[]")
         return argument.split()
+
+# set game names and prefixes
+game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic']
+game_prefix_dict = {
+    'worldle': '#Worldle',
+    'travle': '#travle',
+    'factle': 'Factle.app',
+    'boxoffice': 'boxofficega.me',
+    'wordle': 'Wordle',
+    'atlantic': 'Atlantic',
+}
 
 # emoji map for confirming game scores
 emoji_map = {
@@ -127,26 +139,28 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # get message detail
-    game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
     msg_text = str(message.content)
-    user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
 
-    # check all potential score posts
-    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic', '#travle']
-    for game_prefix in pref_list:
+    # check for game score
+    for game_prefix in game_prefixes:
+
+        # find prefix
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
+
+            # get message detail
+            game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
+            user_id = message.author.name + "#" + message.author.discriminator
             logger.debug(f"{user_id} posted a score for {game_prefix}")
 
-            if game_prefix in ['Atlantic', 'The Atlantic', 'atlantic']:
-                game_prefix = 'atlantic'
-
             # send to score scraper
-            response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+            response = bot_functions.add_score(str.lower(game_prefix), game_date, user_id, msg_text)
 
             # react with proper emoji
             emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
             await message.add_reaction(emoji)
+        
+            # exit the loop since we found the prefix
+            break
 
     # run the message check
     await bot.process_commands(message)
@@ -237,7 +251,7 @@ async def auto_post():
 # ****************************************************************************** #
 
 # get leaderboards
-@bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
+@bot.command(name='get', aliases=['mini', 'travle', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
 async def get(ctx, *, time_frame=None):
     
     # clarify request
@@ -280,24 +294,45 @@ async def get(ctx, *, time_frame=None):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
-# getting missed scores
+# request rescan of scores
 @bot.command(name='rescan', description="Rescan the past 30 days of messages for missed scores")
-async def rescan(ctx):
+async def rescan(ctx, game_name=None):
+    
+    # get info
     user_id = ctx.author.name + "#" + ctx.author.discriminator
-    days = 30
-    logger.debug(f"User {user_id} requested rescan in channel {ctx.channel.name}")
-    await process_missed_scores(ctx, days)
+    days = 90
+    print(f"rescan of {game_name} requested by {user_id} for past {days} days")
 
-# actually getting them
-async def process_missed_scores(ctx, days):
+    # check game
+    if game_name is None:
+        games_list = "\n".join(list(game_prefix_dict.values()))
+        await ctx.send(f"This function requires a game_name parameter. Please enter one of the following game names:\n{games_list}")
+        return
+    elif game_name.lower() not in game_prefix_dict:
+        games_list = "\n".join(list(game_prefix_dict.keys()))
+        await ctx.send(f"Invalid game name. Please enter one of the following game names:\n{games_list}")
+        return
+    else:
+        game_prefix = game_prefix_dict[game_name.lower()]
+
+    await ctx.send(f"Rescanning for {game_name} scores in the past {days} days...")
+    await process_missed_scores(ctx, days, game_prefix)
+
+# loop through messages to find scores
+async def process_missed_scores(ctx, days, game_prefix):
     today = datetime.now(pytz.timezone('US/Eastern'))
+    since = today - timedelta(days=days)
     
-    # keep track
-    missing_scores_added = 0
-    
+    # Initialize DataFrame
+    columns = ['Player', 'Scores Added']
+    df = pd.DataFrame(columns=columns)
+
     # scan messages
-    async for message in ctx.channel.history(before=today):  # after=since):
+    async for message in ctx.channel.history(before=today, after=since):
         
+        # wait 1 second to avoid rate limiting
+        await asyncio.sleep(1)
+
         # ignore bot messages
         if message.author == bot.user:
             continue
@@ -305,39 +340,42 @@ async def process_missed_scores(ctx, days):
         # ignore other channels
         if message.channel.name not in active_channel_names:
             continue
-        
+
+        # get info
+        user_id = message.author.name + "#" + message.author.discriminator
+        game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime('%Y-%m-%d')
+        msg_text = str.lower(str(message.content))
+
+        # Print message details
+        print(f"Message content: game_date: {game_date}, msg_text: {msg_text[:10]}")
+
         # check to see if it's a game score
-        msg_text = str(message.content)
-        pref_list = ['#travle', '#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
-        game_prefix = next((p for p in pref_list if str.lower(msg_text).startswith(str.lower(p))), None)
-        if game_prefix is None:
-            continue
-        
-        # see if it's already been added
-        score_already_added = False
-        for reaction in message.reactions:
-            if reaction.me:
-                score_already_added = True
-                break
-    
-        if score_already_added:
+        if not msg_text.startswith(game_prefix):  # Check if the message starts with the game_prefix
             continue
 
         # add the score
-        user_id = message.author.name + "#" + message.author.discriminator
-        game_date = message.created_at.strftime('%Y-%m-%d')
         response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
-        logger.debug(f"Added score from {game_date}, {game_prefix}, {user_id}")
-        missing_scores_added += 1
+        print(f"Response from add_score: {response}")
+
+        # add to counter
+        if user_id in df['Player'].values:
+            df.loc[df['Player'] == user_id, 'Scores Added'] += 1
+        else:
+            # Add a new row to the DataFrame
+            new_row = pd.DataFrame({'Player': [user_id], 'Scores Added': [1]})
+            df = pd.concat([df, new_row], ignore_index=True)
 
         # determine response emoji if response is not True
         emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
         await message.add_reaction(emoji)
 
-        # wait a second
-        await asyncio.sleep(1)
+    # get image of dataframe from custom function
+    img = dataframe_to_image_dark_mode(df, 
+                                       img_filepath='files/images/rescan.png', 
+                                       img_title=f"Rescan for {game_prefix}",
+                                       img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
-    await ctx.send(f"Added {missing_scores_added} missing scores.")
+    await ctx.channel.send(file=discord.File(img))
 
 # run bot
 bot.run(TOKEN)
