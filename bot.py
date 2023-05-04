@@ -54,6 +54,8 @@ class BracketSeparatedWords(Converter):
         argument = argument.strip("[]")
         return argument.split()
 
+game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
+
 # emoji map for confirming game scores
 emoji_map = {
             '#worldle': '🌎',
@@ -133,8 +135,7 @@ async def on_message(message):
     user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
 
     # check all potential score posts
-    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic', '#travle']
-    for game_prefix in pref_list:
+    for game_prefix in game_prefixes:
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
             logger.debug(f"{user_id} posted a score for {game_prefix}")
 
@@ -237,7 +238,7 @@ async def auto_post():
 # ****************************************************************************** #
 
 # get leaderboards
-@bot.command(name='get', aliases=['mini', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
+@bot.command(name='get', aliases=['mini', 'travle', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
 async def get(ctx, *, time_frame=None):
     
     # clarify request
@@ -308,8 +309,7 @@ async def process_missed_scores(ctx, days):
         
         # check to see if it's a game score
         msg_text = str(message.content)
-        pref_list = ['#travle', '#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
-        game_prefix = next((p for p in pref_list if str.lower(msg_text).startswith(str.lower(p))), None)
+        game_prefix = next((p for p in game_prefixes if str.lower(msg_text).startswith(str.lower(p))), None)
         if game_prefix is None:
             continue
         
