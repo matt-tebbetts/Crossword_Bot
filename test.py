@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import json
 import pandas as pd
 
-tickers = ['SHOP', 'AMZN', 'NVDA', 'AMD', 'ROL', 'BXC', 'TREX', 'GOOGL', 'AI', 'PLTR', 'SNOW', 'TSLA', 'AAPL', 'MSFT', 'META', 'NFLX', 'SQ', 'PYPL', 'ZM', 'UBER', 'LYFT']
+tickers = ['SHOP', 'AMZN'] #, 'NVDA', 'AMD', 'ROL', 'BXC', 'TREX', 'GOOGL', 'AI', 'PLTR', 'SNOW', 'TSLA', 'AAPL', 'MSFT', 'META', 'NFLX', 'SQ', 'PYPL', 'ZM', 'UBER', 'LYFT']
 dataframes = []
 
 for ticker in tickers:
