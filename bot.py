@@ -308,7 +308,7 @@ async def process_missed_scores(ctx, days):
         
         # check to see if it's a game score
         msg_text = str(message.content)
-        pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
+        pref_list = ['#travle', '#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
         game_prefix = next((p for p in pref_list if str.lower(msg_text).startswith(str.lower(p))), None)
         if game_prefix is None:
             continue
