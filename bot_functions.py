@@ -232,6 +232,19 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             game_score = msg_txt[11:14]
             metric_02 = 1 if game_score[0] != 'X' else 0
 
+    if game_prefix == "#travle":
+        game_name = 'travle'
+
+        # find position of opening and closing parentheses
+        opening_paren = msg_txt.find('(')
+        closing_paren = msg_txt.find(')')
+
+        # get substring between parentheses
+        game_score = msg_txt[opening_paren+1:closing_paren]
+
+        # set metric_02 based on first character of game_score
+        metric_02 = 1 if game_score[0] != 'X' else 0
+
     if game_prefix == "Factle.app":
         game_name = "factle"
         game_score = msg_txt[14:17]
