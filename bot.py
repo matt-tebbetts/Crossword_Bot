@@ -132,7 +132,7 @@ async def on_message(message):
     user_id = message.author.name + "#" + message.author.discriminator #str(message.author.display_name)
 
     # check all potential score posts
-    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic']
+    pref_list = ['#Worldle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'The Atlantic', '#travle']
     for game_prefix in pref_list:
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
             logger.debug(f"{user_id} posted a score for {game_prefix}")
