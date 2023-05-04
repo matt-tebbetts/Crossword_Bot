@@ -56,10 +56,11 @@ class BracketSeparatedWords(Converter):
 
 # emoji map for confirming game scores
 emoji_map = {
-            'worldle': '🌎',
-            '#Worldle': '🌎',
-            'Factle.app': '📈',
-            'Wordle': '📚',
+            '#worldle': '🌎',
+            '#travle': '🌍',
+            'atlantic': '🌊',
+            'factle.app': '📈',
+            'wordle': '📚',
             'boxofficega.me': '🎥'
         }
 
