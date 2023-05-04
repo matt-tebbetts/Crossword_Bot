@@ -153,7 +153,7 @@ async def on_message(message):
             logger.debug(f"{user_id} posted a score for {game_prefix}")
 
             # send to score scraper
-            response = bot_functions.add_score(str.lower(game_prefix), game_date, user_id, msg_text)
+            response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
             emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
@@ -347,7 +347,7 @@ async def process_missed_scores(ctx, days, game_prefix):
         msg_text = str.lower(str(message.content))
 
         # Print message details
-        print(f"Message content: game_date: {game_date}, msg_text: {msg_text[:10]}")
+        print(f"Message content: game_date: {game_date}, msg_text: {msg_text[:20]}")
 
         # check to see if it's a game score
         if not msg_text.startswith(game_prefix):  # Check if the message starts with the game_prefix
