@@ -295,12 +295,15 @@ async def get(ctx, *, time_frame=None):
         await ctx.channel.send(error_message)
 
 # request rescan of scores
-@bot.command(name='rescan', description="Rescan the past 30 days of messages for missed scores")
+@bot.command(name='rescan')
 async def rescan(ctx, game_name=None):
+
+    await scrape_messages()
+    await ctx.send("Scraped last 7 days of game scores to text file")
     
     # get info
     user_id = ctx.author.name + "#" + ctx.author.discriminator
-    days = 90
+    days = 7
     print(f"rescan of {game_name} requested by {user_id} for past {days} days")
 
     # check game
@@ -376,6 +379,31 @@ async def process_missed_scores(ctx, days, game_prefix):
                                        img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
     await ctx.channel.send(file=discord.File(img))
+
+
+# testing new rescan command
+async def scrape_messages():
+
+    # what to scrape
+    list_of_channel_ids = [806881904073900042, 1058057309068197989]
+    one_week_ago = datetime.utcnow() - timedelta(days=7)
+
+    # where to save
+    file_name = 'files/scraped_messages.txt'
+    if os.path.exists(file_name):
+        os.remove(file_name)
+
+    # do it
+    with open(file_name, 'a', encoding='utf-8') as f:
+        for channel_id in list_of_channel_ids:
+            channel = bot.get_channel(channel_id)
+            print(f"Scraping messages from {channel.name}")
+            async for message in channel.history(limit=None, after=one_week_ago):
+                if any(message.content.startswith(prefix) for prefix in game_prefixes):
+                    message_date = message.created_at.strftime("%Y-%m-%d")
+                    author_name = f"{message.author.name}#{message.author.discriminator}"
+                    formatted_message = f"{message_date} - {author_name} - {message.content}\n"
+                    f.write(formatted_message)
 
 # run bot
 bot.run(TOKEN)
