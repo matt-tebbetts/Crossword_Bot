@@ -35,6 +35,10 @@ if response.status_code == 200:
         date_match = re.search(r'(\d{4}-\d{2}-\d{2})', file_name)
         game_date = date_match.group(1) if date_match else None
 
+        # limit which files to pull
+        if game_date < '2023-05-01':
+            continue
+
         # Download the CSV and read it into a DataFrame
         csv_response = requests.get(csv_url)
         csv_content = csv_response.content.decode('utf-8')
@@ -59,7 +63,7 @@ if response.status_code == 200:
 
     # add timestamp
     combined_df['added_ts'] = added_ts
-    combined_df.to_csv('files/test.csv', index=False)
+    combined_df.to_csv('files/mini_backup.csv', index=False)
 
     engine = create_engine(sql_addr)
     combined_df.to_sql('mini_history', engine, if_exists='append', index=False)
