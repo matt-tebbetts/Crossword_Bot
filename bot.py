@@ -1,3 +1,8 @@
+
+# ****************************************************************************** #
+# import packages
+# ****************************************************************************** #
+
 # connections and local python files
 import os
 import socket
@@ -24,6 +29,10 @@ import json
 # timing and scheduling
 from datetime import date, datetime, timedelta
 import asyncio
+
+# ****************************************************************************** #
+# set-up
+# ****************************************************************************** #
 
 # environment variables
 load_dotenv()
@@ -247,7 +256,7 @@ async def auto_post():
         await post_mini()
 
 # ****************************************************************************** #
-# end tasks
+# commands
 # ****************************************************************************** #
 
 # get leaderboards
@@ -282,7 +291,7 @@ async def get(ctx, *, time_frame=None):
             mini_response = bot_functions.get_mini()
             logger.debug(f"Got latest mini scores from NYT")
         
-        asyncio.sleep(1) # wait a second before running query
+        await asyncio.sleep(1) # wait a second before running query
 
         # pull leaderboard
         img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
@@ -294,7 +303,7 @@ async def get(ctx, *, time_frame=None):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
-# request rescan of scores
+# request rescan
 @bot.command(name='rescan')
 async def rescan(ctx, game_name=None):
 
@@ -379,7 +388,6 @@ async def process_missed_scores(ctx, days, game_prefix):
                                        img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
     await ctx.channel.send(file=discord.File(img))
-
 
 # testing new rescan command
 async def scrape_messages():
