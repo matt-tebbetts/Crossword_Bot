@@ -293,7 +293,7 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
         metric_01 = movies_guessed
 
-    if game_prefix == 'atlantic':
+    if game_prefix == 'Atlantic':
         game_name = 'atlantic'
         msg_txt = msg_txt.replace('[', '')
 
@@ -317,6 +317,10 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             r_year = game_date[0:4]
 
         game_date = f'{r_year}-{r_month}-{r_day}'
+
+    if game_prefix == '📷 #WhereTaken':
+        game_name = 'wheretaken'
+        game_score = text.split("\n")[0][-3:]
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
