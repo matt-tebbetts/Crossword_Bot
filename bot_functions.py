@@ -178,15 +178,21 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     # determine leaderboard query to run
     cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
 
-    # run the query
-    result = connection.execute(text(query),
-                                            {"guild_id": guild_id,
-                                            "game_name": game_name,
-                                            "min_date": min_date,
-                                            "max_date": max_date,
-                                            "user_nm": user_nm})
-    rows = result.fetchall()
-    connection.close()
+    try:
+        # run the query
+        result = connection.execute(text(query),
+                                                {"guild_id": guild_id,
+                                                "game_name": game_name,
+                                                "min_date": min_date,
+                                                "max_date": max_date,
+                                                "user_nm": user_nm})
+        rows = result.fetchall()
+        connection.close()
+    except Exception as e:
+        print(f"Error when trying to run SQL query: {e}")
+        img = 'files/error.png'
+        return img
+
     df = pd.DataFrame(rows, columns=cols)
 
     # clean some columns
