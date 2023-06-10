@@ -120,7 +120,7 @@ async def on_ready():
             guild_id = guild.id
             guild_nm = guild.name
             member_id = member.id
-            member_nm = str(member)
+            member_nm = str(member)[:-2] if str(member).endswith("#0") else str(member)
             member_data.append([guild_id, guild_nm, member_id, member_nm, now_txt])
         guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
         all_users = pd.concat([all_users, guild_users], ignore_index=True)
