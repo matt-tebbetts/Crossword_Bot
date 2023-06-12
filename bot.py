@@ -158,7 +158,11 @@ async def on_message(message):
 
             # get message detail
             game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-            user_id = message.author.name + "#" + message.author.discriminator
+            
+            # get discord name
+            author = message.author.name
+            user_id = author[:-2] if author.endswith("#0") else author
+
             logger.debug(f"{user_id} posted a score for {game_prefix}")
 
             # send to score scraper
@@ -264,7 +268,10 @@ async def auto_post():
 async def get(ctx, *, time_frame=None):
     
     # clarify request
-    user_nm = ctx.author.name + "#" + ctx.author.discriminator
+    if ctx.author.discriminator == "0":
+        user_nm = ctx.author.name
+    else:
+        user_nm = ctx.author.name + "#" + ctx.author.discriminator
     guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
@@ -311,7 +318,10 @@ async def rescan(ctx, game_name=None):
     await ctx.send("Scraped last 7 days of game scores to text file")
     
     # get info
-    user_id = ctx.author.name + "#" + ctx.author.discriminator
+    if ctx.author.discriminator == "0":
+        user_id = ctx.author.name
+    else:
+        user_id = ctx.author.name + "#" + ctx.author.discriminator
     days = 7
     print(f"rescan of {game_name} requested by {user_id} for past {days} days")
 
@@ -354,7 +364,10 @@ async def process_missed_scores(ctx, days, game_prefix):
             continue
 
         # get info
-        user_id = message.author.name + "#" + message.author.discriminator
+        if ctx.author.discriminator == "0":
+            user_id = ctx.author.name
+        else:
+            user_id = ctx.author.name + "#" + ctx.author.discriminator
         game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime('%Y-%m-%d')
         msg_text = str.lower(str(message.content))
 
@@ -409,7 +422,10 @@ async def scrape_messages():
             async for message in channel.history(limit=None, after=one_week_ago):
                 if any(message.content.startswith(prefix) for prefix in game_prefixes):
                     message_date = message.created_at.strftime("%Y-%m-%d")
-                    author_name = f"{message.author.name}#{message.author.discriminator}"
+                    if message.author.discriminator == "0":
+                        author_name = message.author.name
+                    else:
+                        author_name = message.author.name + "#" + message.author.discriminator
                     formatted_message = f"{message_date} - {author_name} - {message.content}\n"
                     f.write(formatted_message)
 
