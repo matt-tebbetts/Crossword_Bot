@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 import socket
 
 host_nm = socket.gethostname()
+local_mode = True if "DESKTOP" in str(host_nm) or "MJT" in str(host_nm) else False
 
 # returns the image filepath
 def dataframe_to_image_dark_mode(df, 
@@ -10,7 +11,7 @@ def dataframe_to_image_dark_mode(df,
                                  img_title="Today's Mini", 
                                  img_subtitle="Nerd City",
                                  right_aligned_columns=['Rank', 'Time', 'Score','Points', 'Wins', 'Top 3', 'Top 5', 'Played', 'Games', 'Scores Added']):
-    
+
     # Set colors
     header_bg_color = '#4a4e53'
     row_bg_color = '#2c2f33'
@@ -21,27 +22,24 @@ def dataframe_to_image_dark_mode(df,
     padding = 8
 
     # Load font
-    font_path = 'C:/Windows/Fonts/arial.ttf' if host_nm == "MJT" else '/usr/share/fonts/truetype/ARIAL.TTF'
+    font_path = 'C:/Windows/Fonts/arial.ttf' if local_mode else '/usr/share/fonts/truetype/ARIAL.TTF'
     font_size = 18
     font = ImageFont.truetype(font_path, font_size)
 
     # Temporary image and draw object for calculating column widths
     temp_img = Image.new('RGB', (1, 1))
     temp_draw = ImageDraw.Draw(temp_img)
-
-    ## old code
-    # Calculate column widths and row heights
-    #col_widths = [max(
-    #    temp_draw.textlength(str(max(df[col], key=lambda x: len(str(x)))), font) for col in df.columns) + 2 * padding
-    #              for col in df.columns]
     
+    # calculate row height
     row_height = font.getbbox('A')[3] + 2 * padding
 
-    # Calculate column widths and row heights
-    col_widths = [max(
-        temp_draw.textlength(str(max(df[col].tolist() + [col], key=lambda x: len(str(x)))), font) for col in
-        df.columns) + 2 * padding
-                  for col in df.columns]
+    # old col widths calculation
+    #col_widths = [max(temp_draw.textlength(str(max(df[col].tolist() + [col], key=lambda x: len(str(x)))), font) for col in df.columns) + 2 * padding for col in df.columns]
+
+    # new col widths calculation    
+    col_widths = [max(temp_draw.textlength(str(x), font) for x in df[col].tolist() + [col]) + 2 * padding for col in df.columns]
+
+    print(f"column widths are going to be: {col_widths}")
     
     # Create a new image
     img_width = sum(col_widths)
@@ -91,5 +89,6 @@ def dataframe_to_image_dark_mode(df,
         y += row_height
 
     img.save(img_filepath)
-
+    print('saved image!')
+    
     return img_filepath
