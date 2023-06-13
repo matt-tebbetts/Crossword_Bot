@@ -302,6 +302,7 @@ async def get(ctx, *, time_frame=None):
 
         # pull leaderboard
         img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
+        print('got img')
         
         # send it
         await ctx.channel.send(file=discord.File(img))
@@ -407,7 +408,7 @@ async def scrape_messages():
 
     # what to scrape
     list_of_channel_ids = [806881904073900042, 1058057309068197989]
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    one_week_ago = datetime.utcnow() - timedelta(days=3)
 
     # where to save
     file_name = 'files/scraped_messages.txt'
