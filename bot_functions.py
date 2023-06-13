@@ -156,6 +156,7 @@ def get_date_range(user_input):
 def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
     engine = create_engine(sql_addr)
     connection = engine.connect()
+    print('connected to database within get_leaderboard')
     logger.debug(f'Connected to database using {sql_addr}')
     today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
 
@@ -177,6 +178,8 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
 
     # determine leaderboard query to run
     cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
+    print('built query')
+    print(f'query is: {query}')
 
     try:
         # run the query
@@ -193,6 +196,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
         img = 'files/error.png'
         return img
 
+    print('ran query successfully')
     df = pd.DataFrame(rows, columns=cols)
 
     # clean some columns
@@ -201,10 +205,11 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     if 'Game' in df.columns:
         df['Game'] = df['Game'].str.capitalize()
 
-
     # create image
     img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm
+    print('got image title, sending to camera now')
     img = bot_camera.dataframe_to_image_dark_mode(df, img_title=img_title, img_subtitle=title_date)
+    print('created image successfully')
     return img
 
 # add discord scores to database when people paste them to discord chat
