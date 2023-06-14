@@ -329,9 +329,27 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
         game_date = f'{r_year}-{r_month}-{r_day}'
 
-    if game_prefix == '📷 #WhereTaken':
-        game_name = 'wheretaken'
-        game_score = text.split("\n")[0][-3:]
+    if game_prefix == 'Connections':
+        game_name = 'connections'
+        
+        # split the text by newlines
+        lines = msg_txt.strip().split("\n")
+
+        # only keep lines that contain at least one emoji square
+        emoji_squares = ["🟨", "🟩", "🟦", "🟪"]
+        lines = [line for line in lines if any(emoji in line for emoji in emoji_squares)]
+
+        max_possible_guesses = 7
+        guesses_taken = len(lines)
+        completed_lines = 0
+
+        for line in lines:
+            # a line is considered completed if all emojis are the same
+            if len(set(line)) == 1:
+                completed_lines += 1
+
+        metric_02 = int(completed_lines == 4) # did the user complete the puzzle?
+        game_score = f"{guesses_taken}/{max_possible_guesses}" if metric_02 == 1 else f"X/{max_possible_guesses}"
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
