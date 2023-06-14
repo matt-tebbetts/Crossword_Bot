@@ -65,7 +65,7 @@ class BracketSeparatedWords(Converter):
         return argument.split()
 
 # set game names and prefixes
-game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic']
+game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'Connections']
 game_prefix_dict = {
     'worldle': '#Worldle',
     'travle': '#travle',
