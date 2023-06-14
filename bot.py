@@ -73,6 +73,7 @@ game_prefix_dict = {
     'boxoffice': 'boxofficega.me',
     'wordle': 'Wordle',
     'atlantic': 'Atlantic',
+    'connections': 'Connections'
 }
 
 # emoji map for confirming game scores
@@ -82,7 +83,8 @@ emoji_map = {
             'atlantic': '🌊',
             'factle.app': '📈',
             'wordle': '📚',
-            'boxofficega.me': '🎥'
+            'boxofficega.me': '🎥',
+            'connections': '⛓️'
         }
 
 # ****************************************************************************** #
