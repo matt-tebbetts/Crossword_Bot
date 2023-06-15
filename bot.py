@@ -266,7 +266,7 @@ async def auto_post():
 # ****************************************************************************** #
 
 # get leaderboards
-@bot.command(name='get', aliases=['mini', 'travle', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores'])
+@bot.command(name='get', aliases=['mini', 'travle', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores', 'connections'])
 async def get(ctx, *, time_frame=None):
     
     # clarify request
