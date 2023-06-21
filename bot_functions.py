@@ -193,7 +193,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
         connection.close()
     except Exception as e:
         print(f"Error when trying to run SQL query: {e}")
-        img = 'files/error.png'
+        img = 'files/images/error.png'
         return img
 
     print('ran query successfully')
