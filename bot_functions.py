@@ -224,7 +224,7 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
     game_score = None
     game_dtl = None
     metric_01 = None
-    metric_02 = None
+    metric_02 = None # game completed yes/no
     metric_03 = None
 
     if game_prefix == "#Worldle":
@@ -350,6 +350,35 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
         metric_02 = int(completed_lines == 4) # did the user complete the puzzle?
         game_score = f"{guesses_taken}/{max_possible_guesses}" if metric_02 == 1 else f"X/{max_possible_guesses}"
+
+    if game_prefix == '#Emovi':
+        game_name = 'emovi'
+
+        # split the string into lines
+        lines = msg_txt.split('\n')
+
+        # find the line with the score
+        for line in lines:
+            if '🟥' in line or '🟩' in line:
+                score_line = line
+                break
+        else:
+            raise ValueError('No score line found in game text')
+
+        # count the total squares and the position of the green square
+        total_squares = 3
+        green_square_pos = None
+        for i, char in enumerate(score_line):
+            if char == '🟩':
+                green_square_pos = i
+
+        # if no green square was found, the score is 0
+        if green_square_pos is None:
+            game_score = f"X/{total_squares}"
+            metric_02 = 0
+        else:
+            game_score = f"{green_square_pos+1}/{total_squares}"
+            metric_02 = 1
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
