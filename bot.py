@@ -65,7 +65,7 @@ class BracketSeparatedWords(Converter):
         return argument.split()
 
 # set game names and prefixes
-game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'Connections']
+game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'Connections', '#Emovi']
 game_prefix_dict = {
     'worldle': '#Worldle',
     'travle': '#travle',
@@ -73,7 +73,8 @@ game_prefix_dict = {
     'boxoffice': 'boxofficega.me',
     'wordle': 'Wordle',
     'atlantic': 'Atlantic',
-    'connections': 'Connections'
+    'connections': 'Connections',
+    'emovi': '#Emovi'
 }
 
 # emoji map for confirming game scores
@@ -84,6 +85,7 @@ emoji_map = {
             'factle.app': '📈',
             'wordle': '📚',
             'boxofficega.me': '🎥',
+            '#emovi': '🎥',
             'connections': '⛓️'
         }
 
