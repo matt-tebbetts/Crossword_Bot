@@ -243,8 +243,8 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             game_score = msg_txt[11:14]
             metric_02 = 1 if game_score[0] != 'X' else 0
 
-    if game_prefix == "#travle":
-        game_name = 'travle'
+    if game_prefix == "#travle" or game_prefix == "#travle_usa":
+        game_name = 'travle' if game_prefix == "#travle" else 'travle_usa'
 
         # find position of opening and closing parentheses
         opening_paren = msg_txt.find('(')
