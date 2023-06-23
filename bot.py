@@ -70,6 +70,7 @@ game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Atlantic', 'Connections', '#Emovi']
 
 game_prefix_dict = {
+    'mini': 'Mini',
     'worldle': '#Worldle',
     'travle': '#travle',
     'travle_usa': '#travle_usa',
