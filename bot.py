@@ -96,6 +96,10 @@ emoji_map = {
             'connections': '⛓️'
         }
 
+# for calling the /get_leaderboard command (which has aliases)
+list_of_game_names = list(game_prefix_dict.keys())
+list_of_game_names.extend(['winners', 'my_scores'])
+
 # ****************************************************************************** #
 # connecting
 # ****************************************************************************** #
@@ -275,7 +279,7 @@ async def auto_post():
 # ****************************************************************************** #
 
 # get leaderboards
-@bot.command(name='get', aliases=['mini', 'travle', 'travle_usa', 'emovi', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores', 'connections'])
+@bot.command(name='get', aliases=list_of_game_names)
 async def get(ctx, *, time_frame=None):
     
     # clarify request
