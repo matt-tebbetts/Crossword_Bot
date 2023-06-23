@@ -65,10 +65,11 @@ class BracketSeparatedWords(Converter):
         return argument.split()
 
 # set game names and prefixes
-game_prefixes = ['#Worldle', '#travle', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'Connections', '#Emovi']
+game_prefixes = ['#Worldle', '#travle', '#travle_usa', 'Wordle', 'Factle.app', 'boxofficega.me', 'Atlantic', 'Connections', '#Emovi']
 game_prefix_dict = {
     'worldle': '#Worldle',
     'travle': '#travle',
+    'travle_usa': '#travle_usa',
     'factle': 'Factle.app',
     'boxoffice': 'boxofficega.me',
     'wordle': 'Wordle',
@@ -81,6 +82,7 @@ game_prefix_dict = {
 emoji_map = {
             '#worldle': '🌎',
             '#travle': '🌍',
+            '#travle_usa': '🌎',
             'atlantic': '🌊',
             'factle.app': '📈',
             'wordle': '📚',
@@ -268,7 +270,7 @@ async def auto_post():
 # ****************************************************************************** #
 
 # get leaderboards
-@bot.command(name='get', aliases=['mini', 'travle', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores', 'connections'])
+@bot.command(name='get', aliases=['mini', 'travle', 'travle_usa', 'emovi', 'wordle', 'factle', 'worldle', 'atlantic', 'boxoffice', 'winners', 'my_scores', 'connections'])
 async def get(ctx, *, time_frame=None):
     
     # clarify request
@@ -315,40 +317,12 @@ async def get(ctx, *, time_frame=None):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
+"""
 # request rescan
 @bot.command(name='rescan')
 async def rescan(ctx, game_name=None):
-
-    await scrape_messages()
-    await ctx.send("Scraped last 7 days of game scores to text file")
-    
-    # get info
-    if ctx.author.discriminator == "0":
-        user_id = ctx.author.name
-    else:
-        user_id = ctx.author.name + "#" + ctx.author.discriminator
-    days = 7
-    print(f"rescan of {game_name} requested by {user_id} for past {days} days")
-
-    # check game
-    if game_name is None:
-        games_list = "\n".join(list(game_prefix_dict.values()))
-        await ctx.send(f"This function requires a game_name parameter. Please enter one of the following game names:\n{games_list}")
-        return
-    elif game_name.lower() not in game_prefix_dict:
-        games_list = "\n".join(list(game_prefix_dict.keys()))
-        await ctx.send(f"Invalid game name. Please enter one of the following game names:\n{games_list}")
-        return
-    else:
-        game_prefix = game_prefix_dict[game_name.lower()]
-
-    await ctx.send(f"Rescanning for {game_name} scores in the past {days} days...")
-    await process_missed_scores(ctx, days, game_prefix)
-
-# loop through messages to find scores
-async def process_missed_scores(ctx, days, game_prefix):
     today = datetime.now(pytz.timezone('US/Eastern'))
-    since = today - timedelta(days=days)
+    since = today - timedelta(days=1)
     
     # Initialize DataFrame
     columns = ['Player', 'Scores Added']
@@ -406,33 +380,7 @@ async def process_missed_scores(ctx, days, game_prefix):
                                        img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
     await ctx.channel.send(file=discord.File(img))
-
-# testing new rescan command
-async def scrape_messages():
-
-    # what to scrape
-    list_of_channel_ids = [806881904073900042, 1058057309068197989]
-    one_week_ago = datetime.utcnow() - timedelta(days=3)
-
-    # where to save
-    file_name = 'files/scraped_messages.txt'
-    if os.path.exists(file_name):
-        os.remove(file_name)
-
-    # do it
-    with open(file_name, 'a', encoding='utf-8') as f:
-        for channel_id in list_of_channel_ids:
-            channel = bot.get_channel(channel_id)
-            print(f"Scraping messages from {channel.name}")
-            async for message in channel.history(limit=None, after=one_week_ago):
-                if any(message.content.startswith(prefix) for prefix in game_prefixes):
-                    message_date = message.created_at.strftime("%Y-%m-%d")
-                    if message.author.discriminator == "0":
-                        author_name = message.author.name
-                    else:
-                        author_name = message.author.name + "#" + message.author.discriminator
-                    formatted_message = f"{message_date} - {author_name} - {message.content}\n"
-                    f.write(formatted_message)
+"""
 
 # run bot
 bot.run(TOKEN)
