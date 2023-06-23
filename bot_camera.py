@@ -38,8 +38,6 @@ def dataframe_to_image_dark_mode(df,
 
     # new col widths calculation    
     col_widths = [max(temp_draw.textlength(str(x), font) for x in df[col].tolist() + [col]) + 2 * padding for col in df.columns]
-
-    print(f"column widths are going to be: {col_widths}")
     
     # Create a new image
     img_width = sum(col_widths)
@@ -89,6 +87,5 @@ def dataframe_to_image_dark_mode(df,
         y += row_height
 
     img.save(img_filepath)
-    print('saved image!')
     
     return img_filepath
