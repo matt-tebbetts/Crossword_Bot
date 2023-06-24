@@ -69,6 +69,9 @@ game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
                  'Atlantic', 'Connections', '#Emovi']
 
+# this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
+game_prefixes.sort(key=len, reverse=True)
+
 game_prefix_dict = {
     'mini': 'Mini',
     'worldle': '#Worldle',
