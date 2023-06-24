@@ -211,7 +211,7 @@ async def auto_fetch():
 
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
-        changed = bot_functions.mini_leader_changed(guild.id)
+        changed = await bot_functions.mini_leader_changed(guild.id)
 
         # if changed, post new leaderboard to games channel for that guild
         if changed:
@@ -330,70 +330,64 @@ async def get(ctx, *, time_frame=None):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
-"""
 # request rescan
 @bot.command(name='rescan')
-async def rescan(ctx, game_name=None):
+async def rescan(ctx):
     today = datetime.now(pytz.timezone('US/Eastern'))
     since = today - timedelta(days=1)
-    
-    # Initialize DataFrame
+
+    # print since as a text with time
+    since_text = since.strftime("%Y-%m-%d %H:%M:%S")
+    await ctx.channel.send(f"Rescanning messages since {since_text}...")
+
+    # start dataframe to keep track of re-added scores
     columns = ['Player', 'Scores Added']
     df = pd.DataFrame(columns=columns)
 
     # scan messages
-    async for message in ctx.channel.history(before=today, after=since):
-        
-        # wait 1 second to avoid rate limiting
-        await asyncio.sleep(1)
-
-        # ignore bot messages
-        if message.author == bot.user:
-            continue
-        
-        # ignore other channels
-        if message.channel.name not in active_channel_names:
-            continue
-
-        # get info
-        if ctx.author.discriminator == "0":
-            user_id = ctx.author.name
-        else:
-            user_id = ctx.author.name + "#" + ctx.author.discriminator
-        game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime('%Y-%m-%d')
-        msg_text = str.lower(str(message.content))
-
-        # Print message details
-        print(f"Message content: game_date: {game_date}, msg_text: {msg_text[:20]}")
+    async for message in ctx.channel.history(before=today, after=since, oldest_first=False):
+        msg_text = str(message.content)
 
         # check to see if it's a game score
-        if not msg_text.startswith(game_prefix):  # Check if the message starts with the game_prefix
-            continue
+        for game_prefix in game_prefixes:
 
-        # add the score
-        response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
-        print(f"Response from add_score: {response}")
+            # if we find the prefix, add the score
+            if str.lower(msg_text).startswith(str.lower(game_prefix)):
 
-        # add to counter
-        if user_id in df['Player'].values:
-            df.loc[df['Player'] == user_id, 'Scores Added'] += 1
-        else:
-            # Add a new row to the DataFrame
-            new_row = pd.DataFrame({'Player': [user_id], 'Scores Added': [1]})
-            df = pd.concat([df, new_row], ignore_index=True)
+                # get message detail
+                game_date = ctx.message.created_at.date()
+                
+                # get discord name
+                author = message.author.name
+                user_id = author[:-2] if author.endswith("#0") else author
 
-        # determine response emoji if response is not True
-        emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
-        await message.add_reaction(emoji)
+                logger.debug(f"Found {user_id}'s {game_prefix} score from {game_date}")
+
+                # send to score scraper
+                response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+
+                # react with proper emoji
+                emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
+                await message.add_reaction(emoji)
+            
+                # add to counter
+                if user_id in df['Player'].values:
+                    df.loc[df['Player'] == user_id, 'Scores Added'] += 1
+                else:
+                    # Add a new row to the DataFrame
+                    new_row = pd.DataFrame({'Player': [user_id], 'Scores Added': [1]})
+                    df = pd.concat([df, new_row], ignore_index=True)
+                    
+                # exit the loop since we found the prefix
+                break
 
     # get image of dataframe from custom function
     img = dataframe_to_image_dark_mode(df, 
-                                       img_filepath='files/images/rescan.png', 
-                                       img_title=f"Rescan for {game_prefix}",
-                                       img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
+                                    img_filepath='files/images/rescan.png', 
+                                    img_title=f"Rescan for {game_prefix}",
+                                    img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
-    await ctx.channel.send(file=discord.File(img))
-"""
+    await ctx.channel.send(f"Rescan complete. Here are the results:", file=discord.File(img))
 
 # run bot
 bot.run(TOKEN)
