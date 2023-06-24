@@ -12,6 +12,7 @@ import bot_queries
 from config import credentials, sql_addr
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+import time
 
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -388,13 +389,24 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
     return msg_back
 
 # check for leader changes
-def mini_leader_changed(guild_id):
+def mini_leader_changed(guild_id, attempts=0):
     engine = create_engine(sql_addr)
     query = f"""
         SELECT guild_id FROM mini_leader_changed
         WHERE guild_id = :guild_id
     """
-    with engine.connect() as connection:
-        result = connection.execute(text(query), {"guild_id": guild_id})
-        row = result.fetchone()
-        return bool(row)
+
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text(query), {"guild_id": guild_id})
+            row = result.fetchone()
+            return bool(row)
+
+    except Exception as e:
+        if attempts < 5:  # Limit the number of reconnection attempts
+            print(f"An error occurred: {e}. Retrying in 5 seconds...")
+            time.sleep(5)  # Wait a bit before trying again
+            return mini_leader_changed(guild_id, attempts + 1)
+        else:
+            print(f"Failed to execute query after {attempts} attempts: {e}")
+            return None
