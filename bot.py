@@ -341,7 +341,7 @@ async def rescan(ctx):
     await ctx.channel.send(f"Rescanning messages since {since_text}...")
 
     # start dataframe to keep track of re-added scores
-    columns = ['Player', 'Scores Added']
+    columns = ['Player', 'Game Date', 'Game Name', 'Scores Added']
     df = pd.DataFrame(columns=columns)
 
     # scan messages
@@ -355,7 +355,7 @@ async def rescan(ctx):
             if str.lower(msg_text).startswith(str.lower(game_prefix)):
 
                 # get message detail
-                game_date = ctx.message.created_at.date()
+                game_date = message.created_at.date()
                 
                 # get discord name
                 author = message.author.name
@@ -371,11 +371,16 @@ async def rescan(ctx):
                 await message.add_reaction(emoji)
             
                 # add to counter
-                if user_id in df['Player'].values:
-                    df.loc[df['Player'] == user_id, 'Scores Added'] += 1
+                condition = (df['Player'] == user_id) & (df['Game Name'] == game_prefix) & (df['Game Date'] == game_date)
+
+                if df[condition].any().any():
+                    df.loc[condition, 'Scores Added'] += 1
                 else:
                     # Add a new row to the DataFrame
-                    new_row = pd.DataFrame({'Player': [user_id], 'Scores Added': [1]})
+                    new_row = pd.DataFrame({'Player': [user_id],
+                                            'Game Date': [game_date],
+                                            'Game Name': [game_prefix], 
+                                            'Scores Added': [1]})
                     df = pd.concat([df, new_row], ignore_index=True)
                     
                 # exit the loop since we found the prefix
