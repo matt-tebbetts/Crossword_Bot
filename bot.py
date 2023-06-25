@@ -215,14 +215,14 @@ async def auto_fetch():
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
         try:
-            changed = await bot_functions.mini_leader_changed(guild.id)
+            changed = bot_functions.mini_leader_changed(guild.id)
 
             # if changed, post new leaderboard to games channel for that guild
             if changed:
                 
                 # get leaderboard image
                 try:
-                    img = await bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
+                    img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
                 except Exception as e:
                     logger.error(f"An error occurred while getting the leaderboard image: {e}")
                     continue
