@@ -6,13 +6,13 @@ from bs4 import BeautifulSoup
 import pytz
 from datetime import date, datetime, timedelta
 from sqlalchemy import create_engine, text
+from sqlalchemy.ext.asyncio import create_async_engine
 import logging
 import bot_camera
 import bot_queries
 from config import credentials, sql_addr
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-import time
 
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -22,6 +22,9 @@ logger.setLevel(logging.DEBUG)
 # get secrets
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
+
+# connect to database
+async_engine = create_async_engine(sql_addr)
 
 # get main channel for each guild (improved)
 def get_main_channel_for_guild(guild_id):
@@ -388,25 +391,18 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     return msg_back
 
-# check for leader changes
-def mini_leader_changed(guild_id, attempts=0):
-    engine = create_engine(sql_addr)
-    query = f"""
+async def mini_leader_changed(guild_id):
+    query = """
         SELECT guild_id FROM mini_leader_changed
         WHERE guild_id = :guild_id
     """
 
     try:
-        with engine.connect() as connection:
-            result = connection.execute(text(query), {"guild_id": guild_id})
-            row = result.fetchone()
+        async with async_engine.begin() as connection:
+            result = await connection.execute(text(query), {"guild_id": guild_id})
+            row = await result.fetchone()
             return bool(row)
 
     except Exception as e:
-        if attempts < 5:  # Limit the number of reconnection attempts
-            print(f"An error occurred: {e}. Retrying in 5 seconds...")
-            time.sleep(5)  # Wait a bit before trying again
-            return mini_leader_changed(guild_id, attempts + 1)
-        else:
-            print(f"Failed to execute query after {attempts} attempts: {e}")
-            return None
+        logger.error(f"An error occurred while executing query: {e}")
+        return None
