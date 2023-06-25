@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 import pytz
 from datetime import date, datetime, timedelta
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.asyncio import create_async_engine
 import logging
 import bot_camera
 import bot_queries
@@ -22,9 +21,6 @@ logger.setLevel(logging.DEBUG)
 # get secrets
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
-
-# connect to database
-async_engine = create_async_engine(sql_addr)
 
 # get main channel for each guild (improved)
 def get_main_channel_for_guild(guild_id):
@@ -398,7 +394,8 @@ async def mini_leader_changed(guild_id):
     """
 
     try:
-        async with async_engine.begin() as connection:
+        engine = create_engine(sql_addr)
+        async with engine.begin() as connection:
             result = await connection.execute(text(query), {"guild_id": guild_id})
             row = await result.fetchone()
             return bool(row)
