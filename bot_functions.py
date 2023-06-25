@@ -395,10 +395,9 @@ def mini_leader_changed(guild_id):
 
     try:
         engine = create_engine(sql_addr)
-        with engine.begin() as connection:
-            result = connection.execute(text(query), {"guild_id": guild_id})
-            row = result.fetchone()
-            return bool(row)
+        result = engine.execute(text(query), {"guild_id": guild_id})
+        row = result.fetchone()
+        return bool(row)
 
     except Exception as e:
         logger.error(f"An error occurred while executing query: {e}")
