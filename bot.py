@@ -206,26 +206,41 @@ async def on_message(message):
 async def auto_fetch():
 
     # get new mini and save to database
-    bot_functions.get_mini()
-    logger.debug("Got latest mini scores from NYT")
+    try:
+        bot_functions.get_mini()
+        logger.debug("Got latest mini scores from NYT")
+    except Exception as e:
+        logger.error(f"An error occurred while getting the latest mini scores: {e}")
 
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
-        changed = bot_functions.mini_leader_changed(guild.id)
+        try:
+            changed = await bot_functions.mini_leader_changed(guild.id)
 
-        # if changed, post new leaderboard to games channel for that guild
-        if changed:
-            
-            # get leaderboard image
-            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
+            # if changed, post new leaderboard to games channel for that guild
+            if changed:
+                
+                # get leaderboard image
+                try:
+                    img = await bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
+                except Exception as e:
+                    logger.error(f"An error occurred while getting the leaderboard image: {e}")
+                    continue
 
-            # get channel to post to
-            main_channel_id = bot_functions.get_main_channel_for_guild(str(guild.id))
-            send_channel = bot.get_channel(main_channel_id)
+                # get channel to post to
+                main_channel_id = bot_functions.get_main_channel_for_guild(str(guild.id))
+                send_channel = bot.get_channel(main_channel_id)
 
-            # send message
-            await send_channel.send("Someone else took the lead!")
-            await send_channel.send(file=discord.File(img))
+                # send message
+                try:
+                    await send_channel.send("Someone else took the lead!")
+                    await send_channel.send(file=discord.File(img))
+                except Exception as e:
+                    logger.error(f"An error occurred while sending the message: {e}")
+
+        except Exception as e:
+            logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
+
 
 # post daily mini warning
 async def post_warning():
@@ -321,7 +336,6 @@ async def get(ctx, *, time_frame=None):
 
         # pull leaderboard
         img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
-        print('got img')
         
         # send it
         await ctx.channel.send(file=discord.File(img))

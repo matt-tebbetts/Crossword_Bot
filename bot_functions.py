@@ -387,6 +387,7 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     return msg_back
 
+# check to see if there's a new mini leader
 def mini_leader_changed(guild_id):
     query = """
         SELECT guild_id FROM mini_leader_changed
