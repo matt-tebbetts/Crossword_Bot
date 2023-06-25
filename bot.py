@@ -211,7 +211,7 @@ async def auto_fetch():
 
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
-        changed = bot_functions.mini_leader_changed(guild.id)
+        changed = await bot_functions.mini_leader_changed(guild.id)
 
         # if changed, post new leaderboard to games channel for that guild
         if changed:
