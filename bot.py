@@ -212,6 +212,8 @@ async def auto_fetch():
     except Exception as e:
         logger.error(f"An error occurred while getting the latest mini scores: {e}")
 
+    """
+    ## disabled this part for now 6/25/2023 @ 9:30am
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
         try:
@@ -240,7 +242,7 @@ async def auto_fetch():
 
         except Exception as e:
             logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
-
+    """
 
 # post daily mini warning
 async def post_warning():
