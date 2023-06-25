@@ -387,7 +387,7 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     return msg_back
 
-async def mini_leader_changed(guild_id):
+def mini_leader_changed(guild_id):
     query = """
         SELECT guild_id FROM mini_leader_changed
         WHERE guild_id = :guild_id
@@ -395,9 +395,9 @@ async def mini_leader_changed(guild_id):
 
     try:
         engine = create_engine(sql_addr)
-        async with engine.begin() as connection:
-            result = await connection.execute(text(query), {"guild_id": guild_id})
-            row = await result.fetchone()
+        with engine.begin() as connection:
+            result = connection.execute(text(query), {"guild_id": guild_id})
+            row = result.fetchone()
             return bool(row)
 
     except Exception as e:
