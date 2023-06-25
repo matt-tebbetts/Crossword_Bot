@@ -389,7 +389,7 @@ async def rescan(ctx):
     # get image of dataframe from custom function
     img = dataframe_to_image_dark_mode(df, 
                                     img_filepath='files/images/rescan.png', 
-                                    img_title=f"Rescan for {game_prefix}",
+                                    img_title=f"Rescan Summary",
                                     img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
     await ctx.channel.send(f"Rescan complete. Here are the results:", file=discord.File(img))
