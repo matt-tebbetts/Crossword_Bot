@@ -67,7 +67,8 @@ class BracketSeparatedWords(Converter):
 # set game names and prefixes
 game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
-                 'Atlantic', 'Connections', '#Emovi']
+                 'Atlantic', 'Connections', '#Emovi',
+                 'Daily Crosswordle']
 
 # this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
 game_prefixes.sort(key=len, reverse=True)
@@ -83,7 +84,8 @@ game_prefix_dict = {
     'wordle': 'Wordle',
     'atlantic': 'Atlantic',
     'connections': 'Connections',
-    'emovi': '#Emovi'
+    'emovi': '#Emovi',
+    'crosswordle': 'Daily Crosswordle'
 }
 
 # emoji map for confirming game scores
@@ -96,8 +98,9 @@ emoji_map = {
             'factle.app': '📈',
             'wordle': '📚',
             'boxofficega.me': '🎥',
-            '#emovi': '🎥',
-            'connections': '⛓️'
+            '#emovi': '🎬',
+            'connections': '🔢',
+            'crosswordle': '🧩',
         }
 
 # for calling the /get_leaderboard command (which has aliases)
