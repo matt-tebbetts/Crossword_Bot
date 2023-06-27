@@ -376,7 +376,9 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             metric_02 = 1
 
     if game_prefix == 'Daily Crosswordle':
+        game_name = 'crosswordle'
         match = re.search(r"(\d+)m\s*(\d+)s", msg_txt)
+        metric_02 = 1
         if match:
             minutes = int(match.group(1))
             seconds = int(match.group(2))
