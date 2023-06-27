@@ -100,7 +100,7 @@ emoji_map = {
             'boxofficega.me': '🎥',
             '#emovi': '🎬',
             'connections': '🔢',
-            'crosswordle': '🧩',
+            'daily crosswordle': '🧩',
         }
 
 # for calling the /get_leaderboard command (which has aliases)
