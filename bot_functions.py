@@ -12,6 +12,7 @@ import bot_queries
 from config import credentials, sql_addr
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+import re
 
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -373,6 +374,14 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
         else:
             game_score = f"{green_square_pos+1}/{total_squares}"
             metric_02 = 1
+
+    if game_prefix == 'Daily Crosswordle':
+        match = re.search(r"(\d+)m\s*(\d+)s", msg_txt)
+        if match:
+            minutes = int(match.group(1))
+            seconds = int(match.group(2))
+            seconds_str = str(seconds).zfill(2)
+            game_score = f"{minutes}:{seconds_str}"
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
