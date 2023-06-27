@@ -351,9 +351,19 @@ async def get(ctx, *, time_frame=None):
 
 # request rescan
 @bot.command(name='rescan')
-async def rescan(ctx):
+async def rescan(ctx, game_to_rescan=None):
     today = datetime.now(pytz.timezone('US/Eastern'))
     since = today - timedelta(days=1)
+
+    # if one game specified, create list with that game only
+    if game_to_rescan is not None:
+        if game_to_rescan in game_prefix_dict:
+            game_prefixes_to_rescan = [game_prefix_dict[game_to_rescan]]
+        else:
+            await ctx.channel.send(f"The game {game_to_rescan} is not found.")
+            return
+    else:
+        game_prefixes_to_rescan = game_prefixes
 
     # print since as a text with time
     since_text = since.strftime("%Y-%m-%d %H:%M:%S")
@@ -368,7 +378,7 @@ async def rescan(ctx):
         msg_text = str(message.content)
 
         # check to see if it's a game score
-        for game_prefix in game_prefixes:
+        for game_prefix in game_prefixes_to_rescan:
 
             # if we find the prefix, add the score
             if str.lower(msg_text).startswith(str.lower(game_prefix)):
