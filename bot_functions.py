@@ -377,12 +377,15 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     if game_prefix == 'Daily Crosswordle':
         game_name = 'crosswordle'
-        match = re.search(r"(\d+)m\s*(\d+)s", msg_txt)
+        match = re.search(r"(?:(\d+)m\s*)?(\d+)s", msg_txt) # make minutes optional
         metric_02 = 1
         if match:
-            minutes = int(match.group(1))
+            minutes = match.group(1)
             seconds = int(match.group(2))
             seconds_str = str(seconds).zfill(2)
+            
+            # If no minutes are present, consider it as 0
+            minutes = 0 if minutes is None else int(minutes)
             game_score = f"{minutes}:{seconds_str}"
 
     # put into dataframe
