@@ -338,6 +338,9 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
         guesses_taken = len(lines)
         completed_lines = 0
 
+        # purple square bonus
+        metric_01 = 1 if lines[0].count("🟪") == 4 else 0
+
         for line in lines:
             # a line is considered completed if all emojis are the same
             if len(set(line)) == 1:
