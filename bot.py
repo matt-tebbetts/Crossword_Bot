@@ -215,6 +215,7 @@ async def auto_fetch():
     except Exception as e:
         logger.error(f"An error occurred while getting the latest mini scores: {e}")
 
+    """ it's slow, that's why... keeps pinging the sql server
     ## disabled this part for now 6/25/2023 @ 9:30am -- enabled again 7/7/2023 @ 11:44am, not sure why it was disabled
     # for each guild, see if the mini leader has changed since the last run
     for guild in bot.guilds:
@@ -244,7 +245,8 @@ async def auto_fetch():
 
         except Exception as e:
             logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
-
+        """
+    
 # post daily mini warning
 async def post_warning():
     async with asyncio.Lock():
