@@ -103,9 +103,12 @@ def get_mini():
     if len(df) == 0:
         return [False, "Nobody did the mini yet"]
     else:
-        engine = create_engine(sql_addr)
-        df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
-        return [True, "Got mini and saved to database"]
+        try:
+            engine = create_engine(sql_addr)
+            df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
+            return [True, "Got mini and saved to database"]
+        except Exception as e:
+            return [False, f"Error saving mini to database: {e}"]
 
 # translate date range based on text
 def get_date_range(user_input):
