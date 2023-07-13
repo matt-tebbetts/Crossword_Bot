@@ -374,7 +374,7 @@ async def rescan(ctx, game_to_rescan=None):
     df = pd.DataFrame(columns=columns)
 
     # scan messages
-    async for message in ctx.channel.history(before=today, after=since, oldest_first=False):
+    async for message in ctx.channel.history(before=today, after=since, oldest_first=True):
         msg_text = str(message.content)
 
         # check to see if it's a game score
