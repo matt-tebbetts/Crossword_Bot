@@ -353,7 +353,7 @@ async def get(ctx, *, time_frame=None):
 @bot.command(name='rescan')
 async def rescan(ctx, game_to_rescan=None):
     today = datetime.now(pytz.timezone('US/Eastern'))
-    since = today - timedelta(days=1)
+    since = today - timedelta(days=3)
 
     # if one game specified, create list with that game only
     if game_to_rescan is not None:
