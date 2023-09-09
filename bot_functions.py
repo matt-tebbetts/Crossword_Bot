@@ -162,11 +162,7 @@ def get_date_range(user_input):
 
 # returns image location of leaderboard
 def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
-    engine = create_engine(sql_addr)
-    connection = engine.connect()
-    logger.debug(f'Connected to database using {sql_addr}')
-    today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-
+    
     # if no date range, use default
     if min_date is None and max_date is None:
         if game_name == 'mini':
@@ -187,15 +183,25 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
 
     try:
-        # run the query
-        result = connection.execute(text(query),
-                                                {"guild_id": guild_id,
-                                                "game_name": game_name,
-                                                "min_date": min_date,
-                                                "max_date": max_date,
-                                                "user_nm": user_nm})
-        rows = result.fetchall()
+        engine = create_engine(sql_addr)
+    
+        # setting "with" so that errors don't cause the connection to stay open
+        with engine.connect() as connection:
+            logger.debug(f'Connected to database using {sql_addr}')
+            today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
+            
+            # run the query
+            result = connection.execute(text(query),
+                                                    {"guild_id": guild_id,
+                                                    "game_name": game_name,
+                                                    "min_date": min_date,
+                                                    "max_date": max_date,
+                                                    "user_nm": user_nm})
+            rows = result.fetchall()
+        
+        # close connection
         connection.close()
+    
     except Exception as e:
         print(f"Error when trying to run SQL query: {e}")
         img = 'files/images/error.png'
@@ -441,7 +447,7 @@ def send_sms(recipient, message):
     return
 
 # text reminders
-def find_reminders():
+def warn_players():
 
     engine = create_engine(sql_addr)
 
@@ -466,4 +472,7 @@ def find_reminders():
         # send text
         send_sms(phone_nbr, msg)
     
-    return df
+    # make list of players who were warned
+    warned_players = df['player_name'].tolist()
+
+    return warned_players
