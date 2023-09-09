@@ -249,6 +249,14 @@ async def auto_fetch():
     
 # post daily mini warning
 async def post_warning():
+
+    # send text warning here
+    try:
+        warned_players = bot_functions.warn_players()
+    except Exception as e:
+        logger.error(f"An error occurred while warning players: {e}")
+
+    # wait
     async with asyncio.Lock():
         await asyncio.sleep(5)
 
@@ -257,7 +265,11 @@ async def post_warning():
             logger.debug(f"Posting Mini Warning for {guild.name}")
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f""" Mini expires in one hour! """)
+
+                    # send message showing which players were warned
+                    await channel.send(f""" Mini expires in one hour! Sent warning texts to the following players: {warned_players}...""")
+
+    return
 
 # post daily mini final
 async def post_mini():

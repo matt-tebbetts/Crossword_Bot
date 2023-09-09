@@ -13,6 +13,7 @@ from config import credentials, sql_addr
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 import re
+from twilio.rest import Client
 
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -22,6 +23,9 @@ logger.setLevel(logging.DEBUG)
 # get secrets
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
+TWILIO_NBR = os.getenv('TWILIO_NBR')
+TWILIO_SID = os.getenv('TWILIO_SID')
+TWILIO_TOKEN = os.getenv('TWILIO_TOKEN')
 
 # get main channel for each guild (improved)
 def get_main_channel_for_guild(guild_id):
@@ -424,3 +428,42 @@ def mini_leader_changed(guild_id):
     except Exception as e:
         logger.error(f"An error occurred while executing query: {e}")
         return None
+
+# send text message
+def send_sms(recipient, message):
+    twilio_client = Client(TWILIO_SID, TWILIO_TOKEN)
+    twilio_client.messages.create(
+        to=recipient,
+        from_=TWILIO_NBR,
+        body=message
+    )
+    print(f"sent message to {recipient}")
+    return
+
+# text reminders
+def find_reminders():
+
+    engine = create_engine(sql_addr)
+
+    # run sql query to find players who have not done the puzzle
+    with engine.connect() as connection:
+        logger.debug(f'Connected to database using {sql_addr}')
+        query = "SELECT * FROM mini_not_completed"
+        df = pd.read_sql(query, connection)
+
+    # if dataframe is empty, return
+    if df.empty:
+        return None
+
+    # loop through each row and send text via Twilio
+    for index, row in df.iterrows():
+        player_name = row['player_name']
+        phone_nbr = row['phone_nbr']
+        
+        # custom message
+        msg = f"Hi {player_name}! This is a reminder for you to complete the mini!"
+
+        # send text
+        send_sms(phone_nbr, msg)
+    
+    return df
