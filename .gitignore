@@ -1,4 +1,5 @@
 # ignored files below
+.env
 .vscode/
 .idea/
 .venv/
