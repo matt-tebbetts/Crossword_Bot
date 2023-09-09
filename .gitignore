@@ -1,7 +1,8 @@
 # ignored files below
-.env
+.vscode/
+.idea/
+.venv/
 bq_key.json
-venv/
 files/bot.log
 files/bot_MJT.log
 files/bot_mattbot1.log

@@ -353,7 +353,7 @@ async def get(ctx, *, time_frame=None):
 
         # pull leaderboard
         img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
-        
+
         # send it
         await ctx.channel.send(file=discord.File(img))
 
