@@ -37,7 +37,12 @@ def get_main_channel_for_guild(guild_id):
         WHERE guild_channel_category = 'main'
         AND guild_id = :guild_id
     """
-    result = connection.execute(text(query), {"guild_id": guild_id})
+    try:
+        result = connection.execute(text(query), {"guild_id": guild_id})
+    except Exception as e:
+        print(f"Error when trying to run SQL query: {e}")
+        return None
+    
     row = result.fetchone()
     connection.close()
 
@@ -449,32 +454,39 @@ def send_sms(recipient, message):
     return
 
 # text reminders
-def warn_players():
-
-    engine = create_engine(sql_addr)
+def find_players_to_warn(guild_id):
 
     # run sql query to find players who have not done the puzzle
+    engine = create_engine(sql_addr)
     with engine.connect() as connection:
-        logger.debug(f'Connected to database using {sql_addr}')
-        query = "SELECT * FROM mini_not_completed"
+        query = "SELECT * FROM mini_not_completed WHERE guild_id = :guild_id"
         df = pd.read_sql(query, connection)
 
     # if dataframe is empty, return
     if df.empty:
         return None
 
-    # loop through each row and send text via Twilio
+    # now we'll find the players to warn via discord tag or sms text
+    players_to_tag = []
+    players_to_sms = []
+
+    # loop
     for index, row in df.iterrows():
-        player_name = row['player_name']
-        phone_nbr = row['phone_nbr']
-        
-        # custom message
-        msg = f"Hi {player_name}! This is a reminder for you to complete the mini!"
 
-        # send text
-        send_sms(phone_nbr, msg)
-    
-    # make list of players who were warned
-    warned_players = df['player_name'].tolist()
+        # if they want a text, add them to the "players_to_sms"
+        if row['mini_warning_text'] == 1 and row['player_name'] not in players_to_sms:
+            players_to_sms[row['player_name']] = row['phone_nbr']
 
-    return warned_players
+        # otherwise just add them to the list of "players_to_tag"
+        else:
+
+            # if this guild is in the dictionary already, add this member_id
+            if row['guild_id'] in players_to_tag:
+                players_to_tag[row['guild_id']].append(f"<@{row['member_id']}>")
+
+            # else create this guild_id key and add this member_id
+            else:
+                players_to_tag[row['guild_id']] = [f"<@{row['member_id']}>"]
+
+    # return the dictionaries
+    return players_to_sms, players_to_tag

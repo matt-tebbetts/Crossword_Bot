@@ -247,31 +247,6 @@ async def auto_fetch():
             logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
         """
 
-# post daily mini warning
-async def post_warning():
-
-    # send text warning here
-    try:
-        warned_players = bot_functions.warn_players()
-    except Exception as e:
-        logger.error(f"An error occurred while warning players: {e}")
-        warned_players = []
-    
-    # wait
-    async with asyncio.Lock():
-        await asyncio.sleep(5)
-
-        # post warning in each active channel for each guild
-        for guild in bot.guilds:
-            logger.debug(f"Posting Mini Warning for {guild.name}")
-            for channel in guild.channels:
-                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-
-                    # send message showing which players were warned
-                    await channel.send(f""" Mini expires in one hour! Sent warning texts to the following players: {warned_players}...""")
-
-    return
-
 # post daily mini final
 async def post_mini():
     async with asyncio.Lock():
@@ -296,11 +271,48 @@ async def post_mini():
 # timer for warning
 @tasks.loop(minutes=1)
 async def auto_warn():
+    
+    # set time for warning
     now = datetime.now(pytz.timezone('US/Eastern'))
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now.minute == 0 and now.hour == cutoff_hour:
-        logger.debug("Time to warn!")
-        await post_warning()
+
+    # check time
+    time_for_warning = now.minute == 0 and now.hour == cutoff_hour
+    if not time_for_warning:
+        return
+    
+    # print
+    logger.debug("Time to warn!")
+    
+    # loop through guilds
+    for guild in bot.guilds:
+
+        # valid guild?
+        if not guild:
+            return
+
+        # find the main channel
+        channel_id = bot_functions.get_main_channel_for_guild(guild.id)
+
+        # find players to warn
+        try:
+            players_to_sms, players_to_tag = bot_functions.find_players_to_warn(guild.id) # this returns players_to_sms, players_to_msg
+        except Exception as e:
+            logger.error(f"Error posting warning for guild {guild.id}: {e}")
+            continue
+    
+        # send discord reminders
+        for member_id in players_to_tag:
+            reminder_msg = " ".join(member_id) + " there's one hour left to complete the mini!"
+            bot.get_channel(channel_id).send(reminder_msg)
+
+        # wait a sec between guilds
+        await asyncio.sleep(1)
+
+    # send text reminders
+    for player_name, phone_nbr in players_to_sms.items():
+        msg = f"Hi {player_name}! This is a reminder for you to complete the mini!"
+        bot_functions.send_sms(phone_nbr, msg)
 
 # timer for final post
 @tasks.loop(minutes=1)
