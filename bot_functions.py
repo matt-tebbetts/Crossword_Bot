@@ -83,7 +83,10 @@ def get_mini():
 
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
-    html = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
+    try:
+        html = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
+    except Exception as e:
+        return [False, f"Error getting mini from NYT: {e}"]
 
     # find scores in the html
     soup = BeautifulSoup(html.text, features='lxml')
@@ -182,31 +185,30 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     # determine leaderboard query to run
     cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
 
-    try:
-        engine = create_engine(sql_addr)
-    
-        # setting "with" so that errors don't cause the connection to stay open
-        with engine.connect() as connection:
-            logger.debug(f'Connected to database using {sql_addr}')
-            today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-            
-            # run the query
+    # set up the sql connection
+    engine = create_engine(sql_addr)
+    with engine.connect() as connection:
+        logger.debug(f'Connected to database using {sql_addr}')
+        today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
+
+        # attempt to run the query
+        try:
             result = connection.execute(text(query),
                                                     {"guild_id": guild_id,
                                                     "game_name": game_name,
                                                     "min_date": min_date,
                                                     "max_date": max_date,
                                                     "user_nm": user_nm})
-            rows = result.fetchall()
+        except Exception as e:
+            print(f"Error when trying to run SQL query: {e}")
+            img = 'files/images/error.png'
+            return img
         
-        # close connection
+        # get the data and close the connection
+        rows = result.fetchall()
         connection.close()
     
-    except Exception as e:
-        print(f"Error when trying to run SQL query: {e}")
-        img = 'files/images/error.png'
-        return img
-
+    # put into dataframe
     df = pd.DataFrame(rows, columns=cols)
 
     # clean some columns

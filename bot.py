@@ -246,7 +246,7 @@ async def auto_fetch():
         except Exception as e:
             logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
         """
-    
+
 # post daily mini warning
 async def post_warning():
 
@@ -255,7 +255,8 @@ async def post_warning():
         warned_players = bot_functions.warn_players()
     except Exception as e:
         logger.error(f"An error occurred while warning players: {e}")
-
+        warned_players = []
+    
     # wait
     async with asyncio.Lock():
         await asyncio.sleep(5)
