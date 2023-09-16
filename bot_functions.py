@@ -445,48 +445,48 @@ def mini_leader_changed(guild_id):
 # send text message
 def send_sms(recipient, message):
     twilio_client = Client(TWILIO_SID, TWILIO_TOKEN)
-    twilio_client.messages.create(
-        to=recipient,
-        from_=TWILIO_NBR,
-        body=message
-    )
-    print(f"sent message to {recipient}")
-    return
+    try:
+        twilio_client.messages.create(
+            to=recipient,
+            from_=TWILIO_NBR,
+            body=message
+        )
+        print(f"sent message to {recipient}")
+    except Exception as e:
+        print(f"Error sending text message: {e}")
 
 # text reminders
-def find_players_to_warn(guild_id):
+def warn_via_text(guild_id):
 
-    # run sql query to find players who have not done the puzzle
+    # set up query
+    query = """
+            SELECT DISTINCT
+                player_name, phone_nbr
+            FROM mini_not_completed 
+            WHERE guild_id = :guild_id
+            and mini_warning_text = 1
+    """
+
+    # run query
     engine = create_engine(sql_addr)
     with engine.connect() as connection:
-        query = "SELECT * FROM mini_not_completed WHERE guild_id = :guild_id"
-        df = pd.read_sql(query, connection)
+        try:
+            df = pd.read_sql(query, connection)
+        except Exception as e:
+            print(f"Error when trying to run SQL query: {e}")
+            return
 
     # if dataframe is empty, return
     if df.empty:
-        return None
+        return
 
-    # now we'll find the players to warn via discord tag or sms text
-    players_to_tag = []
-    players_to_sms = []
-
-    # loop
-    for index, row in df.iterrows():
-
-        # if they want a text, add them to the "players_to_sms"
-        if row['mini_warning_text'] == 1 and row['player_name'] not in players_to_sms:
-            players_to_sms[row['player_name']] = row['phone_nbr']
-
-        # otherwise just add them to the list of "players_to_tag"
-        else:
-
-            # if this guild is in the dictionary already, add this member_id
-            if row['guild_id'] in players_to_tag:
-                players_to_tag[row['guild_id']].append(f"<@{row['member_id']}>")
-
-            # else create this guild_id key and add this member_id
-            else:
-                players_to_tag[row['guild_id']] = [f"<@{row['member_id']}>"]
+    # Convert the dataframe to a dictionary
+    players_to_sms = dict(zip(df['player_name'], df['phone_nbr']))
+  
+    # send the text
+    for player_name, phone_nbr in players_to_sms.items():
+        message = f"Hey {player_name}, you have one hour to complete the mini!"
+        send_sms(phone_nbr, message)
 
     # return the dictionaries
-    return players_to_sms, players_to_tag
+    return

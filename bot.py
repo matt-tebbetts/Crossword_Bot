@@ -284,6 +284,9 @@ async def auto_warn():
     # print
     logger.debug("Time to warn!")
     
+    # set up variables
+    players_to_sms = {}
+
     # loop through guilds
     for guild in bot.guilds:
 
