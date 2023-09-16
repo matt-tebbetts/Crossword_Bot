@@ -278,44 +278,13 @@ async def auto_warn():
 
     # check time
     time_for_warning = now.minute == 0 and now.hour == cutoff_hour
-    if not time_for_warning:
-        return
-    
-    # print
-    logger.debug("Time to warn!")
-    
-    # set up variables
-    players_to_sms = {}
+    if time_for_warning:
+        logger.debug("Time to warn!")
+        
+        # send texts
+        bot_functions.warn_via_text()
 
-    # loop through guilds
-    for guild in bot.guilds:
-
-        # valid guild?
-        if not guild:
-            return
-
-        # find the main channel
-        channel_id = bot_functions.get_main_channel_for_guild(guild.id)
-
-        # find players to warn
-        try:
-            players_to_sms, players_to_tag = bot_functions.find_players_to_warn(guild.id) # this returns players_to_sms, players_to_msg
-        except Exception as e:
-            logger.error(f"Error posting warning for guild {guild.id}: {e}")
-            continue
-    
-        # send discord reminders
-        for member_id in players_to_tag:
-            reminder_msg = " ".join(member_id) + " there's one hour left to complete the mini!"
-            bot.get_channel(channel_id).send(reminder_msg)
-
-        # wait a sec between guilds
-        await asyncio.sleep(1)
-
-    # send text reminders
-    for player_name, phone_nbr in players_to_sms.items():
-        msg = f"Hi {player_name}! This is a reminder for you to complete the mini!"
-        bot_functions.send_sms(phone_nbr, msg)
+    return
 
 # timer for final post
 @tasks.loop(minutes=1)
