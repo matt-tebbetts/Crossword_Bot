@@ -456,7 +456,7 @@ def send_sms(recipient, message):
         print(f"Error sending text message: {e}")
 
 # text reminders
-def warn_via_text(guild_id):
+def warn_via_text():
 
     # set up query
     query = """
