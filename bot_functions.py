@@ -463,8 +463,7 @@ def warn_via_text():
             SELECT DISTINCT
                 player_name, phone_nbr
             FROM mini_not_completed 
-            WHERE guild_id = :guild_id
-            and mini_warning_text = 1
+            WHERE mini_warning_text = 1
     """
 
     # run query
