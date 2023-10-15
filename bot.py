@@ -201,7 +201,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 # ****************************************************************************** #
-# tasks
+# daily tasks
 # ****************************************************************************** #
 
 # check nyt mini leaderboard every minute
@@ -247,7 +247,7 @@ async def auto_fetch():
             logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
         """
 
-# post daily mini final
+# post leaderboard
 async def post_mini():
     async with asyncio.Lock():
         await asyncio.sleep(5)
@@ -257,14 +257,14 @@ async def post_mini():
 
         # post warning in each guild
         for guild in bot.guilds:
-            logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
+            logger.debug(f"Posting {game_name.capitalize()} Leaderboard for {guild.name}")
 
             today = datetime.now(pytz.timezone('US/Eastern'))
             
-            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
+            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini', min_date=today, max_date=today)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
+                    await channel.send(f"""Posting the {game_name.capitalize()} Leaderboard now...""")
                     await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 
@@ -286,11 +286,18 @@ async def auto_warn():
 
     return
 
-# timer for final post
+# leaderboard post timer
 @tasks.loop(minutes=1)
 async def auto_post():
     now = datetime.now(pytz.timezone('US/Eastern'))
     post_hour = 18 if now.weekday() in [5, 6] else 22
+
+    # noon
+    if now.minute == 0 and now.hour == 12:
+        logger.debug("Time to post noon!")
+        await post_mini()
+
+    # end of day
     if now.minute == 0 and now.hour == post_hour:
         logger.debug("Time to post final!")
         await post_mini()
