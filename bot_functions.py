@@ -456,15 +456,24 @@ def send_sms(recipient, message):
         print(f"Error sending text message: {e}")
 
 # text reminders
-def warn_via_text():
-
+def warn_via_text(andy_only=False):
+   
     # set up query
-    query = """
-            SELECT DISTINCT
-                player_name, phone_nbr
-            FROM mini_not_completed 
-            WHERE mini_warning_text = 1
-    """
+    if andy_only:
+        query = """
+                SELECT DISTINCT
+                    player_name, phone_nbr
+                FROM mini_not_completed 
+                WHERE mini_warning_text = 1
+                AND player_name = 'Andy'
+                """
+    else:
+        query = """
+                SELECT DISTINCT
+                    player_name, phone_nbr
+                FROM mini_not_completed 
+                WHERE mini_warning_text = 1
+                """
 
     # run query
     engine = create_engine(sql_addr)

@@ -248,7 +248,11 @@ async def auto_fetch():
         """
 
 # post leaderboard
-async def post_mini():
+async def post_mini(msg=None):
+
+    # set default message if none provided
+    msg = msg or "Posting the Mini Leaderboard now..."
+
     async with asyncio.Lock():
         await asyncio.sleep(5)
 
@@ -264,7 +268,7 @@ async def post_mini():
             img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini', min_date=today, max_date=today)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f"""Posting the {game_name.capitalize()} Leaderboard now...""")
+                    await channel.send(msg)
                     await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 
@@ -278,11 +282,19 @@ async def auto_warn():
 
     # check time
     time_for_warning = now.minute == 0 and now.hour == cutoff_hour
+    time_to_warn_andy = now.minute == 0 and now.hour == 12
+
+    # if time for warning, send texts
     if time_for_warning:
         logger.debug("Time to warn!")
         
         # send texts
         bot_functions.warn_via_text()
+
+    # if noon, send text to andy only
+    if time_to_warn_andy:
+        logger.debug("warning Andy only")
+        bot_functions.warn_via_text(andy_only=True)
 
     return
 
@@ -294,13 +306,15 @@ async def auto_post():
 
     # noon
     if now.minute == 0 and now.hour == 12:
-        logger.debug("Time to post noon!")
-        await post_mini()
+        msg = "It's noon on the east coast! Here comes the latest Mini Leaderboard..."
+        logger.debug(msg)
+        await post_mini(msg)
 
     # end of day
     if now.minute == 0 and now.hour == post_hour:
-        logger.debug("Time to post final!")
-        await post_mini()
+        msg = "It's the end of the day! Here comes the final Mini Leaderboard..."
+        logger.debug(msg)
+        await post_mini(msg)
 
 # ****************************************************************************** #
 # commands
