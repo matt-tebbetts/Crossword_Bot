@@ -68,7 +68,7 @@ class BracketSeparatedWords(Converter):
 game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
                  'Atlantic', 'Connections', '#Emovi',
-                 'Daily Crosswordle']
+                 'Daily Crosswordle', 'TimeGuessr', 'Concludle']
 
 # this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
 game_prefixes.sort(key=len, reverse=True)
@@ -85,7 +85,9 @@ game_prefix_dict = {
     'atlantic': 'Atlantic',
     'connections': 'Connections',
     'emovi': '#Emovi',
-    'crosswordle': 'Daily Crosswordle'
+    'crosswordle': 'Daily Crosswordle',
+    'timeguessr': 'TimeGuessr',
+    'concludle': 'Concludle',
 }
 
 # emoji map for confirming game scores
@@ -101,6 +103,8 @@ emoji_map = {
             '#emovi': '🎬',
             'connections': '🔢',
             'daily crosswordle': '🧩',
+            'timeguessr': '⏱️',
+            'concludle': '🏁',
         }
 
 # for calling the /get_leaderboard command (which has aliases)
@@ -371,7 +375,8 @@ async def get(ctx, *, time_frame=None):
 @bot.command(name='rescan')
 async def rescan(ctx, game_to_rescan=None):
     today = datetime.now(pytz.timezone('US/Eastern'))
-    since = today - timedelta(days=3)
+    since = today - timedelta(days=1)
+    later_today = today + timedelta(days=1)
 
     # if one game specified, create list with that game only
     if game_to_rescan is not None:
@@ -392,7 +397,7 @@ async def rescan(ctx, game_to_rescan=None):
     df = pd.DataFrame(columns=columns)
 
     # scan messages
-    async for message in ctx.channel.history(before=today, after=since, oldest_first=True):
+    async for message in ctx.channel.history(before=later_today, after=since, oldest_first=False):
         msg_text = str(message.content)
 
         # check to see if it's a game score

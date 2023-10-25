@@ -412,10 +412,12 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             game_score = f"{minutes}:{seconds_str}"
 
     if game_prefix == "TimeGuessr":
+        game_name = 'timeguessr'
         parts = msg_txt.split(" ")
-        game_score = parts[2]
+        game_score = parts[2].split("\n")[0].replace(',', '')
 
     if game_prefix == "Concludle":
+        game_name = 'concludle'
         lines = msg_txt.split("\n")
         for line in lines:
             if "/6" in line:
