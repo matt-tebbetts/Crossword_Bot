@@ -411,6 +411,17 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
             minutes = 0 if minutes is None else int(minutes)
             game_score = f"{minutes}:{seconds_str}"
 
+    if game_prefix == "TimeGuessr":
+        parts = msg_txt.split(" ")
+        game_score = parts[2]
+
+    if game_prefix == "Concludle":
+        lines = msg_txt.split("\n")
+        for line in lines:
+            if "/6" in line:
+                game_score = line.split(" ")[1]
+                metric_02 = 0 if 'X' in game_score else 1
+
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
     my_data = [[game_date, game_name, game_score, added_ts, discord_id, game_dtl, metric_01, metric_02, metric_03]]
