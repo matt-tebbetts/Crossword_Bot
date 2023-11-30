@@ -92,8 +92,7 @@ def get_mini():
         return [False, "Nobody did the mini yet"]
     else:
         try:
-            engine = create_engine(sql_addr)
-            df.to_sql(name='mini_history', con=engine, if_exists='append', index=False)
+            send_df_to_sql(df, 'mini_history', if_exists='append')
             return [True, "Got mini and saved to database"]
         except Exception as e:
             return [False, f"Error saving mini to database: {e}"]

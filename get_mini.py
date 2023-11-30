@@ -15,7 +15,7 @@ from bot_functions import get_mini_date
 from sql_runners import send_df_to_sql
 
 # save mini to database
-def get_mini():
+def get_mini_to_dataframe():
 
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
@@ -33,8 +33,16 @@ def get_mini():
             if time != '--':
                 scores[name] = time
 
-    # save scores to json for current date (based on date returned from get_mini_date)
-    ## CHATGPT PLEASE FILL THIS IN
+    # save scores to json
+    with open('mini_history.json', 'r') as f:
+        history = json.load(f)
+
+
+# check for new scores and add them to sql database
+def add_new_scores_to_sql():
+
+
+
 
     # put scores into df
     df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
