@@ -1,22 +1,29 @@
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from a .env file
 load_dotenv()
 
-def get_env_variable(var_name):
-    """Retrieve the value of an environment variable."""
-    value = os.getenv(var_name)
-    if not value:
-        raise ValueError(f"Environment variable '{var_name}' not found.")
-    return value
+# Retrieve environment variables
+SQLUSER = os.getenv('SQLUSER')
+SQLPASS = os.getenv('SQLPASS')
+SQLHOST = os.getenv('SQLHOST')
+SQLPORT = os.getenv('SQLPORT')
+SQLDATA = os.getenv('SQLDATA')
 
-credentials = {
-    'SQL_USER': get_env_variable('SQLUSER'),
-    'SQL_PASS': get_env_variable('SQLPASS'),
-    'SQL_HOST': get_env_variable('SQLHOST'),
-    'SQL_PORT': get_env_variable('SQLPORT'),
-    'SQL_DATA': get_env_variable('SQLDATA'),
-    'NYT_COOKIE': get_env_variable('NYT_COOKIE')
+# Check if all environment variables were found
+for var in [SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA]:
+    if var is None:
+        raise ValueError(f"Environment variable '{var}' not found.")
+
+# Construct the SQL address string using the variables
+sql_addr = f"mysql+pymysql://{SQLUSER}:{SQLPASS}@{SQLHOST}:{SQLPORT}/{SQLDATA}"
+
+# Define db_config using the variables
+db_config = {
+    'host': SQLHOST,
+    'port': SQLPORT,
+    'user': SQLUSER,
+    'password': SQLPASS,
+    'db': SQLDATA
 }
-
-sql_addr = f"mysql+pymysql://{credentials['SQL_USER']}:{credentials['SQL_PASS']}@{credentials['SQL_HOST']}:{credentials['SQL_PORT']}/{credentials['SQL_DATA']}"
