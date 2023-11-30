@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 
 # data management
-from sqlalchemy import create_engine, text
 import aiomysql
 import asyncio
 import pandas as pd
@@ -19,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 import logging
 import bot_camera
 import bot_queries
-from config import credentials, sql_addr
+from sql_runners import get_df_from_sql, send_df_to_sql
 
 
 # set up logging?
@@ -31,97 +30,29 @@ logger.setLevel(logging.DEBUG)
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
 
-# sql to df
-async def execute_query(query, params=None):
-
-    # Database connection parameters
-    db_config = {
-        'host': credentials.SQL_HOST,
-        'port': credentials.SQL_PORT,
-        'user': credentials.SQL_USER,
-        'password': credentials.SQL_PASS,
-        'db': credentials.SQL_DATA,
-        'loop': asyncio.get_running_loop()
-    }
-
-    attempts = 0
-    max_attempts = 3
-
-    while attempts < max_attempts:
-        try:
-            # Connect to the database
-            conn = await aiomysql.connect(**db_config)
-
-            # Create a cursor and execute the query
-            async with conn.cursor(aiomysql.DictCursor) as cursor:
-                await cursor.execute(query, params)
-                result = await cursor.fetchall()
-
-            # Close the connection
-            await conn.close()
-
-            # Convert the result to a pandas DataFrame
-            return pd.DataFrame(result) if result else pd.DataFrame()
-
-        except asyncio.TimeoutError:
-            print("SQL Timeout Error")
-            attempts += 1
-            if attempts >= max_attempts:
-                # Return an empty DataFrame after max attempts
-                print("Max attempts reached")
-                return pd.DataFrame()
-
-            await asyncio.sleep(1)  # Wait for a bit before retrying (1 second in this case)
-
-        except Exception as e:
-            # For other exceptions, you might want to handle them differently or log them
-            print(f"An error occurred: {e}")
-            return pd.DataFrame()
-
-    # Return an empty DataFrame if all attempts fail
-    return pd.DataFrame()
-
-# df to sql?
-async def write_to_db(query, params):
-    # Replace with your database credentials
-    db_config = {
-        'host': '127.0.0.1',
-        'port': 3306,
-        'user': 'your_username',
-        'password': 'your_password',
-        'db': 'your_dbname',
-    }
-
-    # Connect to the database
-    async with aiomysql.create_pool(**db_config) as pool:
-        async with pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                # Execute the query
-                await cur.execute(query, params)
-                await conn.commit()
-
 # find main channel id for each guild (old)
-def get_bot_channels():
-    engine = create_engine(sql_addr)
-    connection = engine.connect()
-    query = f"""
+async def get_bot_channels():
+    query = """
         SELECT guild_id, channel_id, guild_channel_category
         FROM discord_connections
         WHERE guild_channel_category = 'main'
     """
-    result = connection.execute(text(query))
-    rows = result.fetchall()
-    connection.close()
+    
+    # Get the DataFrame from the SQL query
+    df = await get_df_from_sql(query)
 
+    # Initialize bot_channels dictionary
     bot_channels = {}
-    for row in rows:
-        row_dict = dict(zip(result.keys(), row)) # convert row to dict
-        bot_channels[row_dict["guild_id"]] = {
-            "channel_id": row_dict["channel_id"],
-            "channel_id_int": int(row_dict["channel_id"]),
+
+    # Iterate over DataFrame rows and populate the dictionary
+    for index, row in df.iterrows():
+        bot_channels[row["guild_id"]] = {
+            "channel_id": row["channel_id"],
+            "channel_id_int": int(row["channel_id"]),
         }
 
     return bot_channels
+
 
 # get mini date
 def get_mini_date():
