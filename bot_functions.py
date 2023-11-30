@@ -53,7 +53,6 @@ async def get_bot_channels():
 
     return bot_channels
 
-
 # get mini date
 def get_mini_date():
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -389,28 +388,9 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
     my_data = [[game_date, game_name, game_score, added_ts, discord_id, game_dtl, metric_01, metric_02, metric_03]]
     df = pd.DataFrame(data=my_data, columns=my_cols)
 
-    # append to mySQL
-    engine = create_engine(sql_addr)
-    df.to_sql(name='game_history', con=engine, if_exists='append', index=False)
+    # send to sql using new function
+    send_df_to_sql(df, 'game_history', if_exists='append')
 
     msg_back = f"Added {game_name} for {discord_id} on {game_date} with score {game_score}"
 
     return msg_back
-
-# check to see if there's a new mini leader
-def mini_leader_changed(guild_id):
-    query = """
-        SELECT guild_id FROM mini_leader_changed
-        WHERE guild_id = :guild_id
-    """
-
-    try:
-        engine = create_engine(sql_addr)
-        with engine.connect() as connection:
-            result = connection.execute(text(query), {"guild_id": guild_id})
-            row = result.fetchone()
-            return bool(row)
-
-    except Exception as e:
-        logger.error(f"An error occurred while executing query: {e}")
-        return None
