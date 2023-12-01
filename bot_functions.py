@@ -20,7 +20,6 @@ import bot_camera
 import bot_queries
 from sql_runners import get_df_from_sql, send_df_to_sql
 
-
 # set up logging?
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -76,41 +75,6 @@ def get_mini_date():
         return (now + timedelta(days=1)).date()
     else:
         return now.date()
-
-# save mini to database
-def get_mini():
-
-    # get leaderboard html
-    leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
-    html = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
-
-    # find scores in the html
-    soup = BeautifulSoup(html.text, features='lxml')
-    divs = soup.find_all("div", class_='lbd-score')
-    scores = {}
-    for div in divs:
-        name = div.find("p", class_='lbd-score__name').getText().strip().replace(' (you)', '')
-        time_div = div.find("p", class_='lbd-score__time')
-        if time_div:
-            time = time_div.getText()
-            if time != '--':
-                scores[name] = time
-
-    # put scores into df
-    df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
-    df['player_id'] = df['player_id'].str.lower()
-    df.insert(0, 'game_date', get_mini_date().strftime("%Y-%m-%d"))
-    df['added_ts'] = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
-
-    # send to database
-    if len(df) == 0:
-        return [False, "Nobody did the mini yet"]
-    else:
-        try:
-            send_df_to_sql(df, 'mini_history', if_exists='append')
-            return [True, "Got mini and saved to database"]
-        except Exception as e:
-            return [False, f"Error saving mini to database: {e}"]
 
 # translate date range based on text
 def get_date_range(user_input):

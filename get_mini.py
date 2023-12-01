@@ -121,14 +121,11 @@ async def save_new_scores_to_sql(existing_scores):
             bot_print(f"An error occurred while sending data to SQL: {e}")
             # Do not update the JSON file if there was an error
 
-
 # get mini
 scores_raw = scrape_mini_scores()
 
 # save new scores to file
 scores_json = save_new_scores_to_json(scores_raw)
-
-
 
 # save new scores to sql
 asyncio.run(save_new_scores_to_sql(scores_json))

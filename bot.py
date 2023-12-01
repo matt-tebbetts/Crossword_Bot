@@ -150,7 +150,7 @@ async def on_ready():
     all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
 
     # Start timed tasks
-    tasks_to_start = [auto_fetch, auto_warn, auto_post]
+    tasks_to_start = [auto_warn, auto_post]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
@@ -203,50 +203,7 @@ async def on_message(message):
 # ****************************************************************************** #
 # tasks
 # ****************************************************************************** #
-
-# check nyt mini leaderboard every minute
-@tasks.loop(minutes=1)
-async def auto_fetch():
-
-    # get new mini and save to database
-    try:
-        bot_functions.get_mini()
-        logger.debug("Got latest mini scores from NYT")
-    except Exception as e:
-        logger.error(f"An error occurred while getting the latest mini scores: {e}")
-
-    """ it's slow, that's why... keeps pinging the sql server
-    ## disabled this part for now 6/25/2023 @ 9:30am -- enabled again 7/7/2023 @ 11:44am, not sure why it was disabled
-    # for each guild, see if the mini leader has changed since the last run
-    for guild in bot.guilds:
-        try:
-            changed = bot_functions.mini_leader_changed(guild.id)
-
-            # if changed, post new leaderboard to games channel for that guild
-            if changed:
-                
-                # get leaderboard image
-                try:
-                    img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name='mini')
-                except Exception as e:
-                    logger.error(f"An error occurred while getting the leaderboard image: {e}")
-                    continue
-
-                # get channel to post to
-                main_channel_id = bot_functions.get_main_channel_for_guild(str(guild.id))
-                send_channel = bot.get_channel(main_channel_id)
-
-                # send message
-                try:
-                    await send_channel.send("Someone else took the lead!")
-                    await send_channel.send(file=discord.File(img))
-                except Exception as e:
-                    logger.error(f"An error occurred while sending the message: {e}")
-
-        except Exception as e:
-            logger.error(f"An error occurred while checking if the mini leader has changed: {e}")
-        """
-    
+   
 # post daily mini warning
 async def post_warning():
     async with asyncio.Lock():
