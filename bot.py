@@ -434,13 +434,6 @@ async def get(ctx, *, time_frame=None):
 
     # get the data
     try:
-        
-        # run new mini before pulling leaderboard
-        if game_name == 'mini':
-            mini_response = bot_functions.get_mini()
-            logger.debug(f"Got latest mini scores from NYT")
-        
-        await asyncio.sleep(1) # wait a second before running query
 
         # pull leaderboard
         img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
