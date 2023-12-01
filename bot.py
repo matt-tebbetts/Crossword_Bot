@@ -4,9 +4,32 @@
 # ****************************************************************************** #
 
 # connections and local python files
+
+# ****************************************************************************** #
+# import packages
+# ****************************************************************************** #
+
+# connections and local python files
 import os
 import socket
+import socket
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+import bot_functions
+from bot_camera import dataframe_to_image_dark_mode
+from config import sql_addr
+
+# discord
+import discord
+from discord.ext import commands, tasks
+from discord.ext.commands import Converter, Context
+from discord import Embed
+from discord import app_commands  # trying new method
+
+# data processing
+import logging
+import numpy as np
+import pandas as pd
 from sqlalchemy import create_engine, text
 import bot_functions
 from bot_camera import dataframe_to_image_dark_mode
@@ -35,7 +58,29 @@ import asyncio
 # ****************************************************************************** #
 
 # environment variables
+import json
+
+# timing and scheduling
+from datetime import date, datetime, timedelta
+import asyncio
+
+# ****************************************************************************** #
+# set-up
+# ****************************************************************************** #
+
+# environment variables
 load_dotenv()
+TOKEN = os.getenv('CROSSWORD_BOT')
+
+# create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+logger.addHandler(file_handler)
+
+# discord connection details
 TOKEN = os.getenv('CROSSWORD_BOT')
 
 # create logger
@@ -51,7 +96,83 @@ my_intents = discord.Intents.all()
 my_intents.message_content = True
 
 # bot setup
+
+# bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
+bot_channels = bot_functions.get_bot_channels()
+
+# remove this!!!!
+active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
+
+# accept multiple words in command arguments/parameters?
+class BracketSeparatedWords(Converter):
+    async def convert(self, ctx: Context, argument: str) -> list:
+        # return argument.split("[")[1].split("]")[0].split()
+        argument = argument.strip("[]")
+        return argument.split()
+
+# set game names and prefixes
+game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
+                 'Wordle', 'Factle.app', 'boxofficega.me',
+                 'Atlantic', 'Connections', '#Emovi',
+                 'Daily Crosswordle', 'TimeGuessr', 'Concludle']
+
+# this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
+game_prefixes.sort(key=len, reverse=True)
+
+game_prefix_dict = {
+    'mini': 'Mini',
+    'worldle': '#Worldle',
+    'travle': '#travle',
+    'travle_usa': '#travle_usa',
+    'travle_gbr': '#travle_gbr',
+    'factle': 'Factle.app',
+    'boxoffice': 'boxofficega.me',
+    'wordle': 'Wordle',
+    'atlantic': 'Atlantic',
+    'connections': 'Connections',
+    'emovi': '#Emovi',
+    'crosswordle': 'Daily Crosswordle',
+    'timeguessr': 'TimeGuessr',
+    'concludle': 'Concludle',
+}
+
+# emoji map for confirming game scores
+emoji_map = {
+            '#worldle': '🌎',
+            '#travle': '🌍',
+            '#travle_usa': '🇺🇸',
+            '#travle_gbr': '🇬🇧',
+            'atlantic': '🌊',
+            'factle.app': '📈',
+            'wordle': '📚',
+            'boxofficega.me': '🎥',
+            '#emovi': '🎬',
+            'connections': '🔢',
+            'daily crosswordle': '🧩',
+            'timeguessr': '⏱️',
+            'concludle': '🏁',
+        }
+
+# for calling the /get_leaderboard command (which has aliases)
+list_of_game_names = list(game_prefix_dict.keys())
+list_of_game_names.extend(['winners', 'my_scores'])
+
+# ****************************************************************************** #
+# connecting
+# ****************************************************************************** #
+
+# connect
+@bot.event
+async def on_connect():
+    logger.info(f"Bot has been reconnected to {socket.gethostname()}")
+
+# disconnect
+@bot.event
+async def on_disconnect():
+    logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
+
+# startup
 bot_channels = bot_functions.get_bot_channels()
 
 # remove this!!!!
@@ -161,7 +282,7 @@ async def on_ready():
 # read channel messages
 @bot.event
 async def on_message(message):
-    
+        
     # check channel
     if message.channel.name not in active_channel_names:
         return
@@ -187,7 +308,32 @@ async def on_message(message):
 
             logger.debug(f"{user_id} posted a score for {game_prefix}")
 
+    # check for game score
+    for game_prefix in game_prefixes:
+
+        # find prefix
+        if str.lower(msg_text).startswith(str.lower(game_prefix)):
+
+            # get message detail
+            game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
+            
+            # get discord name
+            author = message.author.name
+            user_id = author[:-2] if author.endswith("#0") else author
+
+            logger.debug(f"{user_id} posted a score for {game_prefix}")
+
             # send to score scraper
+            response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+
+            # react with proper emoji
+            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
+            await message.add_reaction(emoji)
+        
+            # exit the loop since we found the prefix
+            break
+
+    # run the message check
             response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
