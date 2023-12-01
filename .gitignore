@@ -3,6 +3,7 @@
 .vscode/
 .idea/
 .venv/
+venv/
 files/
 __pycache__/
 test.py
