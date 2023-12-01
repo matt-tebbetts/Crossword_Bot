@@ -8,7 +8,7 @@ load_dotenv()
 SQLUSER = os.getenv('SQLUSER')
 SQLPASS = os.getenv('SQLPASS')
 SQLHOST = os.getenv('SQLHOST')
-SQLPORT = os.getenv('SQLPORT')
+SQLPORT = int(os.getenv('SQLPORT'))
 SQLDATA = os.getenv('SQLDATA')
 NYT_COOKIE = os.getenv('NYT_COOKIE')
 

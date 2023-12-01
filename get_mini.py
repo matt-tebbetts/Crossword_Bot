@@ -4,7 +4,7 @@
 ## it should write the leaderboard to a file, and only write new records to sql
 
 import pandas as pd
-import datetime
+from datetime import datetime
 import pytz
 import json
 import requests
@@ -13,6 +13,9 @@ from bot_functions import get_mini_date
 from sql_runners import send_df_to_sql
 import os
 from config import NYT_COOKIE
+import asyncio
+
+current_mini_dt = get_mini_date().strftime("%Y-%m-%d")
 
 # scrape mini scores
 def scrape_mini_scores():
@@ -38,10 +41,7 @@ def scrape_mini_scores():
 # save mini scores to file
 def save_new_scores_to_json(scores):
 
-    # get current mini date
-    current_mini_dt = datetime.now().strftime("%Y-%m-%d")
-
-    # set file path
+    # get today's mini path
     file_path = f"files/mini/{current_mini_dt}.json"
 
     # check if file exists, read existing data if it does
@@ -51,48 +51,66 @@ def save_new_scores_to_json(scores):
     else:
         existing_scores = {}
 
-    # update existing scores with new scores, only if they are not already present
+    # add new scores (if any)
     for player, score in scores.items():
         if player not in existing_scores:
-            existing_scores[player] = score
+            added_ts = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
+            print(f"{added_ts}: {player} completed the mini in {score}!")
+            existing_scores[player] = {
+                "time": score,
+                "added_ts": added_ts,
+                "added_to_sql": False
+                }
 
-    # Create directory if it doesn't exist
+    # create file if not exists
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-    # Save updated scores to JSON
+    # save updated scores to JSON
     with open(file_path, 'w') as f:
-        json.dump(existing_scores, f)
+        json.dump(existing_scores, f, indent=4)
 
+    return existing_scores
 
+# save new scores to sql
+async def save_new_scores_to_sql(existing_scores):
 
-x = scrape_mini_scores()
-print(x)
+    # Filter scores that haven't been added to SQL yet
+    new_scores = {player: data for player, data in existing_scores.items() if not data['added_to_sql']}
+    print(f"There are {len(new_scores)} scores which still need to be added to sql.")
 
+    if new_scores:
+        # Prepare DataFrame for SQL
+        df = pd.DataFrame(new_scores).transpose().reset_index()
+        df.insert(0, 'game_date', current_mini_dt)
+        df.drop(columns=['added_to_sql'], inplace=True)
+        df.columns = ['game_date', 'player_id', 'game_time', 'added_ts']
 
-
-
-
-
-"""
-# check for new scores and add them to sql database
-def add_new_scores_to_sql():
-
-
-
-
-    # put scores into df
-    df = pd.DataFrame(scores.items(), columns=['player_id', 'game_time'])
-    df['player_id'] = df['player_id'].str.lower()
-    df.insert(0, 'game_date', get_mini_date().strftime("%Y-%m-%d"))
-    df['added_ts'] = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
-
-    # send to database
-    if len(df) == 0:
-        return [False, "Nobody did the mini yet"]
-    else:
         try:
-            send_df_to_sql(df, 'mini_history', if_exists='append')
-            return [True, "Got mini and saved to database"]
+            # Send to SQL
+            await send_df_to_sql(df, 'mini_history')
+
+            # If successful, mark these scores as added to SQL
+            for player in new_scores.keys():
+                print(f"Successfully added {player}'s score to SQL.")
+                existing_scores[player]['added_to_sql'] = True
+
+            # Save the updated scores back to JSON
+            with open(f"files/mini/{current_mini_dt}.json", 'w') as f:
+                json.dump(existing_scores, f, indent=4)
+
         except Exception as e:
-            return [False, f"Error saving mini to database: {e}"]
-"""
+            # Handle the exception (e.g., log it, send an alert, etc.)
+            print(f"An error occurred while sending data to SQL: {e}")
+            # Do not update the JSON file if there was an error
+
+
+# get mini
+scores_raw = scrape_mini_scores()
+print('got scores')
+
+# save new scores to file
+scores_json = save_new_scores_to_json(scores_raw)
+print('sent to json')
+
+# save new scores to sql
+asyncio.run(save_new_scores_to_sql(scores_json))
