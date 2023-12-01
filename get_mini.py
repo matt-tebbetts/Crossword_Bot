@@ -1,25 +1,25 @@
 
 ## this should run on a completely separate process from the bot
 ## it should not be linked to Discord at all
-## it should check the leaderboard and only write new records
-## it should write the records to both a json file and the sql database
+## it should write the leaderboard to a file, and only write new records to sql
 
 import pandas as pd
 import datetime
 import pytz
 import json
 import requests
-from config import credentials
 from bs4 import BeautifulSoup
 from bot_functions import get_mini_date
 from sql_runners import send_df_to_sql
+import os
+from config import NYT_COOKIE
 
-# save mini to database
-def get_mini_to_dataframe():
+# scrape mini scores
+def scrape_mini_scores():
 
     # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
-    html = requests.get(leaderboard_url, cookies={'NYT-S': credentials.NYT_COOKIE})
+    html = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
 
     # find scores in the html
     soup = BeautifulSoup(html.text, features='lxml')
@@ -33,11 +33,47 @@ def get_mini_to_dataframe():
             if time != '--':
                 scores[name] = time
 
-    # save scores to json
-    with open('mini_history.json', 'r') as f:
-        history = json.load(f)
+    return scores
+
+# save mini scores to file
+def save_new_scores_to_json(scores):
+
+    # get current mini date
+    current_mini_dt = datetime.now().strftime("%Y-%m-%d")
+
+    # set file path
+    file_path = f"files/mini/{current_mini_dt}.json"
+
+    # check if file exists, read existing data if it does
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            existing_scores = json.load(f)
+    else:
+        existing_scores = {}
+
+    # update existing scores with new scores, only if they are not already present
+    for player, score in scores.items():
+        if player not in existing_scores:
+            existing_scores[player] = score
+
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+    # Save updated scores to JSON
+    with open(file_path, 'w') as f:
+        json.dump(existing_scores, f)
 
 
+
+x = scrape_mini_scores()
+print(x)
+
+
+
+
+
+
+"""
 # check for new scores and add them to sql database
 def add_new_scores_to_sql():
 
@@ -59,3 +95,4 @@ def add_new_scores_to_sql():
             return [True, "Got mini and saved to database"]
         except Exception as e:
             return [False, f"Error saving mini to database: {e}"]
+"""

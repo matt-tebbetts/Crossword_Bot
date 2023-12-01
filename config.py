@@ -10,6 +10,7 @@ SQLPASS = os.getenv('SQLPASS')
 SQLHOST = os.getenv('SQLHOST')
 SQLPORT = os.getenv('SQLPORT')
 SQLDATA = os.getenv('SQLDATA')
+NYT_COOKIE = os.getenv('NYT_COOKIE')
 
 # Check if all environment variables were found
 for var in [SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA]:
