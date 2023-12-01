@@ -68,10 +68,10 @@ def save_new_scores_to_json(scores):
 
     # print count of scores added
     if new_scores_found == 0:
-        print("No new scores found.")
+        bot_print("No new scores found.")
         
     else: 
-        print(f"Found {new_scores_found} new mini score(s).")
+        bot_print(f"Found {new_scores_found} new mini score(s).")
 
         # create file if not exists
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -92,15 +92,14 @@ async def save_new_scores_to_sql(existing_scores):
         return
 
     else:
-        print(f"Adding {len(new_scores)} new score(s) to SQL...")
-
         # Prepare DataFrame for SQL
         df = pd.DataFrame(new_scores).transpose().reset_index()
         df.insert(0, 'game_date', current_mini_dt)
 
-        # set added_ts for sql to current time
+        # set added_ts for sql to current time (to overwrite json added_ts for records that failed sql last time)
         df['added_ts'] = get_current_time()
 
+        # set columns
         df.drop(columns=['added_to_sql'], inplace=True)
         df.columns = ['game_date', 'player_id', 'game_time', 'added_ts']
 
@@ -110,7 +109,7 @@ async def save_new_scores_to_sql(existing_scores):
 
             # If successful, mark these scores as added to SQL
             for player in new_scores.keys():
-                print(f"Successfully added {player}'s score to SQL.")
+                bot_print(f"Successfully added score for: {player}")
                 existing_scores[player]['added_to_sql'] = True
 
             # Save the updated scores back to JSON
@@ -119,7 +118,7 @@ async def save_new_scores_to_sql(existing_scores):
 
         except Exception as e:
             # Handle the exception (e.g., log it, send an alert, etc.)
-            print(f"An error occurred while sending data to SQL: {e}")
+            bot_print(f"An error occurred while sending data to SQL: {e}")
             # Do not update the JSON file if there was an error
 
 

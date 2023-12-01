@@ -42,8 +42,8 @@ def bot_print(message):
     msg = f"{get_current_time()}: {message}"
     
     # print and log message
-    print(message)
-    logger.info(message)
+    print(msg)
+    logger.info(msg)
 
 # find main channel id for each guild (old)
 async def get_bot_channels():
