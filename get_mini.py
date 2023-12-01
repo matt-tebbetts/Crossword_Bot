@@ -9,7 +9,7 @@ import pytz
 import json
 import requests
 from bs4 import BeautifulSoup
-from bot_functions import get_mini_date
+from bot_functions import get_mini_date, get_current_time, bot_print
 from sql_runners import send_df_to_sql
 import os
 from config import NYT_COOKIE
@@ -51,37 +51,56 @@ def save_new_scores_to_json(scores):
     else:
         existing_scores = {}
 
+    # initialize count of scores added
+    new_scores_found = 0
+    
     # add new scores (if any)
     for player, score in scores.items():
         if player not in existing_scores:
-            added_ts = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
+            added_ts = get_current_time()
             print(f"{added_ts}: {player} completed the mini in {score}!")
             existing_scores[player] = {
                 "time": score,
                 "added_ts": added_ts,
                 "added_to_sql": False
                 }
+            new_scores_found += 1
 
-    # create file if not exists
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    # print count of scores added
+    if new_scores_found == 0:
+        print("No new scores found.")
+        
+    else: 
+        print(f"Found {new_scores_found} new mini score(s).")
 
-    # save updated scores to JSON
-    with open(file_path, 'w') as f:
-        json.dump(existing_scores, f, indent=4)
+        # create file if not exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # save updated scores to JSON
+        with open(file_path, 'w') as f:
+            json.dump(existing_scores, f, indent=4)
 
     return existing_scores
 
 # save new scores to sql
 async def save_new_scores_to_sql(existing_scores):
 
-    # Filter scores that haven't been added to SQL yet
+    # check for scores that haven't been added to SQL yet
     new_scores = {player: data for player, data in existing_scores.items() if not data['added_to_sql']}
-    print(f"There are {len(new_scores)} scores which still need to be added to sql.")
 
-    if new_scores:
+    if len(new_scores) == 0:
+        return
+
+    else:
+        print(f"Adding {len(new_scores)} new score(s) to SQL...")
+
         # Prepare DataFrame for SQL
         df = pd.DataFrame(new_scores).transpose().reset_index()
         df.insert(0, 'game_date', current_mini_dt)
+
+        # set added_ts for sql to current time
+        df['added_ts'] = get_current_time()
+
         df.drop(columns=['added_to_sql'], inplace=True)
         df.columns = ['game_date', 'player_id', 'game_time', 'added_ts']
 
@@ -106,11 +125,11 @@ async def save_new_scores_to_sql(existing_scores):
 
 # get mini
 scores_raw = scrape_mini_scores()
-print('got scores')
 
 # save new scores to file
 scores_json = save_new_scores_to_json(scores_raw)
-print('sent to json')
+
+
 
 # save new scores to sql
 asyncio.run(save_new_scores_to_sql(scores_json))

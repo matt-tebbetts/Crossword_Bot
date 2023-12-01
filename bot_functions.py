@@ -30,6 +30,21 @@ logger.setLevel(logging.DEBUG)
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
 
+# get current time
+def get_current_time():
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    return now.strftime("%Y-%m-%d %H:%M:%S")
+
+# function to both print messages and save them to the log file
+def bot_print(message):
+    
+    # add timestamp to message
+    msg = f"{get_current_time()}: {message}"
+    
+    # print and log message
+    print(message)
+    logger.info(message)
+
 # find main channel id for each guild (old)
 async def get_bot_channels():
     query = """
