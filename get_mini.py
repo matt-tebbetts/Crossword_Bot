@@ -95,13 +95,11 @@ async def save_new_scores_to_sql(existing_scores):
         # Prepare DataFrame for SQL
         df = pd.DataFrame(new_scores).transpose().reset_index()
         df.insert(0, 'game_date', current_mini_dt)
-
-        # set added_ts for sql to current time (to overwrite json added_ts for records that failed sql last time)
         df['added_ts'] = get_current_time()
 
         # set columns
-        df.drop(columns=['added_to_sql'], inplace=True)
-        df.columns = ['game_date', 'player_id', 'game_time', 'added_ts']
+        df.rename(columns={'index': 'player_id', 'name': 'player_id', 'time': 'game_time'}, inplace=True)
+        df = df[['game_date', 'player_id', 'game_time', 'added_ts']]
 
         try:
             # Send to SQL

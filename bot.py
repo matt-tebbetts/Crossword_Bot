@@ -318,6 +318,9 @@ async def auto_post():
 @bot.command(name='get', aliases=list_of_game_names)
 async def get(ctx, *, time_frame=None):
     
+    # currently disabling this function while it's being fixed
+    return await ctx.channel.send("Sorry, the leaderboard is currently under construction.")
+
     # clarify request
     if ctx.author.discriminator == "0":
         user_nm = ctx.author.name
