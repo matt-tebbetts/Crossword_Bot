@@ -51,6 +51,8 @@ def save_new_scores_to_json(scores):
     else:
         existing_scores = {}
 
+    print(f"Found {len(existing_scores)} existing scores: {existing_scores}")
+
     # initialize count of scores added
     new_scores_found = 0
     
