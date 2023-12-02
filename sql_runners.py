@@ -18,6 +18,12 @@ async def get_df_from_sql(query, params=None):
 
             # Create a cursor and execute the query
             async with conn.cursor(aiomysql.DictCursor) as cursor:
+
+                print('for testing, here are the details...')
+                print('')
+                print("Executing query:", query)
+                print("With parameters:", params)
+
                 await cursor.execute(query, params)
                 result = await cursor.fetchall()
 
@@ -78,6 +84,5 @@ async def send_df_to_sql(df, table_name, if_exists='append'):
                         raise ValueError(f"Table {table_name} is not empty. Aborting operation.")
 
                 # Execute the insert query
-                print(f"query to run is: {insert_query, data_tuples}")
                 await cur.executemany(insert_query, data_tuples)
                 await conn.commit()

@@ -12,12 +12,11 @@
 # connections and local python files
 import os
 import socket
-import socket
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
 import bot_functions
 from bot_camera import dataframe_to_image_dark_mode
 from config import sql_addr
+from sql_runners import send_df_to_sql, get_df_from_sql
 
 # discord
 import discord
@@ -30,17 +29,9 @@ from discord import app_commands  # trying new method
 import logging
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine, text
 import bot_functions
 from bot_camera import dataframe_to_image_dark_mode
 from config import sql_addr
-
-# discord
-import discord
-from discord.ext import commands, tasks
-from discord.ext.commands import Converter, Context
-from discord import Embed
-from discord import app_commands  # trying new method
 
 # data processing
 import logging
@@ -96,10 +87,7 @@ my_intents = discord.Intents.all()
 my_intents.message_content = True
 
 # bot setup
-
-# bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
-bot_channels = bot_functions.get_bot_channels()
 
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
@@ -173,76 +161,6 @@ async def on_disconnect():
     logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
 
 # startup
-bot_channels = bot_functions.get_bot_channels()
-
-# remove this!!!!
-active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
-
-# accept multiple words in command arguments/parameters?
-class BracketSeparatedWords(Converter):
-    async def convert(self, ctx: Context, argument: str) -> list:
-        # return argument.split("[")[1].split("]")[0].split()
-        argument = argument.strip("[]")
-        return argument.split()
-
-# set game names and prefixes
-game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
-                 'Wordle', 'Factle.app', 'boxofficega.me',
-                 'Atlantic', 'Connections', '#Emovi',
-                 'Daily Crosswordle']
-
-# this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
-game_prefixes.sort(key=len, reverse=True)
-
-game_prefix_dict = {
-    'mini': 'Mini',
-    'worldle': '#Worldle',
-    'travle': '#travle',
-    'travle_usa': '#travle_usa',
-    'travle_gbr': '#travle_gbr',
-    'factle': 'Factle.app',
-    'boxoffice': 'boxofficega.me',
-    'wordle': 'Wordle',
-    'atlantic': 'Atlantic',
-    'connections': 'Connections',
-    'emovi': '#Emovi',
-    'crosswordle': 'Daily Crosswordle'
-}
-
-# emoji map for confirming game scores
-emoji_map = {
-            '#worldle': '🌎',
-            '#travle': '🌍',
-            '#travle_usa': '🇺🇸',
-            '#travle_gbr': '🇬🇧',
-            'atlantic': '🌊',
-            'factle.app': '📈',
-            'wordle': '📚',
-            'boxofficega.me': '🎥',
-            '#emovi': '🎬',
-            'connections': '🔢',
-            'daily crosswordle': '🧩',
-        }
-
-# for calling the /get_leaderboard command (which has aliases)
-list_of_game_names = list(game_prefix_dict.keys())
-list_of_game_names.extend(['winners', 'my_scores'])
-
-# ****************************************************************************** #
-# connecting
-# ****************************************************************************** #
-
-# connect
-@bot.event
-async def on_connect():
-    logger.info(f"Bot has been reconnected to {socket.gethostname()}")
-
-# disconnect
-@bot.event
-async def on_disconnect():
-    logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
-
-# startup
 @bot.event
 async def on_ready():
 
@@ -267,8 +185,9 @@ async def on_ready():
             member_data.append([guild_id, guild_nm, member_id, member_nm, now_txt])
         guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
         all_users = pd.concat([all_users, guild_users], ignore_index=True)
-    engine = create_engine(sql_addr)
-    all_users.to_sql('user_history', con=engine, if_exists='append', index=False)
+    
+    # send all_users to sql using custom function from sql_runners.py
+    await send_df_to_sql(all_users, 'user_history')
 
     # Start timed tasks
     tasks_to_start = [auto_warn, auto_post]
@@ -324,17 +243,7 @@ async def on_message(message):
             logger.debug(f"{user_id} posted a score for {game_prefix}")
 
             # send to score scraper
-            response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
-
-            # react with proper emoji
-            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
-            await message.add_reaction(emoji)
-        
-            # exit the loop since we found the prefix
-            break
-
-    # run the message check
-            response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+            response = await bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
             emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
@@ -349,7 +258,7 @@ async def on_message(message):
 # ****************************************************************************** #
 # tasks
 # ****************************************************************************** #
-   
+
 # post daily mini warning
 async def post_warning():
     async with asyncio.Lock():
@@ -376,7 +285,7 @@ async def post_mini():
 
             today = datetime.now(pytz.timezone('US/Eastern'))
             
-            img = bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
+            img = await bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
@@ -436,7 +345,7 @@ async def get(ctx, *, time_frame=None):
     try:
 
         # pull leaderboard
-        img = bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
+        img = await bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
         
         # send it
         await ctx.channel.send(file=discord.File(img))
@@ -449,7 +358,7 @@ async def get(ctx, *, time_frame=None):
 @bot.command(name='rescan')
 async def rescan(ctx, game_to_rescan=None):
     today = datetime.now(pytz.timezone('US/Eastern'))
-    since = today - timedelta(days=3)
+    since = today - timedelta(days=1)
 
     # if one game specified, create list with that game only
     if game_to_rescan is not None:
@@ -470,7 +379,7 @@ async def rescan(ctx, game_to_rescan=None):
     df = pd.DataFrame(columns=columns)
 
     # scan messages
-    async for message in ctx.channel.history(before=today, after=since, oldest_first=True):
+    async for message in ctx.channel.history(before=today, after=since, oldest_first=False):
         msg_text = str(message.content)
 
         # check to see if it's a game score
@@ -480,7 +389,7 @@ async def rescan(ctx, game_to_rescan=None):
             if str.lower(msg_text).startswith(str.lower(game_prefix)):
 
                 # get message detail
-                game_date = message.created_at.date()
+                game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
                 
                 # get discord name
                 author = message.author.name
@@ -489,7 +398,7 @@ async def rescan(ctx, game_to_rescan=None):
                 logger.debug(f"Found {user_id}'s {game_prefix} score from {game_date}")
 
                 # send to score scraper
-                response = bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+                response = await bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
 
                 # react with proper emoji
                 emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         

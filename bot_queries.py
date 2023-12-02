@@ -1,9 +1,12 @@
 def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
-    guild_condition = "guild_id = :guild_id"
-    date_condition = "game_date BETWEEN :min_date AND :max_date"
-    game_condition = "game_name = :game_name"
-    user_condition = "member_nm = :user_nm"
+    # Initialize the parameters list
+    query_params = []
+
+    guild_condition = "guild_id = %s"
+    date_condition = "game_date BETWEEN %s AND %s"
+    game_condition = "game_name = %s"
+    user_condition = "member_nm = %s"
 
     # check for date range first
     # has_date_range = (min_date != max_date)
@@ -142,4 +145,15 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                     ) x
         """
 
-    return cols, query
+    # Add parameters based on the conditions
+    query_params.append(guild_id)
+    query_params.extend([min_date, max_date])  # For date_condition
+    if game_name != 'winners':
+        query_params.append(game_name)  # For game_condition
+    if game_name == 'my_scores':
+        query_params.append(user_nm)  # For user_condition
+
+    # Convert the list to a tuple
+    params_tuple = tuple(query_params)
+
+    return cols, query, params_tuple

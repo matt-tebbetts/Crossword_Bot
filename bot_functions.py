@@ -123,7 +123,7 @@ def get_date_range(user_input):
     return min_date, max_date
 
 # returns image location of leaderboard
-def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
+async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
 
     today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
 
@@ -144,18 +144,12 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
         title_date = f"{min_date} through {max_date}"
 
     # determine leaderboard query to run
-    cols, query = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
-
-    # get the result via new query function
-    query_parameters = {"guild_id": guild_id,
-                        "game_name": game_name,
-                        "min_date": min_date,
-                        "max_date": max_date,
-                        "user_nm": user_nm}
+    cols, query, params = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
     
     try:
+        
         # new asynchronous query function
-        df = execute_query(query, query_parameters)
+        df = await get_df_from_sql(query, params)
         print('got query into dataframe')
 
     except Exception as e:
@@ -178,7 +172,7 @@ def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=N
     return img
 
 # add discord scores to database when people paste them to discord chat
-def add_score(game_prefix, game_date, discord_id, msg_txt):
+async def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -367,7 +361,7 @@ def add_score(game_prefix, game_date, discord_id, msg_txt):
     df = pd.DataFrame(data=my_data, columns=my_cols)
 
     # send to sql using new function
-    send_df_to_sql(df, 'game_history', if_exists='append')
+    await send_df_to_sql(df, 'game_history', if_exists='append')
 
     msg_back = f"Added {game_name} for {discord_id} on {game_date} with score {game_score}"
 
