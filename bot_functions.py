@@ -383,7 +383,7 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
     return msg_back
 
 # save message to file
-def save_message_detail(message, msg_type):
+def save_message_detail(message):
     
     # Find URLs
     urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', message.content)
@@ -417,20 +417,24 @@ def save_message_detail(message, msg_type):
     }
 
     # set directory to save file
-    if msg_type == "edited":
-        directory = f"files/messages/{message.guild.id}/edits"
-    else:
-        directory = f"files/messages/{message.guild.id}/messages"
-
-    # create it if not exists
+    directory = f"files/messages/{message.guild.id}"
     if not os.path.exists(directory):
         os.makedirs(directory)
+    file_path = f"{directory}/messages.json"
 
-    # write to it
-    with open(f"{directory}/messages.json", "a") as file:
-        json.dump(message_data, file)
-        file.write('\n')
+    # Read existing messages (if any)
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            messages = json.load(file)
+    else:
+        messages = {}
+    
+    messages[message.id] = message_data  # This will overwrite if the ID already exists
 
+    # Write updated messages back to the file
+    with open(file_path, 'w') as file:
+        json.dump(messages, file, indent=4)
+    
     print('Message saved to file')
 
     return

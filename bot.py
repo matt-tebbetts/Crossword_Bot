@@ -246,6 +246,17 @@ async def on_message(message):
     # run the message check
     await bot.process_commands(message)
 
+# read channel message edits
+@bot.event
+async def on_message_edit(before, after):
+    
+    try:
+        # Call save_message_detail with the edited message
+        bot_functions.save_message_detail(after)
+
+    except Exception as e:
+        bot_functions.bot_print(f"Failed to update edited message: {e}")
+
 # ****************************************************************************** #
 # tasks
 # ****************************************************************************** #
