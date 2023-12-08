@@ -201,7 +201,13 @@ async def on_ready():
 # read channel messages
 @bot.event
 async def on_message(message):
-        
+    
+    # save message into json
+    try:
+        bot_functions.save_message_detail(message)
+    except Exception as e:
+        bot_functions.bot_print(f"failed to save message: {e}")
+
     # check channel
     if message.channel.name not in active_channel_names:
         return
@@ -211,21 +217,6 @@ async def on_message(message):
         return
 
     msg_text = str(message.content)
-
-    # check for game score
-    for game_prefix in game_prefixes:
-
-        # find prefix
-        if str.lower(msg_text).startswith(str.lower(game_prefix)):
-
-            # get message detail
-            game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-            
-            # get discord name
-            author = message.author.name
-            user_id = author[:-2] if author.endswith("#0") else author
-
-            logger.debug(f"{user_id} posted a score for {game_prefix}")
 
     # check for game score
     for game_prefix in game_prefixes:
