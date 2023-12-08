@@ -357,7 +357,10 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     if game_prefix == "TimeGuessr":
         parts = msg_txt.split(" ")
-        game_score = parts[2]
+        game_score = parts[2].split("\n")[0]  # Get the score before the newline
+        game_score = game_score.split('/')[0]  # Split by '/' and take the first part
+        game_score = game_score.replace(',', '')  # Remove commas
+
 
     if game_prefix == "Concludle":
         lines = msg_txt.split("\n")
