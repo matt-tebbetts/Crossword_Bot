@@ -5,5 +5,6 @@
 .venv/
 venv/
 files/
+!files/images/
 __pycache__/
 test.py
