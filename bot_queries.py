@@ -1,3 +1,5 @@
+from global_functions import bot_print
+
 def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
     # Initialize the parameters list
@@ -122,9 +124,9 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 x.player_name,
                 x.points,
                 x.wins,
-                CONCAT(ROUND(x.top_3 * 100), '%') as top_3,
-                CONCAT(ROUND(x.top_5 * 100), '%') as top_5,
-                CONCAT(ROUND((x.games_played / max(x.games_played) over()) * 100), '%') as participation
+                CONCAT(ROUND(x.top_3 * 100), '%%') as top_3,
+                CONCAT(ROUND(x.top_5 * 100), '%%') as top_5,
+                CONCAT(ROUND((x.games_played / max(x.games_played) over()) * 100), '%%') as participation
             FROM
                     (
                     SELECT 

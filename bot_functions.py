@@ -128,19 +128,21 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
     cols, query, params = build_query(guild_id, game_name, min_date, max_date, user_nm)
     
     try:
-        
         # new asynchronous query function
         df = await get_df_from_sql(query, params)
-        bot_print('got query into dataframe')
+        bot_print(f'Ran the leaderboard query. Got {len(df)} rows and put into dataframe')
 
     except Exception as e:
         bot_print(f"Error when trying to run SQL query: {e}")
         img = 'files/images/error.png'
         return img
 
-    if not df.empty and cols:
-        df.columns = cols
+    # if leaderboard empty
+    if len(df) == 0 or not cols:
+        bot_print('The leaderboard is empty')
+        return None
 
+    df.columns = cols
     # clean some columns
     if 'Rank' in df.columns:
         df['Rank'] = df['Rank'].fillna('').astype(str).apply(lambda x: x.rstrip('.0') if '.' in x and x != '' else x)
@@ -148,8 +150,19 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
         df['Game'] = df['Game'].str.capitalize()
 
     # create image
-    img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm
-    img = bot_camera.dataframe_to_image_dark_mode(df, img_title=img_title, img_subtitle=title_date)
+    img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm\
+    
+    print("the dataframe we're trying to print looks like this...")
+    print(df.head())
+
+    # try to generate image
+    try:
+        img = bot_camera.dataframe_to_image_dark_mode(df, img_title=img_title, img_subtitle=title_date)
+        bot_print('successfully generated image')
+    except Exception as e:
+        bot_print(f"Error when trying to generate image: {e}")
+        img = 'files/images/error.png'
+
     return img
 
 # add discord scores to database when people paste them to discord chat
