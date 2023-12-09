@@ -30,6 +30,7 @@ import logging
 import numpy as np
 import pandas as pd
 import bot_functions
+from bot_functions import bot_print
 from bot_camera import dataframe_to_image_dark_mode
 
 # timing and scheduling
@@ -45,7 +46,7 @@ import asyncio
 load_dotenv()
 TOKEN = os.getenv('MATT_BOT') if test_mode else os.getenv('CROSSWORD_BOT')
 
-# create logger
+# create bot_print
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
@@ -124,12 +125,12 @@ list_of_game_names.extend(['winners', 'my_scores'])
 # connect
 @bot.event
 async def on_connect():
-    logger.info(f"Bot has been reconnected to {socket.gethostname()}")
+    bot_print.info(f"Bot has been reconnected to {socket.gethostname()}")
 
 # disconnect
 @bot.event
 async def on_disconnect():
-    logger.warning(f"Bot has been disconnected from {socket.gethostname()}")
+    bot_print.warning(f"Bot has been disconnected from {socket.gethostname()}")
 
 # startup
 @bot.event
@@ -143,7 +144,7 @@ async def on_ready():
 
     # get latest user list
     for guild in bot.guilds:
-        logger.debug(f"Connected to {guild.name}")
+        bot_print.debug(f"Connected to {guild.name}")
 
         # get user list into csv
         members = guild.members
@@ -167,11 +168,15 @@ async def on_ready():
             task.start()
 
     # confirm
-    logger.debug(f"{bot.user.name} is ready!")
+    bot_print.debug(f"{bot.user.name} is ready!")
 
 # read channel messages
 @bot.event
 async def on_message(message):
+    
+    # ignore self
+    if message.author == bot.user:
+        return
     
     # save message into json
     try:
@@ -181,10 +186,6 @@ async def on_message(message):
 
     # check channel
     if message.channel.name not in active_channel_names:
-        return
-
-    # ignore self
-    if message.author == bot.user:
         return
 
     msg_text = str(message.content)
@@ -202,7 +203,7 @@ async def on_message(message):
             author = message.author.name
             user_id = author[:-2] if author.endswith("#0") else author
 
-            logger.debug(f"{user_id} posted a score for {game_prefix}")
+            bot_print.debug(f"{user_id} posted a score for {game_prefix}")
 
             # send to score scraper
             response = await bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
@@ -239,7 +240,7 @@ async def post_warning():
 
         # post warning in each active channel for each guild
         for guild in bot.guilds:
-            logger.debug(f"Posting Mini Warning for {guild.name}")
+            bot_print.debug(f"Posting Mini Warning for {guild.name}")
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f""" Mini expires in one hour! """)
@@ -254,7 +255,7 @@ async def post_mini():
 
         # post warning in each guild
         for guild in bot.guilds:
-            logger.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
+            bot_print.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
 
             today = datetime.now(pytz.timezone('US/Eastern'))
             
@@ -271,7 +272,7 @@ async def auto_warn():
     now = datetime.now(pytz.timezone('US/Eastern'))
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
     if now.minute == 0 and now.hour == cutoff_hour:
-        logger.debug("Time to warn!")
+        bot_print.debug("Time to warn!")
         await post_warning()
 
 # timer for final post
@@ -280,7 +281,7 @@ async def auto_post():
     now = datetime.now(pytz.timezone('US/Eastern'))
     post_hour = 18 if now.weekday() in [5, 6] else 22
     if now.minute == 0 and now.hour == post_hour:
-        logger.debug("Time to post final!")
+        bot_print.debug("Time to post final!")
         await post_mini()
 
 # ****************************************************************************** #
@@ -292,7 +293,7 @@ async def auto_post():
 async def get(ctx, *, time_frame=None):
     
     # currently disabling this function while it's being fixed
-    return await ctx.channel.send("Sorry, the leaderboard is currently under construction.")
+    ## return await ctx.channel.send("Sorry, the leaderboard is currently under construction.")
 
     # clarify request
     if ctx.author.discriminator == "0":
@@ -309,7 +310,7 @@ async def get(ctx, *, time_frame=None):
     time_frame = str.lower(time_frame)
 
     # print
-    logger.debug(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
+    bot_print.debug(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
 
     # get the min_date and max_date based on the user's input
     date_range = bot_functions.get_date_range(time_frame)
@@ -371,7 +372,7 @@ async def rescan(ctx, game_to_rescan=None):
                 author = message.author.name
                 user_id = author[:-2] if author.endswith("#0") else author
 
-                logger.debug(f"Found {user_id}'s {game_prefix} score from {game_date}")
+                bot_print.debug(f"Found {user_id}'s {game_prefix} score from {game_date}")
 
                 # send to score scraper
                 response = await bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
