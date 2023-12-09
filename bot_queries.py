@@ -3,13 +3,9 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     # Initialize the parameters list
     query_params = []
 
-    guild_condition = "guild_id = %s"
-    date_condition = "game_date BETWEEN %s AND %s"
-    game_condition = "game_name = %s"
-    user_condition = "member_nm = %s"
-
-    # check for date range first
-    # has_date_range = (min_date != max_date)
+    # Add common parameters
+    query_params.append(guild_id)
+    query_params.extend([min_date, max_date])  # These are needed in every query
 
     # all games, winners only, single date
     if game_name == 'winners' and min_date == max_date:
@@ -20,8 +16,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 player_name,
                 game_score
             FROM game_view
-            WHERE {guild_condition}
-            AND {date_condition}
+            WHERE guild_id = %s
+            AND game_date BETWEEN %s AND %s
             and game_rank = 1
             ORDER BY 
                 case    when game_name = 'mini'      then 1
@@ -68,8 +64,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                                 sum(case when game_rank <= 5 then 1 else 0 end) / sum(1.0) as top_5,
                                 sum(1) as games_played
                             FROM game_view
-                            WHERE {guild_condition}
-                            AND {date_condition}
+                            WHERE guild_id = %s
+                            AND game_date BETWEEN %s AND %s
                             GROUP BY 1,2
                             ) x
                     ) z
@@ -86,9 +82,9 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 game_score,
                 game_rank
             FROM game_view
-            WHERE {guild_condition}
-            AND {date_condition}
-            AND {user_condition}
+            WHERE guild_id = %s
+            AND game_date BETWEEN %s AND %s
+            AND member_nm = %s
             ORDER BY 
                 case    when game_name = 'mini'      then 1
                         when game_name = 'boxoffice' then 2
@@ -98,7 +94,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         else 9
                 end asc, game_date desc;
         """
-    
+        query_params.append(user_nm)
+
     # specific game: single date
     elif min_date == max_date:  
         cols = ['Rank', 'Player', 'Score', 'Points']
@@ -109,11 +106,12 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 game_score,
                 points
             FROM game_view
-            WHERE {guild_condition}
-            AND {date_condition}
-            AND {game_condition}
+            WHERE guild_id = %s
+            AND game_date BETWEEN %s AND %s
+            AND game_name = %s
             ORDER BY game_rank;
         """
+        query_params.append(game_name)
 
     # specific game: date range
     else:  
@@ -138,20 +136,13 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         sum(case when game_rank <= 5 then 1 else 0 end) / sum(1.0) as top_5,
                         sum(1) as games_played
                     FROM game_view
-                    WHERE {guild_condition}
-                    AND {date_condition}
-                    AND {game_condition}
+                    WHERE guild_id = %s
+                    AND game_date BETWEEN %s AND %s
+                    AND game_name = %s
                     GROUP BY 1,2
                     ) x
         """
-
-    # Add parameters based on the conditions
-    query_params.append(guild_id)
-    query_params.extend([min_date, max_date])  # For date_condition
-    if game_name != 'winners':
-        query_params.append(game_name)  # For game_condition
-    if game_name == 'my_scores':
-        query_params.append(user_nm)  # For user_condition
+        query_params.append(game_name)
 
     # Convert the list to a tuple
     params_tuple = tuple(query_params)

@@ -9,14 +9,17 @@
 # import packages
 # ****************************************************************************** #
 
-# connections and local python files
+# connections
 import os
 import socket
 from dotenv import load_dotenv
-import bot_functions
+
+# local files
+from global_functions import bot_print
+from bot_functions import save_message_detail, add_score, get_leaderboard, get_date_range
 from bot_camera import dataframe_to_image_dark_mode
 from config import test_mode
-from sql_runners import send_df_to_sql, get_df_from_sql
+from bot_sql import send_df_to_sql, get_df_from_sql
 
 # discord
 import discord
@@ -29,9 +32,6 @@ from discord import app_commands  # trying new method
 import logging
 import numpy as np
 import pandas as pd
-import bot_functions
-from bot_functions import bot_print
-from bot_camera import dataframe_to_image_dark_mode
 
 # timing and scheduling
 from datetime import date, datetime, timedelta
@@ -46,30 +46,25 @@ import asyncio
 load_dotenv()
 TOKEN = os.getenv('MATT_BOT') if test_mode else os.getenv('CROSSWORD_BOT')
 
-# create bot_print
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
-logger.addHandler(file_handler)
-
 # discord connection details
 my_intents = discord.Intents.all()
 my_intents.message_content = True
 
 # bot setup
 bot = commands.Bot(command_prefix="/", intents=my_intents)
+bot_ready = False
 
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
 
+"""
 # accept multiple words in command arguments/parameters?
 class BracketSeparatedWords(Converter):
     async def convert(self, ctx: Context, argument: str) -> list:
         # return argument.split("[")[1].split("]")[0].split()
         argument = argument.strip("[]")
         return argument.split()
+"""
 
 # set game names and prefixes
 game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
@@ -125,16 +120,21 @@ list_of_game_names.extend(['winners', 'my_scores'])
 # connect
 @bot.event
 async def on_connect():
-    bot_print.info(f"Bot has been reconnected to {socket.gethostname()}")
+    bot_print(f"Bot has been reconnected to {socket.gethostname()}")
 
 # disconnect
 @bot.event
 async def on_disconnect():
-    bot_print.warning(f"Bot has been disconnected from {socket.gethostname()}")
+    bot_print(f"Bot has been disconnected from {socket.gethostname()}")
 
 # startup
 @bot.event
 async def on_ready():
+
+    # set bot_ready to True
+    global bot_ready
+    bot_ready = True
+    bot_print(f"{bot.user.name} is ready!")
 
     # get time
     now_txt = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
@@ -144,7 +144,7 @@ async def on_ready():
 
     # get latest user list
     for guild in bot.guilds:
-        bot_print.debug(f"Connected to {guild.name}")
+        bot_print(f"Connected to {guild.name}")
 
         # get user list into csv
         members = guild.members
@@ -167,22 +167,24 @@ async def on_ready():
         if not task.is_running():
             task.start()
 
-    # confirm
-    bot_print.debug(f"{bot.user.name} is ready!")
-
 # read channel messages
 @bot.event
 async def on_message(message):
-    
+
+    # check if bot is ready
+    global bot_ready
+    if not bot_ready:
+        return
+
     # ignore self
     if message.author == bot.user:
         return
     
     # save message into json
     try:
-        bot_functions.save_message_detail(message)
+        save_message_detail(message)
     except Exception as e:
-        bot_functions.bot_print(f"failed to save message: {e}")
+        bot_print(f"failed to save message: {e}")
 
     # check channel
     if message.channel.name not in active_channel_names:
@@ -203,10 +205,10 @@ async def on_message(message):
             author = message.author.name
             user_id = author[:-2] if author.endswith("#0") else author
 
-            bot_print.debug(f"{user_id} posted a score for {game_prefix}")
+            bot_print(f"{user_id} posted a score for {game_prefix}")
 
             # send to score scraper
-            response = await bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+            response = await add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
             emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
@@ -224,10 +226,10 @@ async def on_message_edit(before, after):
     
     try:
         # Call save_message_detail with the edited message
-        bot_functions.save_message_detail(after)
+        save_message_detail(after)
 
     except Exception as e:
-        bot_functions.bot_print(f"Failed to update edited message: {e}")
+        bot_print(f"Failed to update edited message: {e}")
 
 # ****************************************************************************** #
 # tasks
@@ -240,7 +242,7 @@ async def post_warning():
 
         # post warning in each active channel for each guild
         for guild in bot.guilds:
-            bot_print.debug(f"Posting Mini Warning for {guild.name}")
+            bot_print(f"Posting Mini Warning for {guild.name}")
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f""" Mini expires in one hour! """)
@@ -255,11 +257,11 @@ async def post_mini():
 
         # post warning in each guild
         for guild in bot.guilds:
-            bot_print.debug(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
+            bot_print(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
 
             today = datetime.now(pytz.timezone('US/Eastern'))
             
-            img = await bot_functions.get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
+            img = await get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
@@ -272,7 +274,7 @@ async def auto_warn():
     now = datetime.now(pytz.timezone('US/Eastern'))
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
     if now.minute == 0 and now.hour == cutoff_hour:
-        bot_print.debug("Time to warn!")
+        bot_print("Time to warn!")
         await post_warning()
 
 # timer for final post
@@ -281,11 +283,12 @@ async def auto_post():
     now = datetime.now(pytz.timezone('US/Eastern'))
     post_hour = 18 if now.weekday() in [5, 6] else 22
     if now.minute == 0 and now.hour == post_hour:
-        bot_print.debug("Time to post final!")
+        bot_print("Time to post final!")
         await post_mini()
 
 # ****************************************************************************** #
-# commands
+# commands (only 2 right now: /get and /rescan)
+# /get can be replaced by any of the game names
 # ****************************************************************************** #
 
 # get leaderboards
@@ -296,24 +299,19 @@ async def get(ctx, *, time_frame=None):
     ## return await ctx.channel.send("Sorry, the leaderboard is currently under construction.")
 
     # clarify request
-    if ctx.author.discriminator == "0":
-        user_nm = ctx.author.name
-    else:
-        user_nm = ctx.author.name + "#" + ctx.author.discriminator
+    user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
     guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
     
     # default time_frame to 'today' if not provided
-    if time_frame is None:
-        time_frame = 'today'
-    time_frame = str.lower(time_frame)
+    time_frame = 'today' if time_frame is None else str.lower(time_frame)
 
     # print
-    bot_print.debug(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
+    bot_print(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
 
     # get the min_date and max_date based on the user's input
-    date_range = bot_functions.get_date_range(time_frame)
+    date_range = get_date_range(time_frame)
     if date_range is None:
         return await ctx.channel.send("Invalid date range or format. Please try again with a valid date range or keyword (e.g., 'yesterday', 'last week', 'this month', etc.).")
     min_date, max_date = date_range
@@ -322,7 +320,7 @@ async def get(ctx, *, time_frame=None):
     try:
 
         # pull leaderboard
-        img = await bot_functions.get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
+        img = await get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
         
         # send it
         await ctx.channel.send(file=discord.File(img))
@@ -372,10 +370,10 @@ async def rescan(ctx, game_to_rescan=None):
                 author = message.author.name
                 user_id = author[:-2] if author.endswith("#0") else author
 
-                bot_print.debug(f"Found {user_id}'s {game_prefix} score from {game_date}")
+                bot_print(f"Found {user_id}'s {game_prefix} score from {game_date}")
 
                 # send to score scraper
-                response = await bot_functions.add_score(game_prefix, game_date, user_id, msg_text)
+                response = await add_score(game_prefix, game_date, user_id, msg_text)
 
                 # react with proper emoji
                 emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         

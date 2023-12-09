@@ -3,6 +3,7 @@ import asyncio
 import aiomysql
 import pandas as pd
 from config import db_config
+from bot_functions import bot_print
 
 # sql to df
 async def get_df_from_sql(query, params=None):   
@@ -18,11 +19,8 @@ async def get_df_from_sql(query, params=None):
 
             # Create a cursor and execute the query
             async with conn.cursor(aiomysql.DictCursor) as cursor:
-
-                print('for testing, here are the details...')
-                print('')
-                print("Executing query:", query)
-                print("With parameters:", params)
+                bot_print("Query to execute:", query)
+                bot_print("Parameters to use:", params)
 
                 await cursor.execute(query, params)
                 result = await cursor.fetchall()
@@ -34,18 +32,18 @@ async def get_df_from_sql(query, params=None):
             return pd.DataFrame(result) if result else pd.DataFrame()
 
         except asyncio.TimeoutError:
-            print("SQL Timeout Error")
+            bot_print("SQL Timeout Error")
             attempts += 1
             if attempts >= max_attempts:
                 # Return an empty DataFrame after max attempts
-                print("Max attempts reached")
+                bot_print("Max attempts reached")
                 return pd.DataFrame()
 
             await asyncio.sleep(1)  # Wait for a bit before retrying (1 second in this case)
 
         except Exception as e:
             # For other exceptions, you might want to handle them differently or log them
-            print(f"An error occurred: {e}")
+            bot_print(f"Error in bot_sql.py line 46: {e}")
             return pd.DataFrame()
 
     # Return an empty DataFrame if all attempts fail

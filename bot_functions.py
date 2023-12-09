@@ -1,6 +1,7 @@
 # connections
 import os
 from dotenv import load_dotenv
+from global_functions import bot_print
 
 # data management
 import json
@@ -16,34 +17,12 @@ from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 # internal
-import logging
 import bot_camera
-import bot_queries
-from sql_runners import get_df_from_sql, send_df_to_sql
-
-# set up logging?
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from bot_sql import get_df_from_sql, send_df_to_sql
 
 # get secrets
 load_dotenv()
 NYT_COOKIE = os.getenv('NYT_COOKIE')
-
-# get current time
-def get_current_time():
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    return now.strftime("%Y-%m-%d %H:%M:%S")
-
-# function to both print messages and save them to the log file
-def bot_print(message):
-    
-    # add timestamp to message
-    msg = f"{get_current_time()}: {message}"
-    
-    # print and log message
-    print(msg)
-    logger.info(msg)
 
 # find main channel id for each guild (old)
 async def get_bot_channels():
@@ -125,6 +104,7 @@ def get_date_range(user_input):
 
 # returns image location of leaderboard
 async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
+    from bot_queries import build_query
 
     today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
 
@@ -145,16 +125,16 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
         title_date = f"{min_date} through {max_date}"
 
     # determine leaderboard query to run
-    cols, query, params = bot_queries.build_query(guild_id, game_name, min_date, max_date, user_nm)
+    cols, query, params = build_query(guild_id, game_name, min_date, max_date, user_nm)
     
     try:
         
         # new asynchronous query function
         df = await get_df_from_sql(query, params)
-        print('got query into dataframe')
+        bot_print('got query into dataframe')
 
     except Exception as e:
-        print(f"Error when trying to run SQL query: {e}")
+        bot_print(f"Error when trying to run SQL query: {e}")
         img = 'files/images/error.png'
         return img
 
@@ -393,8 +373,10 @@ def save_message_detail(message):
     urls.extend(attachments)
     contains_gifs = any(url.endswith('.gif') for url in attachments)
     
-    msg_crt = message.created_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
-    msg_edt = message.edited_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
+    msg_crt = message.created_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
+    msg_edt = None
+    if message.edited_at is not None:
+        msg_edt = message.edited_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
 
     # Structure data
     message_data = {
@@ -428,16 +410,25 @@ def save_message_detail(message):
     # Read existing messages (if any)
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
-            messages = json.load(file)
+            content = file.read()
+            if content:  # Check if the file is not empty
+                try:
+                    messages = json.loads(content)
+                except json.JSONDecodeError as e:
+                    bot_print(f"JSON decode error: {e}")
+                    # Handle the error - maybe backup the file and create a new empty dictionary
+                    messages = {}
+            else:
+                messages = {}
     else:
         messages = {}
-    
+
     messages[message.id] = message_data  # This will overwrite if the ID already exists
 
     # Write updated messages back to the file
     with open(file_path, 'w') as file:
         json.dump(messages, file, indent=4)
     
-    print('Message saved to file')
+    bot_print('Message saved to file')
 
     return
