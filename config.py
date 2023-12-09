@@ -28,3 +28,6 @@ db_config = {
     'password': SQLPASS,
     'db': SQLDATA
 }
+
+# set test_mode
+test_mode = True

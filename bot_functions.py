@@ -393,12 +393,15 @@ def save_message_detail(message):
     urls.extend(attachments)
     contains_gifs = any(url.endswith('.gif') for url in attachments)
     
+    msg_crt = message.created_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
+    msg_edt = message.edited_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
+
     # Structure data
     message_data = {
         "id": message.id,
         "content": message.content,
-        "create_ts": message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        "edit_ts": message.edited_at.strftime('%Y-%m-%d %H:%M:%S') if message.edited_at else None,
+        "create_ts": msg_crt,
+        "edit_ts": msg_edt,
         "length": len(message.content),
         "guild_id": message.guild.id,
         "guild_nm": message.guild.name,

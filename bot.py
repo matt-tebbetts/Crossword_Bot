@@ -15,7 +15,7 @@ import socket
 from dotenv import load_dotenv
 import bot_functions
 from bot_camera import dataframe_to_image_dark_mode
-from config import sql_addr
+from config import test_mode
 from sql_runners import send_df_to_sql, get_df_from_sql
 
 # discord
@@ -31,28 +31,10 @@ import numpy as np
 import pandas as pd
 import bot_functions
 from bot_camera import dataframe_to_image_dark_mode
-from config import sql_addr
 
-# data processing
-import logging
-import numpy as np
-import pandas as pd
+# timing and scheduling
+from datetime import date, datetime, timedelta
 import pytz
-import json
-
-# timing and scheduling
-from datetime import date, datetime, timedelta
-import asyncio
-
-# ****************************************************************************** #
-# set-up
-# ****************************************************************************** #
-
-# environment variables
-import json
-
-# timing and scheduling
-from datetime import date, datetime, timedelta
 import asyncio
 
 # ****************************************************************************** #
@@ -61,18 +43,7 @@ import asyncio
 
 # environment variables
 load_dotenv()
-TOKEN = os.getenv('CROSSWORD_BOT')
-
-# create logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
-logger.addHandler(file_handler)
-
-# discord connection details
-TOKEN = os.getenv('CROSSWORD_BOT')
+TOKEN = os.getenv('MATT_BOT') if test_mode else os.getenv('CROSSWORD_BOT')
 
 # create logger
 logger = logging.getLogger(__name__)
