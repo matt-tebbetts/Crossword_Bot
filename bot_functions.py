@@ -411,7 +411,7 @@ def save_message_detail(message):
         "list_of_attachment_types": [attachment.content_type for attachment in message.attachments],
         "list_of_links": urls,
         "list_of_gifs": [url for url in urls if url.endswith('.gif')],
-        "list_of_mentioned": [str(user.id) for user in message.mentions]
+        "list_of_mentioned": [str(user.name) for user in message.mentions]
     }
 
     # set directory to save file

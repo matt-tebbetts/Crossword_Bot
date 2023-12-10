@@ -45,7 +45,7 @@ async def get_df_from_sql(query, params=None):
 
         except Exception as e:
             # For other exceptions, you might want to handle them differently or log them
-            bot_print(f"Error in bot_sql.py line 46: {e}")
+            bot_print(f"Error in bot_sql.py: {e}")
             return pd.DataFrame()
 
     # Return an empty DataFrame if all attempts fail
