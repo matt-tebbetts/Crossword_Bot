@@ -29,7 +29,6 @@ from discord import Embed
 from discord import app_commands  # trying new method
 
 # data processing
-import logging
 import numpy as np
 import pandas as pd
 
