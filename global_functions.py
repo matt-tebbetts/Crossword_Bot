@@ -4,7 +4,7 @@ from datetime import datetime
 # create logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(f"files/bot_{socket.gethostname()}.log")
+file_handler = logging.FileHandler(f"files/logs/{socket.gethostname()}.log")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
 logger.addHandler(file_handler)

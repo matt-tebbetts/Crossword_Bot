@@ -30,4 +30,4 @@ db_config = {
 }
 
 # set test_mode
-test_mode = False
+test_mode = True
