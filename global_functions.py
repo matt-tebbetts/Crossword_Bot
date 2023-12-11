@@ -1,20 +1,39 @@
 import logging, socket, pytz, os
 from datetime import datetime
 
-# create logger
-log_directory = f"files/logs"
-log_file = f"{log_directory}/{socket.gethostname()}.log"
+import logging
+import os
+import socket
+import stat
 
-# Check if the directory exists, if not, create it
-if not os.path.exists(log_directory):
-    os.makedirs(log_directory)
+def set_logger():
+    # Logger configuration
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(log_file)
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
-logger.addHandler(file_handler)
+    # Log file path configuration
+    log_directory = "files/logs"
+    log_file = f"{log_directory}/{socket.gethostname()}.log"
+
+    # Ensure directory exists
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+
+    # Create the log file if it doesn't exist and set permissions
+    if not os.path.exists(log_file):
+        open(log_file, 'a').close()  # Create the file if it does not exist
+        os.chmod(log_file, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)  # chmod 744: rwx for user, r for group and others
+
+    # File handler configuration for logger
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+    
+    logger.addHandler(file_handler)
+    return logger
+
+# Use the function
+logger = set_logger()
 
 # get current time
 def get_current_time(ms=False):
