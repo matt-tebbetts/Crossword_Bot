@@ -5,6 +5,6 @@ __pycache__/
 .idea/
 .venv/
 venv/
-files/messages/
-files/users/
+files/
+!files/logs/
 test.py
