@@ -1,9 +1,5 @@
 import logging, socket, pytz, os
 from datetime import datetime
-
-import logging
-import os
-import socket
 import stat
 
 def set_logger():
@@ -18,6 +14,7 @@ def set_logger():
     # Ensure directory exists
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
+        os.chmod(log_directory, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)  # chmod 775 for directory
 
     # Create the log file if it doesn't exist and set permissions
     if not os.path.exists(log_file):
