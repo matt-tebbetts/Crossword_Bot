@@ -1,10 +1,17 @@
-import logging, socket, pytz
+import logging, socket, pytz, os
 from datetime import datetime
 
 # create logger
+log_directory = f"files/logs"
+log_file = f"{log_directory}/{socket.gethostname()}.log"
+
+# Check if the directory exists, if not, create it
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(f"files/logs/{socket.gethostname()}.log")
+file_handler = logging.FileHandler(log_file)
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
 logger.addHandler(file_handler)
