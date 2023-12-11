@@ -1,4 +1,4 @@
-import os
+import os, socket
 from dotenv import load_dotenv
 
 # Load environment variables from a .env file
@@ -29,5 +29,5 @@ db_config = {
     'db': SQLDATA
 }
 
-# set test_mode
-test_mode = False
+# set test_mode if on desktop
+test_mode = True if 'desktop' in str.lower(socket.gethostname()) else False
