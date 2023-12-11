@@ -6,5 +6,4 @@ __pycache__/
 .venv/
 venv/
 files/
-!files/logs/
 test.py
