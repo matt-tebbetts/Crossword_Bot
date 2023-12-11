@@ -1,9 +1,10 @@
 # ignored files below
+__pycache__/
 .env
 .vscode/
 .idea/
 .venv/
 venv/
 files/messages/
-__pycache__/
+files/users/
 test.py

@@ -140,7 +140,8 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
     # if leaderboard empty
     if len(df) == 0 or not cols:
         bot_print('The leaderboard is empty')
-        return None
+        img = 'files/images/error.png'
+        return img
 
     df.columns = cols
     # clean some columns
@@ -151,9 +152,6 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
 
     # create image
     img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm\
-    
-    print("the dataframe we're trying to print looks like this...")
-    print(df.head())
 
     # try to generate image
     try:
