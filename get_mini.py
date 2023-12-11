@@ -9,8 +9,9 @@ import pytz
 import json
 import requests
 from bs4 import BeautifulSoup
-from bot_functions import get_mini_date, get_current_time, bot_print
-from sql_runners import send_df_to_sql
+from bot_functions import get_mini_date, bot_print
+from global_functions import get_current_time
+from bot_sql import send_df_to_sql
 import os
 from config import NYT_COOKIE
 import asyncio
