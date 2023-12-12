@@ -355,6 +355,7 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
         game_score = game_score.replace(',', '')  # Remove commas
 
     if game_prefix == "Concludle":
+        game_name = 'concludle'
         lines = msg_txt.split("\n")
         for line in lines:
             if "/6" in line:
