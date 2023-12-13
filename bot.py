@@ -56,15 +56,6 @@ bot_ready = False
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
 
-"""
-# accept multiple words in command arguments/parameters?
-class BracketSeparatedWords(Converter):
-    async def convert(self, ctx: Context, argument: str) -> list:
-        # return argument.split("[")[1].split("]")[0].split()
-        argument = argument.strip("[]")
-        return argument.split()
-"""
-
 # set game names and prefixes
 game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
