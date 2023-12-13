@@ -99,7 +99,7 @@ async def save_new_scores_to_sql(existing_scores):
         # Prepare DataFrame for SQL
         df = pd.DataFrame(new_scores).transpose().reset_index()
         df.insert(0, 'game_date', current_mini_dt)
-        df['added_ts'] = get_current_time().strftime("%Y-%m-%d %H:%M:%S")
+        df['added_ts'] = get_current_time()
 
         # set columns
         df.rename(columns={'index': 'player_id', 'name': 'player_id', 'time': 'game_time'}, inplace=True)
