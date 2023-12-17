@@ -465,11 +465,10 @@ def get_users(bot):
                 "status": str(member.status)
             }
     
-        # Check if the guild directory exists, if not, create it
-        users_json = f"files/guilds/{guild.name}/users.json"
-        os.makedirs(os.path.dirname(users_json), exist_ok=True)
-
-        with open(users_json, 'w') as file:
-            json.dump(user_details, file, indent=4)
+        # save to file
+        users_json = f"files/guilds/{guild.name}/users.json"        # file path
+        os.makedirs(os.path.dirname(users_json), exist_ok=True)     # if not exists, create the directory
+        with open(users_json, 'w') as file:                         # open (and create, if not exists) the file
+            json.dump(user_details, file, indent=4)                 # overwrite the file with the new user details
 
         bot_print(f"User details saved to {users_json}")
