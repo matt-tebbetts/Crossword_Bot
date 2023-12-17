@@ -214,7 +214,10 @@ async def send_mini_warning():
         # find users who have not yet completed the mini
         df = mini_not_completed()
 
-        if not df.empty:
+        if df.empty:
+            discord_message = "Wow, everyone has completed the mini!"
+        
+        else:
             bot_print(f"Found {len(df)} users who have not completed the mini.")
     
             # prepare discord tags
@@ -238,9 +241,6 @@ async def send_mini_warning():
             discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
             if discord_tags:
                 discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
-        
-        else:
-            discord_message = "Wow, everyone has completed the mini!"
 
         # post warning in each active channel for each guild
         for guild in bot.guilds:

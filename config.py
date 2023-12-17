@@ -34,5 +34,6 @@ db_config = {
 test_mode = True if 'desktop' in str.lower(socket.gethostname()) else False
 
 # load mobile carrier emails
-with open('files/config/carriers.json', 'r') as file:
+os.makedirs(os.path.dirname('files/mini/carriers.json'), exist_ok=True)
+with open('files/mini/carriers.json', 'r') as file:
     carrier_emails = json.load(file)
