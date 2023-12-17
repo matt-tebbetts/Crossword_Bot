@@ -24,7 +24,7 @@ def set_logger():
     # File handler configuration for logger
     file_handler = logging.FileHandler(log_file)
     file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(logging.Formatter("%(asctime)s ... %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+    file_handler.setFormatter(logging.Formatter("%(message)s", datefmt="%Y-%m-%d %H:%M:%S")) # removed timestamp
     
     logger.addHandler(file_handler)
     return logger
