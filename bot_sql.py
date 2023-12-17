@@ -19,19 +19,14 @@ async def get_df_from_sql(query, params=None):
             try:
                 # Connect to the database
                 conn = await aiomysql.connect(**db_config, loop=asyncio.get_running_loop())
-                bot_print("connected to database")
 
                 # Create a cursor and execute the query
                 async with conn.cursor(aiomysql.DictCursor) as cursor:
-                    bot_print(f"Parameters to use: {params}")
-
                     await cursor.execute(query, params)
                     result = await cursor.fetchall()
 
                 # Close the connection
-                bot_print(f"made it to line 29")
                 conn.close()
-                bot_print(f"made it to line 31")
 
                 # Convert the result to a pandas DataFrame
                 return pd.DataFrame(result) if result else pd.DataFrame()
