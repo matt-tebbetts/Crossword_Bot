@@ -402,8 +402,6 @@ def save_message_detail(message):
         "create_ts": msg_crt,
         "edit_ts": msg_edt,
         "length": len(message.content),
-        "guild_id": message.guild.id,
-        "guild_nm": message.guild.name,
         "author_id": message.author.id,
         "author_nm": message.author.name,
         "channel_id": message.channel.id,
@@ -419,7 +417,7 @@ def save_message_detail(message):
     }
 
     # set directory to save messages
-    file_path = f"files/guilds/{message.guild.name}/messages/messages.json"
+    file_path = f"files/guilds/{message.guild.name}/messages.json"
 
     # Read existing messages (if any)
     if os.path.exists(file_path):
@@ -469,11 +467,11 @@ def get_users(bot):
                 "status": str(member.status)
             }
     
-    # Check if the directory exists, if not, create it
-    users_json = 'files/config/user_details.json'
-    os.makedirs(os.path.dirname(users_json), exist_ok=True)
+        # Check if the guild directory exists, if not, create it
+        users_json = f"files/guilds/{guild.name}/users.json"
+        os.makedirs(os.path.dirname(users_json), exist_ok=True)
 
-    with open(users_json, 'w') as file:
-        json.dump(user_details, file, indent=4)
+        with open(users_json, 'w') as file:
+            json.dump(user_details, file, indent=4)
 
-    bot_print(f"User details saved to {users_json}")
+        bot_print(f"User details saved to {users_json}")
