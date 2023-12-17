@@ -282,8 +282,8 @@ async def auto_warn():
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
 
     # set up warning time (120 minutes before cutoff)
-    warning_hour = cutoff_hour - 2
-    warning_minute = 0
+    warning_hour = cutoff_hour - 1
+    warning_minute = 35
     
     # if time, send the warnings!
     if now.minute == warning_minute and now.hour == warning_hour:
