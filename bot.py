@@ -212,7 +212,7 @@ async def on_message_edit(before, after):
 async def send_mini_warning():
 
         # find users who have not yet completed the mini
-        df = mini_not_completed()
+        df = await mini_not_completed()
 
         if df.empty:
             discord_message = "Wow, everyone has completed the mini!"
@@ -283,7 +283,7 @@ async def auto_warn():
 
     # set up warning time (120 minutes before cutoff)
     warning_hour = cutoff_hour - 1
-    warning_minute = 35
+    warning_minute = 42
     
     # if time, send the warnings!
     if now.minute == warning_minute and now.hour == warning_hour:
