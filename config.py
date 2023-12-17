@@ -35,6 +35,5 @@ test_mode = True if 'desktop' in str.lower(socket.gethostname()) else False
 
 # load mobile carrier emails
 sms_carriers_path = 'files/config/carriers.json'
-os.makedirs(os.path.dirname(sms_carriers_path), exist_ok=True)
 with open(sms_carriers_path, 'r') as file:
     carrier_emails = json.load(file)
