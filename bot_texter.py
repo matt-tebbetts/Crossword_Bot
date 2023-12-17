@@ -8,7 +8,7 @@ load_dotenv()
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
 
-def send_sms_via_email(number, carrier, message):
+def send_sms(number, carrier, message):
     try:
         # find user's carrier email based on their carrier
         carrier_gateway_template = carrier_emails[carrier]["sms_email"]
@@ -40,6 +40,3 @@ def send_sms_via_email(number, carrier, message):
         print(f"SMTP error occurred: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-# Example Usage
-send_sms_via_email("4043134793", "Verizon", "Hello, this is a test message.")

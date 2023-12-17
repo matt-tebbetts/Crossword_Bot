@@ -56,6 +56,11 @@ def get_mini_date():
     else:
         return now.date()
 
+# find users who haven't completed the mini
+async def mini_not_completed():
+    df = await get_df_from_sql("SELECT * FROM matt.mini_not_completed")
+    return df
+
 # translate date range based on text
 def get_date_range(user_input):
     today = datetime.now(pytz.timezone('US/Eastern')).date()
