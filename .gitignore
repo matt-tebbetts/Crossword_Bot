@@ -5,6 +5,6 @@ __pycache__/
 .idea/
 .venv/
 venv/
-files/messages
+files/guilds
 files/logs
 test.py

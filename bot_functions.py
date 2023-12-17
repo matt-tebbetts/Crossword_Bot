@@ -418,11 +418,8 @@ def save_message_detail(message):
         "list_of_mentioned": [str(user.name) for user in message.mentions]
     }
 
-    # set directory to save file
-    directory = f"files/messages/{message.guild.id}"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    file_path = f"{directory}/messages.json"
+    # set directory to save messages
+    file_path = f"files/guilds/{message.guild.name}/messages/messages.json"
 
     # Read existing messages (if any)
     if os.path.exists(file_path):
@@ -438,6 +435,7 @@ def save_message_detail(message):
             else:
                 messages = {}
     else:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         messages = {}
 
     messages[message.id] = message_data  # This will overwrite if the ID already exists
