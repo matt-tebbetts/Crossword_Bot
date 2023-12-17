@@ -1,0 +1,45 @@
+{
+    "acowinthecrowd": {
+        "member_nm": "acowinthecrowd",
+        "member_id": "163849350827606016",
+        "guild_nm": "Games Tracker",
+        "guild_id": "1096943693463814167",
+        "joined_ts": "2023-09-06 08:08:34",
+        "is_bot": false,
+        "is_admin": false,
+        "nickname": null,
+        "roles": [
+            "@everyone"
+        ],
+        "status": "online"
+    },
+    "svendiamond": {
+        "member_nm": "svendiamond",
+        "member_id": "340940380927295491",
+        "guild_nm": "Games Tracker",
+        "guild_id": "1096943693463814167",
+        "joined_ts": "2023-04-15 19:42:36",
+        "is_bot": false,
+        "is_admin": true,
+        "nickname": null,
+        "roles": [
+            "@everyone"
+        ],
+        "status": "online"
+    },
+    "Crossword_Bot_Tester#7776": {
+        "member_nm": "Crossword_Bot_Tester#7776",
+        "member_id": "1125064678071083120",
+        "guild_nm": "Games Tracker",
+        "guild_id": "1096943693463814167",
+        "joined_ts": "2023-07-02 10:06:31",
+        "is_bot": true,
+        "is_admin": true,
+        "nickname": null,
+        "roles": [
+            "@everyone",
+            "Crossword_Bot_Tester"
+        ],
+        "status": "online"
+    }
+}

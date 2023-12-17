@@ -1,0 +1,38 @@
+{
+    "AT&T": {
+        "sms_email": "txt.att.net",
+        "mms_email": "mms.att.net"
+    },
+    "Sprint": {
+        "sms_email": "messaging.sprintpcs.com",
+        "mms_email": "pm.sprint.com"
+    },
+    "T-Mobile": {
+        "sms_email": "tmomail.net",
+        "mms_email": "tmomail.net"
+    },
+    "Verizon": {
+        "sms_email": "vtext.com",
+        "mms_email": "vzwpix.com"
+    },
+    "Virgin Mobile": {
+        "sms_email": "vmobl.com",
+        "mms_email": "vmobl.com"
+    },
+    "Boost Mobile": {
+        "sms_email": "sms.myboostmobile.com",
+        "mms_email": "myboostmobile.com"
+    },
+    "Cricket": {
+        "sms_email": "sms.cricketwireless.net",
+        "mms_email": "mms.cricketwireless.net"
+    },
+    "MetroPCS": {
+        "sms_email": "mymetropcs.com",
+        "mms_email": "mymetropcs.com"
+    },
+    "Vodafone": {
+        "sms_email": "vodafone-sms.nl",
+        "mms_email": "vodafone-sms.nl"
+    }
+}
