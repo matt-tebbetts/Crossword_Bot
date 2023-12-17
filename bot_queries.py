@@ -21,14 +21,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
             WHERE guild_id = %s
             AND game_date BETWEEN %s AND %s
             and game_rank = 1
-            ORDER BY 
-                case    when game_name = 'mini'      then 1
-                        when game_name = 'boxoffice' then 2
-                        when game_name = 'worldle'   then 3
-                        when game_name = 'wordle'    then 4
-                        when game_name = 'factle'    then 5
-                        else 9
-                end asc, game_date desc;
+            ORDER BY game_name, game_date desc;
         """
     
     # all games, winners only, range of dates
@@ -87,14 +80,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
             WHERE guild_id = %s
             AND game_date BETWEEN %s AND %s
             AND member_nm = %s
-            ORDER BY 
-                case    when game_name = 'mini'      then 1
-                        when game_name = 'boxoffice' then 2
-                        when game_name = 'worldle'   then 3
-                        when game_name = 'wordle'    then 4
-                        when game_name = 'factle'    then 5
-                        else 9
-                end asc, game_date desc;
+            ORDER BY game_name, game_date desc;
         """
         query_params.append(user_nm)
 
