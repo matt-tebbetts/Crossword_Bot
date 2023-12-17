@@ -252,22 +252,22 @@ async def send_mini_warning():
 # post daily mini final
 async def post_mini():
     async with asyncio.Lock():
-        await asyncio.sleep(5)
 
         # only one game
         game_name = 'mini'
 
         # post warning in each guild
         for guild in bot.guilds:
-            bot_print(f"Posting Final {game_name.capitalize()} Leaderboard for {guild.name}")
+            bot_print(f"Posting {game_name.capitalize()} Leaderboard for {guild.name}")
 
+            # get today's date
             today = datetime.now(pytz.timezone('US/Eastern'))
             
+            # get leaderboard
             img = await get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
+            
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f"""Posting the final {game_name.capitalize()} Leaderboard now...""")
-                    await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 
 
@@ -282,8 +282,8 @@ async def auto_warn():
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
 
     # set up warning time (120 minutes before cutoff)
-    warning_hour = cutoff_hour - 1
-    warning_minute = 42
+    warning_hour = cutoff_hour
+    warning_minute = 0
     
     # if time, send the warnings!
     if now.minute == warning_minute and now.hour == warning_hour:
@@ -291,6 +291,9 @@ async def auto_warn():
 
         # run the warning function
         await send_mini_warning()
+
+        # post current leaderboard
+        await post_mini()
 
 # timer for final post
 @tasks.loop(minutes=1)
