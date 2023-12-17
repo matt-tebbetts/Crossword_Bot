@@ -16,10 +16,11 @@ from dotenv import load_dotenv
 
 # local files
 from global_functions import bot_print
-from bot_functions import save_message_detail, add_score, get_leaderboard, get_date_range
+from bot_functions import save_message_detail, add_score, get_leaderboard, get_date_range, mini_not_completed, get_users
 from bot_camera import dataframe_to_image_dark_mode
 from config import test_mode
 from bot_sql import send_df_to_sql, get_df_from_sql
+from bot_texter import send_sms
 
 # discord
 import discord
@@ -31,6 +32,7 @@ from discord import app_commands  # trying new method
 # data processing
 import numpy as np
 import pandas as pd
+import json
 
 # timing and scheduling
 from datetime import date, datetime, timedelta
@@ -110,7 +112,7 @@ list_of_game_names.extend(['winners', 'my_scores'])
 # connect
 @bot.event
 async def on_connect():
-    bot_print(f"Bot has been reconnected to {socket.gethostname()}")
+    bot_print(f"{bot.user.name} connected to {socket.gethostname()}")
 
 # disconnect
 @bot.event
@@ -121,41 +123,21 @@ async def on_disconnect():
 @bot.event
 async def on_ready():
 
-    # set bot_ready to True
+    # set ready flag
     global bot_ready
     bot_ready = True
     bot_print(f"{bot.user.name} is ready!")
 
-    # get time
-    now_txt = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
-
-    # Initialize empty all_users dataframe
-    all_users = pd.DataFrame(columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
-
-    # get latest user list
-    for guild in bot.guilds:
-        bot_print(f"Connected to {guild.name}")
-
-        # get user list into csv
-        members = guild.members
-        member_data = []
-        for member in members:
-            guild_id = guild.id
-            guild_nm = guild.name
-            member_id = member.id
-            member_nm = str(member)[:-2] if str(member).endswith("#0") else str(member)
-            member_data.append([guild_id, guild_nm, member_id, member_nm, now_txt])
-        guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
-        all_users = pd.concat([all_users, guild_users], ignore_index=True)
-    
-    # send all_users to sql using custom function from sql_runners.py
-    await send_df_to_sql(all_users, 'user_history')
+    # get users into json
+    get_users(bot)
 
     # Start timed tasks
     tasks_to_start = [auto_warn, auto_post]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
+
+    return
 
 # read channel messages
 @bot.event
@@ -221,21 +203,51 @@ async def on_message_edit(before, after):
     except Exception as e:
         bot_print(f"Failed to update edited message: {e}")
 
+
 # ****************************************************************************** #
 # tasks
 # ****************************************************************************** #
 
 # post daily mini warning
-async def post_warning():
-    async with asyncio.Lock():
-        await asyncio.sleep(5)
+async def send_mini_warning():
+
+        # find users who have not yet completed the mini
+        df = mini_not_completed()
+
+        if not df.empty:
+            bot_print(f"Found {len(df)} users who have not completed the mini.")
+    
+            # prepare discord tags
+            discord_tags = []
+            text_count = 0
+
+            # loop through the dataframe
+            for index, row in df.iterrows():
+
+                # if they want the text message, send it
+                if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
+                    send_sms(row['phone_nbr'], row['phone_carr_cd'], "Hey, do the mini!")
+                    text_count += 1
+
+                # otherwise, tag them in Discord
+                else:
+                    discord_tag = f"<@{row['discord_id_nbr']}>"
+                    discord_tags.append(discord_tag)
+
+           # Prepare the final message for the Discord channel
+            discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
+            if discord_tags:
+                discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
+        
+        else:
+            discord_message = "Wow, everyone has completed the mini!"
 
         # post warning in each active channel for each guild
         for guild in bot.guilds:
             bot_print(f"Posting Mini Warning for {guild.name}")
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(f""" Mini expires in one hour! """)
+                    await channel.send(discord_message)
 
 # post daily mini final
 async def post_mini():
@@ -258,14 +270,27 @@ async def post_mini():
                     await asyncio.sleep(5)
                     await channel.send(file=discord.File(img))
 
+
+# ****************************************************************************** #
+# timers for the tasks
+# ****************************************************************************** #
+
 # timer for warning
 @tasks.loop(minutes=1)
 async def auto_warn():
     now = datetime.now(pytz.timezone('US/Eastern'))
     cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now.minute == 0 and now.hour == cutoff_hour:
-        bot_print("Time to warn!")
-        await post_warning()
+
+    # set up warning time (120 minutes before cutoff)
+    warning_hour = cutoff_hour - 2
+    warning_minute = 0
+    
+    # if time, send the warnings!
+    if now.minute == warning_minute and now.hour == warning_hour:
+        bot_print("Time to warn players who haven't completed the mini!")
+
+        # run the warning function
+        await send_mini_warning()
 
 # timer for final post
 @tasks.loop(minutes=1)

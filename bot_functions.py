@@ -56,6 +56,11 @@ def get_mini_date():
     else:
         return now.date()
 
+# find users who haven't completed the mini
+async def mini_not_completed():
+    df = await get_df_from_sql("SELECT * FROM matt.mini_not_completed")
+    return df
+
 # translate date range based on text
 def get_date_range(user_input):
     today = datetime.now(pytz.timezone('US/Eastern')).date()
@@ -444,3 +449,33 @@ def save_message_detail(message):
     bot_print('Message saved to file')
 
     return
+
+# get users from a channel
+def get_users(bot):
+
+    # loop through guilds
+    user_details = {}
+    for guild in bot.guilds:
+        for member in guild.members:
+            member_nm = str(member)[:-2] if str(member).endswith("#0") else str(member)
+            user_details[member_nm] = {
+                "member_nm": member_nm,
+                "guild_nm": guild.name,
+                "member_id": str(member.id),
+                "guild_id": str(guild.id),
+                "joined_ts": member.joined_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S"),
+                "is_bot": member.bot,
+                "is_admin": member.guild_permissions.administrator,
+                "nickname": member.nick,
+                "roles": [role.name for role in member.roles],
+                "status": str(member.status)
+            }
+    
+    # Check if the directory exists, if not, create it
+    users_json = 'files/config/user_details.json'
+    os.makedirs(os.path.dirname(users_json), exist_ok=True)
+
+    with open(users_json, 'w') as file:
+        json.dump(user_details, file, indent=4)
+
+    bot_print(f"User details saved to {users_json}")
