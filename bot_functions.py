@@ -441,8 +441,6 @@ def save_message_detail(message):
     # Write updated messages back to the file
     with open(file_path, 'w') as file:
         json.dump(messages, file, indent=4)
-    
-    bot_print('Message saved to file')
 
     return
 
