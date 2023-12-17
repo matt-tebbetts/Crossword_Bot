@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 # local files
 from global_functions import bot_print
-from bot_functions import save_message_detail, add_score, get_leaderboard, get_date_range, mini_not_completed
+from bot_functions import save_message_detail, add_score, get_leaderboard, get_date_range, mini_not_completed, get_users
 from bot_camera import dataframe_to_image_dark_mode
 from config import test_mode
 from bot_sql import send_df_to_sql, get_df_from_sql
@@ -32,6 +32,7 @@ from discord import app_commands  # trying new method
 # data processing
 import numpy as np
 import pandas as pd
+import json
 
 # timing and scheduling
 from datetime import date, datetime, timedelta
@@ -111,7 +112,7 @@ list_of_game_names.extend(['winners', 'my_scores'])
 # connect
 @bot.event
 async def on_connect():
-    bot_print(f"Bot has been reconnected to {socket.gethostname()}")
+    bot_print(f"{bot.user.name} connected to {socket.gethostname()}")
 
 # disconnect
 @bot.event
@@ -122,41 +123,21 @@ async def on_disconnect():
 @bot.event
 async def on_ready():
 
-    # set bot_ready to True
+    # set ready flag
     global bot_ready
     bot_ready = True
     bot_print(f"{bot.user.name} is ready!")
 
-    # get time
-    now_txt = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S")
-
-    # Initialize empty all_users dataframe
-    all_users = pd.DataFrame(columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
-
-    # get latest user list
-    for guild in bot.guilds:
-        bot_print(f"Connected to {guild.name}")
-
-        # get user list into csv
-        members = guild.members
-        member_data = []
-        for member in members:
-            guild_id = guild.id
-            guild_nm = guild.name
-            member_id = member.id
-            member_nm = str(member)[:-2] if str(member).endswith("#0") else str(member)
-            member_data.append([guild_id, guild_nm, member_id, member_nm, now_txt])
-        guild_users = pd.DataFrame(member_data, columns=["guild_id", "guild_nm", "member_id", "member_nm", "insert_ts"])
-        all_users = pd.concat([all_users, guild_users], ignore_index=True)
-    
-    # send all_users to sql using custom function from sql_runners.py
-    await send_df_to_sql(all_users, 'user_history')
+    # get users into json
+    get_users(bot)
 
     # Start timed tasks
     tasks_to_start = [auto_warn, auto_post]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
+
+    return
 
 # read channel messages
 @bot.event
