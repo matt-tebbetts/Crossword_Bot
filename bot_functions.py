@@ -460,8 +460,8 @@ def get_users(bot):
             member_nm = str(member)[:-2] if str(member).endswith("#0") else str(member)
             user_details[member_nm] = {
                 "member_nm": member_nm,
-                "guild_nm": guild.name,
                 "member_id": str(member.id),
+                "guild_nm": guild.name,
                 "guild_id": str(guild.id),
                 "joined_ts": member.joined_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d %H:%M:%S"),
                 "is_bot": member.bot,
