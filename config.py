@@ -1,5 +1,6 @@
 import os, socket
 from dotenv import load_dotenv
+import json
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -31,3 +32,7 @@ db_config = {
 
 # set test_mode if on desktop
 test_mode = True if 'desktop' in str.lower(socket.gethostname()) else False
+
+# load mobile carrier emails
+with open('files/config/carriers.json', 'r') as file:
+    carrier_emails = json.load(file)
