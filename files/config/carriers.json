@@ -3,6 +3,10 @@
         "sms_email": "txt.att.net",
         "mms_email": "mms.att.net"
     },
+    "Cingular": {
+        "sms_email": "txt.att.net",
+        "mms_email": "mms.att.net"
+    },
     "Sprint": {
         "sms_email": "messaging.sprintpcs.com",
         "mms_email": "pm.sprint.com"
