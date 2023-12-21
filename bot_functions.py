@@ -5,16 +5,11 @@ from global_functions import bot_print
 
 # data management
 import json
-import aiomysql
-import asyncio
 import pandas as pd
 import pytz
 import re
-import requests
-from bs4 import BeautifulSoup
 from datetime import date, datetime, timedelta
 from dateutil.parser import parse
-from dateutil.relativedelta import relativedelta
 
 # internal
 import bot_camera
@@ -161,7 +156,6 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
     # try to generate image
     try:
         img = bot_camera.dataframe_to_image_dark_mode(df, img_title=img_title, img_subtitle=title_date)
-        bot_print('successfully generated image')
     except Exception as e:
         bot_print(f"Error when trying to generate image: {e}")
         img = 'files/images/error.png'
