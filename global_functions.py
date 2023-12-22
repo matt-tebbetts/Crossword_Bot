@@ -47,5 +47,5 @@ def bot_print(message):
     msg = f"{get_current_time(ms=True)}: {message}"
     
     # print and log message
-    print(msg)
-    logger.info(message) # logger already gets timestamp
+    print(message)
+    logger.info(msg) # logger already gets timestamp
