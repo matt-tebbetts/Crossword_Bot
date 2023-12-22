@@ -18,5 +18,70 @@
         "time": "0:19",
         "added_ts": "2023-12-17 19:01:39",
         "added_to_sql": true
+    },
+    "mbbananas": {
+        "time": "0:20",
+        "added_ts": "2023-12-17 22:45:37",
+        "added_to_sql": true
+    },
+    "jackie": {
+        "time": "1:20",
+        "added_ts": "2023-12-18 08:16:22",
+        "added_to_sql": true
+    },
+    "Jim": {
+        "time": "1:23",
+        "added_ts": "2023-12-18 09:07:57",
+        "added_to_sql": true
+    },
+    "Andy": {
+        "time": "0:28",
+        "added_ts": "2023-12-18 09:22:35",
+        "added_to_sql": true
+    },
+    "Tuckle": {
+        "time": "0:25",
+        "added_ts": "2023-12-18 09:47:51",
+        "added_to_sql": true
+    },
+    "Jesse": {
+        "time": "0:38",
+        "added_ts": "2023-12-18 10:17:03",
+        "added_to_sql": true
+    },
+    "Throoper": {
+        "time": "0:15",
+        "added_ts": "2023-12-18 10:54:10",
+        "added_to_sql": true
+    },
+    "Matt": {
+        "time": "0:13",
+        "added_ts": "2023-12-18 11:25:09",
+        "added_to_sql": true
+    },
+    "aromatt": {
+        "time": "0:22",
+        "added_ts": "2023-12-18 13:09:35",
+        "added_to_sql": true
+    },
+    "croasus": {
+        "time": "0:27",
+        "added_ts": "2023-12-18 14:20:39",
+        "added_to_sql": true
+    },
+    "Mama56": {
+        "time": "0:22",
+        "added_ts": "2023-12-18 18:08:39",
+        "added_to_sql": true
+    },
+    "acowinthecrowd": {
+        "time": "0:11",
+        "added_ts": "2023-12-18 19:18:29",
+        "added_to_sql": true
+    },
+    "EvanAT": {
+        "time": "1:19",
+        "added_ts": "2023-12-18 20:27:14",
+        "added_to_sql": true
     }
 }
