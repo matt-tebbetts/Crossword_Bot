@@ -52,9 +52,6 @@ def save_new_scores_to_json(scores):
     else:
         existing_scores = {}
 
-    print(f"Found {len(existing_scores)} existing scores in path {file_path}.")
-    print(f"Existing scores are: {existing_scores}")
-
     # initialize count of scores added
     new_scores_found = 0
     
@@ -62,7 +59,7 @@ def save_new_scores_to_json(scores):
     for player, score in scores.items():
         if player not in existing_scores:
             added_ts = get_current_time()
-            print(f"{added_ts}: {player} completed the mini in {score}!")
+            print(f"{added_ts}: New mini score of {score} from {player}!")
             existing_scores[player] = {
                 "time": score,
                 "added_ts": added_ts,
@@ -71,12 +68,8 @@ def save_new_scores_to_json(scores):
             new_scores_found += 1
 
     # print count of scores added
-    if new_scores_found == 0:
-        bot_print("No new scores found.")
+    if new_scores_found > 0:
         
-    else: 
-        bot_print(f"Found {new_scores_found} new mini score(s).")
-
         # create file if not exists
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
