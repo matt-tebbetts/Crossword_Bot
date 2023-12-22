@@ -48,4 +48,4 @@ def bot_print(message):
     
     # print and log message
     print(msg)
-    logger.info(msg)
+    logger.info(message) # logger already gets timestamp
