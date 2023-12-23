@@ -467,7 +467,7 @@ def get_users(bot):
         bot_print(f"User details saved to {users_json}")
 
 # save mini leaders
-async def save_mini_leaders():
+async def check_mini_leaders():
 
     # use get_df_from_sql to get the latest leaders
     query = """
@@ -508,4 +508,3 @@ async def save_mini_leaders():
             guild_differences[guild_name] = False
     
     return guild_differences
- 

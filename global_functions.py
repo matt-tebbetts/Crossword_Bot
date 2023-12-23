@@ -44,6 +44,10 @@ def get_current_time(ms=False):
     else:
         return now.strftime("%Y-%m-%d %H:%M:%S")
 
+# get current date
+def get_date():
+    return datetime.now(pytz.timezone('US/Eastern'))
+
 # function to both print messages and save them to the log file
 def bot_print(message):
     
