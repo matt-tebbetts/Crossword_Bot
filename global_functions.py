@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import stat
 import json
+from config import test_mode
 
 def set_logger():
     # Logger configuration
@@ -55,8 +56,13 @@ def bot_print(message):
     msg = f"{get_current_time(ms=True)}: {message}"
     
     # print and log message
-    print(message)
-    logger.info(msg) # logger already gets timestamp
+    if test_mode:
+        print(msg)
+    else:
+        print(message)
+    
+    # save to logger with timestamp
+    logger.info(msg)
 
 # read json
 def read_json(filepath, default_data=[]):
