@@ -203,7 +203,7 @@ async def on_message_edit(before, after):
 # tasks
 # ****************************************************************************** #
 
-# post daily mini warning
+# post warning
 async def send_mini_warning():
 
         # find users who have not yet completed the mini
@@ -244,7 +244,7 @@ async def send_mini_warning():
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(discord_message)
 
-# post daily mini final
+# post mini
 async def post_mini():
     async with asyncio.Lock():
 
