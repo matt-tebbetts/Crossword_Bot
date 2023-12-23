@@ -10,8 +10,8 @@ import socket
 from dotenv import load_dotenv
 
 # local files
-from global_functions import bot_print
-from bot_functions import save_message_detail, add_score, get_leaderboard, get_date_range, mini_not_completed, get_users
+from global_functions import *
+from bot_functions import *
 from bot_camera import dataframe_to_image_dark_mode
 from config import test_mode
 from bot_sql import send_df_to_sql, get_df_from_sql
@@ -127,7 +127,7 @@ async def on_ready():
     get_users(bot)
 
     # Start timed tasks
-    tasks_to_start = [auto_warn, auto_post]
+    tasks_to_start = [auto_post]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
@@ -245,59 +245,58 @@ async def send_mini_warning():
                     await channel.send(discord_message)
 
 # post mini
-async def post_mini():
+async def post_mini(guild_name=None):
     async with asyncio.Lock():
 
-        # only one game
-        game_name = 'mini'
-
-        # post warning in each guild
+        # post in each guild
         for guild in bot.guilds:
-            bot_print(f"Posting {game_name.capitalize()} Leaderboard for {guild.name}")
 
-            # get today's date
-            today = datetime.now(pytz.timezone('US/Eastern'))
-            
+            # if guild_name is specified, skip if not the right guild
+            if guild_name is not None and guild.name != guild_name:
+                continue
+
             # get leaderboard
-            img = await get_leaderboard(guild_id=str(guild.id), game_name=game_name, min_date=today, max_date=today)
-            
+            bot_print(f"Posting Mini Leaderboard for {guild.name}")
+            img = await get_leaderboard(guild_id=str(guild.id), game_name='mini', min_date=get_date(), max_date=get_date())
+
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
                     await channel.send(file=discord.File(img))
 
+            if guild_name is not None:
+                break
 
 # ****************************************************************************** #
 # timers for the tasks
 # ****************************************************************************** #
 
-# timer for warning
-@tasks.loop(minutes=1)
-async def auto_warn():
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-
-    # set up warning time (120 minutes before cutoff)
-    warning_hour = cutoff_hour
-    warning_minute = 0
-    
-    # if time, send the warnings!
-    if now.minute == warning_minute and now.hour == warning_hour:
-        bot_print("Time to warn players who haven't completed the mini!")
-
-        # run the warning function
-        await send_mini_warning()
-
-        # post current leaderboard
-        await post_mini()
-
-# timer for final post
+# this timer checks to see if we should post the mini leaderboard
+# we want a post whenever there's a new leader or if it's a preset time
 @tasks.loop(minutes=1)
 async def auto_post():
+
+    # check if it's time for any auto-post
     now = datetime.now(pytz.timezone('US/Eastern'))
     post_hour = 18 if now.weekday() in [5, 6] else 22
-    if now.minute == 0 and now.hour == post_hour:
+    warn_hour = post_hour - 2
+
+    # for final time
+    if now.hour == post_hour and now.minute == 0:
         bot_print("Time to post final!")
+        await post_mini() # all guilds
+
+    # for warning time
+    if now.hour == warn_hour and now.minute == 0:
+        bot_print("Time to warn!")
+        await send_mini_warning()
         await post_mini()
+
+    # for leader change
+    guild_differences = await check_mini_leaders()
+    for guild in bot.guilds:
+        if guild.name in guild_differences:
+            bot_print(f"New leader found for {guild.name}!")
+            await post_mini(guild_name=guild.name)
 
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)
@@ -326,7 +325,11 @@ async def get(ctx, *, time_frame=None):
     # get the min_date and max_date based on the user's input
     date_range = get_date_range(time_frame)
     if date_range is None:
-        return await ctx.channel.send("Invalid date range or format. Please try again with a valid date range or keyword (e.g., 'yesterday', 'last week', 'this month', etc.).")
+        return await ctx.channel.send("""
+            Invalid date range or format.
+            Please try again with a valid date range or keyword
+            (e.g., 'yesterday', 'last week', 'this month', etc.).")
+            """)
     min_date, max_date = date_range
 
     # get the data
