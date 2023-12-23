@@ -1,6 +1,10 @@
-import logging, socket, pytz, os
+import logging
+import socket
+import pytz
+import os
 from datetime import datetime
 import stat
+import json
 
 def set_logger():
     # Logger configuration
@@ -49,3 +53,26 @@ def bot_print(message):
     # print and log message
     print(message)
     logger.info(msg) # logger already gets timestamp
+
+# read json
+def read_json(filepath, default_data=[]):
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    try:
+        with open(filepath, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        with open(filepath, 'w') as file:
+            json.dump(default_data, file)
+        return default_data
+
+# write json
+def write_json(filepath, data):
+    
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    with open(filepath, 'w') as file:
+        json.dump(data, file, indent=4)
