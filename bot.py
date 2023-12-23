@@ -245,8 +245,12 @@ async def send_mini_warning():
                     await channel.send(discord_message)
 
 # post mini
-async def post_mini(guild_name=None):
+async def post_mini(guild_name=None, msg=None):
     async with asyncio.Lock():
+
+        # set default message
+        if msg is None:
+            msg = "Here is Today's Mini Leaderboard"
 
         # post in each guild
         for guild in bot.guilds:
@@ -256,7 +260,7 @@ async def post_mini(guild_name=None):
                 continue
 
             # get leaderboard
-            bot_print(f"Posting Mini Leaderboard for {guild.name}")
+            bot_print(msg)
             img = await get_leaderboard(guild_id=str(guild.id), game_name='mini', min_date=get_date(), max_date=get_date())
 
             for channel in guild.channels:
