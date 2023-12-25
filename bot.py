@@ -127,7 +127,7 @@ async def on_ready():
     get_users(bot)
 
     # Start timed tasks
-    tasks_to_start = [auto_post]
+    tasks_to_start = [auto_post, check_mini]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
@@ -260,11 +260,12 @@ async def post_mini(guild_name=None, msg=None):
                 continue
 
             # get leaderboard
-            bot_print(msg)
-            img = await get_leaderboard(guild_id=str(guild.id), game_name='mini', min_date=get_date(), max_date=get_date())
+            img = await get_leaderboard(guild_id=str(guild.id), game_name='mini',
+                                        min_date=get_date(), max_date=get_date())
 
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+                    await channel.send(msg)
                     await channel.send(file=discord.File(img))
 
             if guild_name is not None:
@@ -274,8 +275,7 @@ async def post_mini(guild_name=None, msg=None):
 # timers for the tasks
 # ****************************************************************************** #
 
-# this timer checks to see if we should post the mini leaderboard
-# we want a post whenever there's a new leader or if it's a preset time
+# this function runs every minute to see if we should post the mini leaderboard
 @tasks.loop(minutes=1)
 async def auto_post():
 
@@ -288,19 +288,29 @@ async def auto_post():
     if now.hour == post_hour and now.minute == 0:
         bot_print("Time to post final!")
         await post_mini() # all guilds
+        return
 
     # for warning time
-    if now.hour == warn_hour and now.minute == 0:
+    elif now.hour == warn_hour and now.minute == 0:
         bot_print("Time to warn!")
         await send_mini_warning()
         await post_mini()
+        return
 
-    # for leader change
+    else:
+        return
+
+@tasks.loop(seconds=5)
+async def check_mini():
+
+    # run check
     guild_differences = await check_mini_leaders()
-    for guild in bot.guilds:
-        if guild.name in guild_differences:
-            bot_print(f"New leader found for {guild.name}!")
-            await post_mini(guild_name=guild.name)
+
+    # for each guild with new leader, post
+    for guild_name, has_new_leader in guild_differences.items():
+        if has_new_leader:
+            message = f"New mini leader found for {guild_name}!"
+            await post_mini(guild_name=guild_name, msg=message)
 
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)
