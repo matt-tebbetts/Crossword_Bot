@@ -172,8 +172,6 @@ async def on_message(message):
             author = message.author.name
             user_id = author[:-2] if author.endswith("#0") else author
 
-            bot_print(f"{user_id} posted a score for {game_prefix}")
-
             # send to score scraper
             response = await add_score(game_prefix, game_date, user_id, msg_text)
 
@@ -300,7 +298,7 @@ async def auto_post():
     else:
         return
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=10)
 async def check_mini():
 
     # run check
@@ -310,6 +308,7 @@ async def check_mini():
     for guild_name, has_new_leader in guild_differences.items():
         if has_new_leader:
             message = f"New mini leader found for {guild_name}!"
+            bot_print(message)
             await post_mini(guild_name=guild_name, msg=message)
 
 # ****************************************************************************** #
@@ -319,22 +318,19 @@ async def check_mini():
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
-async def get(ctx, *, time_frame=None):
+async def get(ctx, *, time_frame='today'):
     
-    # currently disabling this function while it's being fixed
-    ## return await ctx.channel.send("Sorry, the leaderboard is currently under construction.")
+    # default time_frame to 'today' if not provided
+    time_frame = str.lower(time_frame)
 
     # clarify request
     user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
     guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
-    
-    # default time_frame to 'today' if not provided
-    time_frame = 'today' if time_frame is None else str.lower(time_frame)
 
     # print
-    bot_print(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
+    bot_print(f"Leaderboard Request: {guild_nm} user {user_nm} requested {time_frame} {game_name}.")
 
     # get the min_date and max_date based on the user's input
     date_range = get_date_range(time_frame)
