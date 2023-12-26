@@ -368,7 +368,8 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
     # send to sql using new function
     await send_df_to_sql(df, 'game_history', if_exists='append')
 
-    msg_back = f"Added {game_name} for {discord_id} on {game_date} with score {game_score}"
+    msg_back = f"Added Score: {game_date}, {game_name}, {discord_id}, {game_score}"
+    bot_print(msg_back)
 
     return msg_back
 
@@ -504,4 +505,5 @@ async def check_mini_leaders():
         else:
             guild_differences[guild_name] = False
     
+    bot_print(f"Guild differences is: {guild_differences}")
     return guild_differences
