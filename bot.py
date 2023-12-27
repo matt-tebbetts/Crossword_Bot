@@ -146,7 +146,7 @@ async def on_message(message):
     # ignore self
     if message.author == bot.user:
         return
-    
+
     # save message into json
     try:
         save_message_detail(message)
@@ -167,7 +167,7 @@ async def on_message(message):
 
             # get message detail
             game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-            
+
             # get discord name
             author = message.author.name
             user_id = author[:-2] if author.endswith("#0") else author
@@ -176,9 +176,9 @@ async def on_message(message):
             response = await add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
-            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
+            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
             await message.add_reaction(emoji)
-        
+
             # exit the loop since we found the prefix
             break
 
@@ -188,7 +188,7 @@ async def on_message(message):
 # read channel message edits
 @bot.event
 async def on_message_edit(before, after):
-    
+
     try:
         # Call save_message_detail with the edited message
         save_message_detail(after)
@@ -209,7 +209,7 @@ async def send_mini_warning():
 
     if df.empty:
         discord_message = "Wow, everyone has completed the mini!"
-    
+
     else:
         bot_print(f"Found {len(df)} users who have not completed the mini.")
 
@@ -327,7 +327,7 @@ async def check_mini():
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
 async def get(ctx, *, time_frame='today'):
-    
+
     # default time_frame to 'today' if not provided
     time_frame = str.lower(time_frame)
 
@@ -355,7 +355,7 @@ async def get(ctx, *, time_frame='today'):
 
         # pull leaderboard
         img = await get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
-        
+
         # send it
         await ctx.channel.send(file=discord.File(img))
 
@@ -399,7 +399,7 @@ async def rescan(ctx, game_to_rescan=None):
 
                 # get message detail
                 game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-                
+
                 # get discord name
                 author = message.author.name
                 user_id = author[:-2] if author.endswith("#0") else author
@@ -410,9 +410,9 @@ async def rescan(ctx, game_to_rescan=None):
                 response = await add_score(game_prefix, game_date, user_id, msg_text)
 
                 # react with proper emoji
-                emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
+                emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
                 await message.add_reaction(emoji)
-            
+
                 # add to counter
                 condition = (df['Player'] == user_id) & (df['Game Name'] == game_prefix) & (df['Game Date'] == game_date)
 
@@ -422,16 +422,16 @@ async def rescan(ctx, game_to_rescan=None):
                     # Add a new row to the DataFrame
                     new_row = pd.DataFrame({'Player': [user_id],
                                             'Game Date': [game_date],
-                                            'Game Name': [game_prefix], 
+                                            'Game Name': [game_prefix],
                                             'Scores Added': [1]})
                     df = pd.concat([df, new_row], ignore_index=True)
-                    
+
                 # exit the loop since we found the prefix
                 break
 
     # get image of dataframe from custom function
-    img = dataframe_to_image_dark_mode(df, 
-                                    img_filepath='files/images/rescan.png', 
+    img = dataframe_to_image_dark_mode(df,
+                                    img_filepath='files/images/rescan.png',
                                     img_title=f"Rescan Summary",
                                     img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
