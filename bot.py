@@ -127,7 +127,7 @@ async def on_ready():
     get_users(bot)
 
     # Start timed tasks
-    tasks_to_start = [auto_post]
+    tasks_to_start = [auto_post, check_mini]
     for task in tasks_to_start:
         if not task.is_running():
             task.start()
@@ -146,7 +146,7 @@ async def on_message(message):
     # ignore self
     if message.author == bot.user:
         return
-    
+
     # save message into json
     try:
         save_message_detail(message)
@@ -167,20 +167,18 @@ async def on_message(message):
 
             # get message detail
             game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-            
+
             # get discord name
             author = message.author.name
             user_id = author[:-2] if author.endswith("#0") else author
-
-            bot_print(f"{user_id} posted a score for {game_prefix}")
 
             # send to score scraper
             response = await add_score(game_prefix, game_date, user_id, msg_text)
 
             # react with proper emoji
-            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
+            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
             await message.add_reaction(emoji)
-        
+
             # exit the loop since we found the prefix
             break
 
@@ -190,7 +188,7 @@ async def on_message(message):
 # read channel message edits
 @bot.event
 async def on_message_edit(before, after):
-    
+
     try:
         # Call save_message_detail with the edited message
         save_message_detail(after)
@@ -206,47 +204,51 @@ async def on_message_edit(before, after):
 # post warning
 async def send_mini_warning():
 
-        # find users who have not yet completed the mini
-        df = await mini_not_completed()
+    # find users who have not yet completed the mini
+    df = await mini_not_completed()
 
-        if df.empty:
-            discord_message = "Wow, everyone has completed the mini!"
-        
-        else:
-            bot_print(f"Found {len(df)} users who have not completed the mini.")
-    
-            # prepare discord tags
-            discord_tags = []
-            text_count = 0
+    if df.empty:
+        discord_message = "Wow, everyone has completed the mini!"
 
-            # loop through the dataframe
-            for index, row in df.iterrows():
+    else:
+        bot_print(f"Found {len(df)} users who have not completed the mini.")
 
-                # if they want the text message, send it
-                if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
-                    send_sms(row['phone_nbr'], row['phone_carr_cd'], "Hey, do the mini!")
-                    text_count += 1
+        # prepare discord tags
+        discord_tags = []
+        text_count = 0
 
-                # otherwise, tag them in Discord
-                else:
-                    discord_tag = f"<@{row['discord_id_nbr']}>"
-                    discord_tags.append(discord_tag)
+        # loop through the dataframe
+        for index, row in df.iterrows():
 
-           # Prepare the final message for the Discord channel
-            discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
-            if discord_tags:
-                discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
+            # if they want the text message, send it
+            if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
+                send_sms(row['phone_nbr'], row['phone_carr_cd'], "Hey, do the mini!")
+                text_count += 1
 
-        # post warning in each active channel for each guild
-        for guild in bot.guilds:
-            bot_print(f"Posting Mini Warning for {guild.name}")
-            for channel in guild.channels:
-                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(discord_message)
+            # otherwise, tag them in Discord
+            else:
+                discord_tag = f"<@{row['discord_id_nbr']}>"
+                discord_tags.append(discord_tag)
+
+        # Prepare the final message for the Discord channel
+        discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
+        if discord_tags:
+            discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
+
+    # post warning in each active channel for each guild
+    for guild in bot.guilds:
+        bot_print(f"Posting Mini Warning for {guild.name}")
+        for channel in guild.channels:
+            if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+                await channel.send(discord_message)
 
 # post mini
-async def post_mini(guild_name=None):
+async def post_mini(guild_name=None, msg=None):
     async with asyncio.Lock():
+
+        # set default message
+        if msg is None:
+            msg = "Here is Today's Mini Leaderboard"
 
         # post in each guild
         for guild in bot.guilds:
@@ -256,11 +258,12 @@ async def post_mini(guild_name=None):
                 continue
 
             # get leaderboard
-            bot_print(f"Posting Mini Leaderboard for {guild.name}")
-            img = await get_leaderboard(guild_id=str(guild.id), game_name='mini', min_date=get_date(), max_date=get_date())
+            img = await get_leaderboard(guild_id=str(guild.id), game_name='mini',
+                                        min_date=get_date(), max_date=get_date())
 
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+                    await channel.send(msg)
                     await channel.send(file=discord.File(img))
 
             if guild_name is not None:
@@ -270,33 +273,51 @@ async def post_mini(guild_name=None):
 # timers for the tasks
 # ****************************************************************************** #
 
-# this timer checks to see if we should post the mini leaderboard
-# we want a post whenever there's a new leader or if it's a preset time
+# this function runs every minute to see if we should post the mini leaderboard
 @tasks.loop(minutes=1)
 async def auto_post():
 
     # check if it's time for any auto-post
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    post_hour = 18 if now.weekday() in [5, 6] else 22
+    now = get_now()
+    post_hour = get_cutoff_hour()
     warn_hour = post_hour - 2
 
     # for final time
     if now.hour == post_hour and now.minute == 0:
         bot_print("Time to post final!")
-        await post_mini() # all guilds
+        await post_mini(msg="Here's the Final Leaderboard") # all guilds
+        return
 
     # for warning time
-    if now.hour == warn_hour and now.minute == 0:
+    elif now.hour == warn_hour and now.minute == 0:
         bot_print("Time to warn!")
         await send_mini_warning()
         await post_mini()
+        return
 
-    # for leader change
+    else:
+        return
+
+@tasks.loop(seconds=10)
+async def check_mini():
+
+    # run check
     guild_differences = await check_mini_leaders()
-    for guild in bot.guilds:
-        if guild.name in guild_differences:
-            bot_print(f"New leader found for {guild.name}!")
-            await post_mini(guild_name=guild.name)
+
+    # for each guild with new leader, post
+    for guild_name, has_new_leader in guild_differences.items():
+        if has_new_leader:
+            message = f"New mini leader found for {guild_name}!"
+            bot_print(message)
+            await post_mini(guild_name=guild_name, msg=message)
+
+    # reset after cutoff_hour
+    now = get_now()
+    if now.hour == get_cutoff_hour() and now.minute == 0 and now.second < 10:
+        for guild in bot.guilds:
+            guild_name = guild.name
+            leader_filepath = f"files/guilds/{guild_name}/leaders.json"
+            write_json(leader_filepath, [])
 
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)
@@ -305,22 +326,19 @@ async def auto_post():
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
-async def get(ctx, *, time_frame=None):
-    
-    # currently disabling this function while it's being fixed
-    ## return await ctx.channel.send("Sorry, the leaderboard is currently under construction.")
+async def get(ctx, *, time_frame='today'):
+
+    # default time_frame to 'today' if not provided
+    time_frame = str.lower(time_frame)
 
     # clarify request
     user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
     guild_id = str(ctx.guild.id)
     guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
-    
-    # default time_frame to 'today' if not provided
-    time_frame = 'today' if time_frame is None else str.lower(time_frame)
 
     # print
-    bot_print(f"{guild_nm} user {user_nm} requested {game_name} leaderboard for {time_frame}.")
+    bot_print(f"Leaderboard Request: {guild_nm} user {user_nm} requested {time_frame} {game_name}.")
 
     # get the min_date and max_date based on the user's input
     date_range = get_date_range(time_frame)
@@ -337,7 +355,7 @@ async def get(ctx, *, time_frame=None):
 
         # pull leaderboard
         img = await get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
-        
+
         # send it
         await ctx.channel.send(file=discord.File(img))
 
@@ -381,7 +399,7 @@ async def rescan(ctx, game_to_rescan=None):
 
                 # get message detail
                 game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-                
+
                 # get discord name
                 author = message.author.name
                 user_id = author[:-2] if author.endswith("#0") else author
@@ -392,9 +410,9 @@ async def rescan(ctx, game_to_rescan=None):
                 response = await add_score(game_prefix, game_date, user_id, msg_text)
 
                 # react with proper emoji
-                emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')         
+                emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
                 await message.add_reaction(emoji)
-            
+
                 # add to counter
                 condition = (df['Player'] == user_id) & (df['Game Name'] == game_prefix) & (df['Game Date'] == game_date)
 
@@ -404,16 +422,16 @@ async def rescan(ctx, game_to_rescan=None):
                     # Add a new row to the DataFrame
                     new_row = pd.DataFrame({'Player': [user_id],
                                             'Game Date': [game_date],
-                                            'Game Name': [game_prefix], 
+                                            'Game Name': [game_prefix],
                                             'Scores Added': [1]})
                     df = pd.concat([df, new_row], ignore_index=True)
-                    
+
                 # exit the loop since we found the prefix
                 break
 
     # get image of dataframe from custom function
-    img = dataframe_to_image_dark_mode(df, 
-                                    img_filepath='files/images/rescan.png', 
+    img = dataframe_to_image_dark_mode(df,
+                                    img_filepath='files/images/rescan.png',
                                     img_title=f"Rescan Summary",
                                     img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
