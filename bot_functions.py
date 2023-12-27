@@ -1,7 +1,7 @@
 # connections
 import os
 from dotenv import load_dotenv
-from global_functions import bot_print
+from global_functions import *
 
 # data management
 import json
@@ -44,12 +44,12 @@ async def get_bot_channels():
 
 # get mini date
 def get_mini_date():
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now.hour > cutoff_hour:
-        return (now + timedelta(days=1)).date()
+
+    # if past cutoff hour, use tomorrow's date
+    if get_now().hour > get_cutoff_hour():
+        return (get_date() + timedelta(days=1)).date()
     else:
-        return now.date()
+        return get_date()
 
 # find users who haven't completed the mini
 async def mini_not_completed():
@@ -130,7 +130,6 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
     try:
         # new asynchronous query function
         df = await get_df_from_sql(query, params)
-        bot_print(f'Ran the leaderboard query. Got {len(df)} rows and put into dataframe')
 
     except Exception as e:
         bot_print(f"Error when trying to run SQL query: {e}")
@@ -151,7 +150,7 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
         df['Game'] = df['Game'].str.capitalize()
 
     # create image
-    img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm\
+    img_title = game_name.capitalize() if game_name != 'my_scores' else user_nm
 
     # try to generate image
     try:
@@ -369,7 +368,8 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
     # send to sql using new function
     await send_df_to_sql(df, 'game_history', if_exists='append')
 
-    msg_back = f"Added {game_name} for {discord_id} on {game_date} with score {game_score}"
+    msg_back = f"Added Score: {game_date}, {game_name}, {discord_id}, {game_score}"
+    bot_print(msg_back)
 
     return msg_back
 
@@ -466,3 +466,51 @@ def get_users(bot):
             json.dump(user_details, file, indent=4)                 # overwrite the file with the new user details
 
         bot_print(f"User details saved to {users_json}")
+
+# save mini leaders
+async def check_mini_leaders():
+
+    # use get_df_from_sql to get the latest leaders
+    query = """
+        select 
+            guild_nm,
+            player_name,
+            game_time
+        from mini_view
+        where game_date = (select max(game_date) from mini_view)
+        and game_rank = 1
+    """
+    df = await get_df_from_sql(query)
+
+    # get leaders by guild
+    aggregated_df = df.groupby('guild_nm')['player_name'].apply(list).reset_index()
+    new_leaders = aggregated_df.to_dict(orient='records')
+
+    # loop through guilds and check for differences
+    guild_differences = {}
+    for guild in new_leaders:
+        guild_name = guild['guild_nm']
+
+        # ignore global guild
+        if guild_name == "Global":
+            continue
+
+        # get list of previous leaders
+        leader_filepath = f"files/guilds/{guild_name}/leaders.json"
+        previous_leaders = read_json(leader_filepath)
+
+        # check if new leaders are different
+        if set(guild['player_name']) != set(previous_leaders):
+
+            # overwrite with new leaders
+            write_json(leader_filepath, guild['player_name'])
+
+            # set guild_differences to True
+            guild_differences[guild_name] = True
+    
+        else:
+            
+            # set guild_differences to False
+            guild_differences[guild_name] = False
+    
+    return guild_differences
