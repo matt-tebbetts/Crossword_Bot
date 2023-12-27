@@ -204,43 +204,43 @@ async def on_message_edit(before, after):
 # post warning
 async def send_mini_warning():
 
-        # find users who have not yet completed the mini
-        df = await mini_not_completed()
+    # find users who have not yet completed the mini
+    df = await mini_not_completed()
 
-        if df.empty:
-            discord_message = "Wow, everyone has completed the mini!"
-        
-        else:
-            bot_print(f"Found {len(df)} users who have not completed the mini.")
+    if df.empty:
+        discord_message = "Wow, everyone has completed the mini!"
     
-            # prepare discord tags
-            discord_tags = []
-            text_count = 0
+    else:
+        bot_print(f"Found {len(df)} users who have not completed the mini.")
 
-            # loop through the dataframe
-            for index, row in df.iterrows():
+        # prepare discord tags
+        discord_tags = []
+        text_count = 0
 
-                # if they want the text message, send it
-                if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
-                    send_sms(row['phone_nbr'], row['phone_carr_cd'], "Hey, do the mini!")
-                    text_count += 1
+        # loop through the dataframe
+        for index, row in df.iterrows():
 
-                # otherwise, tag them in Discord
-                else:
-                    discord_tag = f"<@{row['discord_id_nbr']}>"
-                    discord_tags.append(discord_tag)
+            # if they want the text message, send it
+            if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
+                send_sms(row['phone_nbr'], row['phone_carr_cd'], "Hey, do the mini!")
+                text_count += 1
 
-           # Prepare the final message for the Discord channel
-            discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
-            if discord_tags:
-                discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
+            # otherwise, tag them in Discord
+            else:
+                discord_tag = f"<@{row['discord_id_nbr']}>"
+                discord_tags.append(discord_tag)
 
-        # post warning in each active channel for each guild
-        for guild in bot.guilds:
-            bot_print(f"Posting Mini Warning for {guild.name}")
-            for channel in guild.channels:
-                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
-                    await channel.send(discord_message)
+        # Prepare the final message for the Discord channel
+        discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
+        if discord_tags:
+            discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
+
+    # post warning in each active channel for each guild
+    for guild in bot.guilds:
+        bot_print(f"Posting Mini Warning for {guild.name}")
+        for channel in guild.channels:
+            if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+                await channel.send(discord_message)
 
 # post mini
 async def post_mini(guild_name=None, msg=None):
@@ -278,14 +278,14 @@ async def post_mini(guild_name=None, msg=None):
 async def auto_post():
 
     # check if it's time for any auto-post
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    post_hour = 18 if now.weekday() in [5, 6] else 22
+    now = get_now()
+    post_hour = get_cutoff_hour()
     warn_hour = post_hour - 2
 
     # for final time
     if now.hour == post_hour and now.minute == 0:
         bot_print("Time to post final!")
-        await post_mini() # all guilds
+        await post_mini(msg="Here's the Final Leaderboard") # all guilds
         return
 
     # for warning time
@@ -310,6 +310,14 @@ async def check_mini():
             message = f"New mini leader found for {guild_name}!"
             bot_print(message)
             await post_mini(guild_name=guild_name, msg=message)
+
+    # reset after cutoff_hour
+    now = get_now()
+    if now.hour == get_cutoff_hour() and now.minute == 0 and now.second < 10:
+        for guild in bot.guilds:
+            guild_name = guild.name
+            leader_filepath = f"files/guilds/{guild_name}/leaders.json"
+            write_json(leader_filepath, [])
 
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)

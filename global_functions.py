@@ -55,7 +55,11 @@ def get_date():
 
 # get last hour before expiration
 def get_cutoff_hour():
-    return 17 if get_date().weekday() in [5, 6] else 21
+    return 18 if get_date().weekday() in [5, 6] else 22
+
+# get last hour before expiration
+def get_final_hour():
+    return get_cutoff_hour() - 1
 
 # function to both print messages and save them to the log file
 def bot_print(message):
