@@ -8,4 +8,5 @@ venv/
 files/guilds
 files/logs
 files/archive
+files/mini
 test.py
