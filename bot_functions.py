@@ -491,6 +491,10 @@ async def check_mini_leaders():
     for guild in new_leaders:
         guild_name = guild['guild_nm']
 
+        # ignore global guild
+        if guild_name == "Global":
+            continue
+
         # get list of previous leaders
         leader_filepath = f"files/guilds/{guild_name}/leaders.json"
         previous_leaders = read_json(leader_filepath)
