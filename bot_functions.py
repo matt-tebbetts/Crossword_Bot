@@ -1,7 +1,7 @@
 # connections
 import os
 from dotenv import load_dotenv
-from global_functions import bot_print, read_json, write_json
+from global_functions import *
 
 # data management
 import json
@@ -44,12 +44,12 @@ async def get_bot_channels():
 
 # get mini date
 def get_mini_date():
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now.hour > cutoff_hour:
-        return (now + timedelta(days=1)).date()
+
+    # if past cutoff hour, use tomorrow's date
+    if get_now().hour > get_cutoff_hour():
+        return (get_date() + timedelta(days=1)).date()
     else:
-        return now.date()
+        return get_date()
 
 # find users who haven't completed the mini
 async def mini_not_completed():
@@ -497,13 +497,16 @@ async def check_mini_leaders():
 
         # check if new leaders are different
         if set(guild['player_name']) != set(previous_leaders):
-            guild_differences[guild_name] = True
 
             # overwrite with new leaders
             write_json(leader_filepath, guild['player_name'])
+
+            # set guild_differences to True
+            guild_differences[guild_name] = True
     
         else:
+            
+            # set guild_differences to False
             guild_differences[guild_name] = False
     
-    bot_print(f"Guild differences is: {guild_differences}")
     return guild_differences
