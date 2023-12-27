@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import stat
 import json
+from config import test_mode
 
 def set_logger():
     # Logger configuration
@@ -36,9 +37,13 @@ def set_logger():
 # Use the function
 logger = set_logger()
 
+# get now
+def get_now():
+    return datetime.now(pytz.timezone('US/Eastern'))
+
 # get current time
 def get_current_time(ms=False):
-    now = datetime.now(pytz.timezone('US/Eastern'))
+    now = get_now()
     if ms:
         return now.strftime("%Y-%m-%d %H:%M:%S.%f")
     else:
@@ -48,6 +53,14 @@ def get_current_time(ms=False):
 def get_date():
     return datetime.now(pytz.timezone('US/Eastern'))
 
+# get last hour before expiration
+def get_cutoff_hour():
+    return 18 if get_date().weekday() in [5, 6] else 22
+
+# get last hour before expiration
+def get_final_hour():
+    return get_cutoff_hour() - 1
+
 # function to both print messages and save them to the log file
 def bot_print(message):
     
@@ -55,8 +68,13 @@ def bot_print(message):
     msg = f"{get_current_time(ms=True)}: {message}"
     
     # print and log message
-    print(message)
-    logger.info(msg) # logger already gets timestamp
+    if test_mode:
+        print(msg)
+    else:
+        print(message)
+    
+    # save to logger with timestamp
+    logger.info(msg)
 
 # read json
 def read_json(filepath, default_data=[]):
