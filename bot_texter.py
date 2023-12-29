@@ -2,24 +2,25 @@ import smtplib
 import os
 from dotenv import load_dotenv
 from config import carrier_emails
+from global_functions import *
 
 # load environment variables
 load_dotenv()
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
 
-def send_sms(number, carrier, message):
+def send_sms(name, number, carrier, message):
     try:
         # find user's carrier email based on their carrier
         carrier_gateway_template = carrier_emails[carrier]["sms_email"]
     except KeyError:
-        print(f"Error: Carrier '{carrier}' not found in carrier_emails.")
+        bot_print(f"Error: Carrier '{carrier}' not found in carrier_emails.")
         return
 
     carrier_gateway = carrier_gateway_template.replace("number", number)
     recipient_email = f"{number}@{carrier_gateway}"
 
-    print(f"Sending message to {recipient_email}...")
+    bot_print(f"Texting reminder to {name} ({recipient_email})...")
 
     try:
         # set my email/pass
