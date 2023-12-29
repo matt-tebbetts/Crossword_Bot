@@ -309,6 +309,8 @@ async def check_mini():
     # run check
     guild_differences = await check_mini_leaders()
 
+    bot_print(f"Just checked for mini leader changes. Guild differences is {guild_differences}")
+
     # for each guild with new leader, post
     for guild_name, has_new_leader in guild_differences.items():
         if has_new_leader:
