@@ -224,7 +224,12 @@ async def send_mini_warning():
 
                 # if they want the text message, send it
                 if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
-                    send_sms(row['phone_nbr'], row['phone_carr_cd'], "Hey, do the mini!")
+                    send_sms(
+                            name=row['player_name'],
+                            number=row['phone_nbr'],
+                            carrier=row['phone_carr_cd'],
+                            message=f"Hey {row['player_name']}, do the mini!"
+                            )
                     text_count += 1
 
                 # otherwise, tag them in Discord

@@ -139,7 +139,7 @@ async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, use
     # if leaderboard empty
     if len(df) == 0 or not cols:
         bot_print('The leaderboard is empty')
-        img = 'files/images/error.png'
+        img = 'files/images/error.png' # should return a blank image or something...
         return img
 
     df.columns = cols
