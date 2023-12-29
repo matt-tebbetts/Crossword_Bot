@@ -1,7 +1,7 @@
 # connections
 import os
 from dotenv import load_dotenv
-from global_functions import bot_print, read_json, write_json
+from global_functions import *
 
 # data management
 import json
@@ -44,12 +44,12 @@ async def get_bot_channels():
 
 # get mini date
 def get_mini_date():
-    now = datetime.now(pytz.timezone('US/Eastern'))
-    cutoff_hour = 17 if now.weekday() in [5, 6] else 21
-    if now.hour > cutoff_hour:
-        return (now + timedelta(days=1)).date()
+
+    # if past cutoff hour, use tomorrow's date
+    if get_now().hour > get_cutoff_hour():
+        return (get_date() + timedelta(days=1)).date()
     else:
-        return now.date()
+        return get_date()
 
 # find users who haven't completed the mini
 async def mini_not_completed():
@@ -368,7 +368,8 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
     # send to sql using new function
     await send_df_to_sql(df, 'game_history', if_exists='append')
 
-    msg_back = f"Added {game_name} for {discord_id} on {game_date} with score {game_score}"
+    msg_back = f"Added Score: {game_date}, {game_name}, {discord_id}, {game_score}"
+    bot_print(msg_back)
 
     return msg_back
 
@@ -490,21 +491,26 @@ async def check_mini_leaders():
     for guild in new_leaders:
         guild_name = guild['guild_nm']
 
-        # read previous leaders
+        # ignore global guild
+        if guild_name == "Global":
+            continue
+
+        # get list of previous leaders
         leader_filepath = f"files/guilds/{guild_name}/leaders.json"
         previous_leaders = read_json(leader_filepath)
 
         # check if new leaders are different
         if set(guild['player_name']) != set(previous_leaders):
-            
-            # new leaders found!
-            guild_differences[guild_name] = True
-            bot_print(f'New mini leader(s) for {guild_name}')
 
             # overwrite with new leaders
             write_json(leader_filepath, guild['player_name'])
+
+            # set guild_differences to True
+            guild_differences[guild_name] = True
     
         else:
+            
+            # set guild_differences to False
             guild_differences[guild_name] = False
     
     return guild_differences
