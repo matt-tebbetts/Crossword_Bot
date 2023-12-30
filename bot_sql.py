@@ -8,46 +8,45 @@ from global_functions import bot_print
 lock = asyncio.Lock()
 
 # sql to df
-async def get_df_from_sql(query, params=None):   
-    async with lock:
+async def get_df_from_sql(query, params=None):
 
-        # set parameters
-        attempts = 0
-        max_attempts = 3
+    # set parameters
+    attempts = 0
+    max_attempts = 3
 
-        while attempts < max_attempts:
-            try:
-                # Connect to the database
-                conn = await aiomysql.connect(**db_config, loop=asyncio.get_running_loop())
+    while attempts < max_attempts:
+        try:
+            # Connect to the database
+            conn = await aiomysql.connect(**db_config, loop=asyncio.get_running_loop())
 
-                # Create a cursor and execute the query
-                async with conn.cursor(aiomysql.DictCursor) as cursor:
-                    await cursor.execute(query, params)
-                    result = await cursor.fetchall()
+            # Create a cursor and execute the query
+            async with conn.cursor(aiomysql.DictCursor) as cursor:
+                await cursor.execute(query, params)
+                result = await cursor.fetchall()
 
-                # Close the connection
-                conn.close()
+            # Close the connection
+            conn.close()
 
-                # Convert the result to a pandas DataFrame
-                return pd.DataFrame(result) if result else pd.DataFrame()
+            # Convert the result to a pandas DataFrame
+            return pd.DataFrame(result) if result else pd.DataFrame()
 
-            except asyncio.TimeoutError:
-                bot_print("SQL Timeout Error")
-                attempts += 1
-                if attempts >= max_attempts:
-                    # Return an empty DataFrame after max attempts
-                    bot_print("Max attempts reached")
-                    return pd.DataFrame()
-
-                await asyncio.sleep(1)  # Wait for a bit before retrying (1 second in this case)
-
-            except Exception as e:
-                # For other exceptions, you might want to handle them differently or log them
-                bot_print(f"Error in bot_sql.py: {e}")
+        except asyncio.TimeoutError:
+            bot_print("SQL Timeout Error")
+            attempts += 1
+            if attempts >= max_attempts:
+                # Return an empty DataFrame after max attempts
+                bot_print("Max attempts reached")
                 return pd.DataFrame()
 
-        # Return an empty DataFrame if all attempts fail
-        return pd.DataFrame()
+            await asyncio.sleep(1)  # Wait for a bit before retrying (1 second in this case)
+
+        except Exception as e:
+            # For other exceptions, you might want to handle them differently or log them
+            bot_print(f"Error in bot_sql.py: {e}")
+            return pd.DataFrame()
+
+    # Return an empty DataFrame if all attempts fail
+    return pd.DataFrame()
 
 # df to sql
 async def send_df_to_sql(df, table_name, if_exists='append'):
