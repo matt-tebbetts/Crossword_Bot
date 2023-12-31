@@ -499,6 +499,10 @@ async def check_mini_leaders():
         leader_filepath = f"files/guilds/{guild_name}/leaders.json"
         previous_leaders = read_json(leader_filepath)
 
+        # print previous vs new leaders
+        bot_print(f"Previous leaders for {guild_name}: {previous_leaders}")
+        bot_print(f"New leaders for {guild_name}: {guild['player_name']}")
+
         # check if new leaders are different
         if set(guild['player_name']) != set(previous_leaders):
 
