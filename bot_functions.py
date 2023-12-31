@@ -464,8 +464,8 @@ def get_users(bot):
         os.makedirs(os.path.dirname(users_json), exist_ok=True)     # if not exists, create the directory
         with open(users_json, 'w') as file:                         # open (and create, if not exists) the file
             json.dump(user_details, file, indent=4)                 # overwrite the file with the new user details
-
-        bot_print(f"User details saved to {users_json}")
+    
+    return
 
 # save mini leaders
 async def check_mini_leaders():
@@ -484,7 +484,7 @@ async def check_mini_leaders():
     try:
         df = await get_df_from_sql(query)
     except Exception as e:
-        bot_print(f"Error when trying to run SQL query: {e}")
+        bot_print(f"Error in check_mini_leaders! Error when trying to run SQL query: {e}")
         return
 
     # get leaders by guild
