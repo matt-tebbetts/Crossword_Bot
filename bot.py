@@ -306,10 +306,13 @@ async def auto_post():
 @tasks.loop(seconds=10)
 async def check_mini():
 
-    # run check
-    guild_differences = await check_mini_leaders()
+    # check for leader changes
+    try:
+        guild_differences = await check_mini_leaders()
 
-    bot_print(f"Just checked for mini leader changes. Guild differences is {guild_differences}")
+    except Exception as e:
+        bot_print(f"Error in auto_post: {e}")
+    
 
     # for each guild with new leader, post
     for guild_name, has_new_leader in guild_differences.items():
@@ -324,7 +327,7 @@ async def check_mini():
         for guild in bot.guilds:
             guild_name = guild.name
             leader_filepath = f"files/guilds/{guild_name}/leaders.json"
-            write_json(leader_filepath, [])
+            write_json(leader_filepath, []) # makes it an empty list
 
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)

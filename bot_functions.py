@@ -480,7 +480,12 @@ async def check_mini_leaders():
         where game_date = (select max(game_date) from mini_view)
         and game_rank = 1
     """
-    df = await get_df_from_sql(query)
+
+    try:
+        df = await get_df_from_sql(query)
+    except Exception as e:
+        bot_print(f"Error when trying to run SQL query: {e}")
+        return
 
     # get leaders by guild
     aggregated_df = df.groupby('guild_nm')['player_name'].apply(list).reset_index()
