@@ -9,6 +9,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     query_params.append(guild_id)
     query_params.extend([min_date, max_date])  # These are needed in every query
 
+    is_date_range = False if min_date == max_date else True
+
     # all games, winners only, single date
     if game_name == 'winners' and min_date == max_date:
         cols = ['Game', 'Winner', 'Score']
@@ -25,7 +27,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
         """
     
     # all games, winners only, range of dates
-    elif game_name == 'winners' and min_date != max_date:
+    elif game_name == 'winners' and is_date_range:
         cols = ['Game', 'Leader', 'Points', 'Wins', 'Top 3', 'Top 5', 'Played']
         query = f"""
             SELECT 

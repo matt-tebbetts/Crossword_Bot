@@ -30,8 +30,8 @@ async def get_df_from_sql(query, params=None):
             # Convert the result to a pandas DataFrame
             return pd.DataFrame(result) if result else pd.DataFrame()
 
-        except asyncio.TimeoutError:
-            bot_print("SQL Timeout Error")
+        except (asyncio.TimeoutError, aiomysql.OperationalError) as e:
+            bot_print(f"SQL Connection/Timeout Error: {e}")
             attempts += 1
             if attempts >= max_attempts:
                 # Return an empty DataFrame after max attempts

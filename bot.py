@@ -311,23 +311,26 @@ async def check_mini():
         guild_differences = await check_mini_leaders()
 
     except Exception as e:
-        bot_print(f"Error in auto_post: {e}")
-    
+        bot_print(f"Error in check_mini part 1: {e}")
+        return
 
-    # for each guild with new leader, post
-    for guild_name, has_new_leader in guild_differences.items():
-        if has_new_leader:
-            message = f"New mini leader found for {guild_name}!"
-            bot_print(message)
-            await post_mini(guild_name=guild_name, msg=message)
+    try:
+        for guild_name, has_new_leader in guild_differences.items():
+            if has_new_leader:
+                message = f"New mini leader found for {guild_name}!"
+                bot_print(message)
+                await post_mini(guild_name=guild_name, msg=message)
 
-    # reset after cutoff_hour
-    now = get_now()
-    if now.hour == get_cutoff_hour() and now.minute == 0 and now.second < 10:
-        for guild in bot.guilds:
-            guild_name = guild.name
-            leader_filepath = f"files/guilds/{guild_name}/leaders.json"
-            write_json(leader_filepath, []) # makes it an empty list
+        # reset after cutoff_hour
+        now = get_now()
+        if now.hour == get_cutoff_hour() and now.minute == 0 and now.second < 10:
+            for guild in bot.guilds:
+                guild_name = guild.name
+                leader_filepath = f"files/guilds/{guild_name}/leaders.json"
+                write_json(leader_filepath, []) # makes it an empty list
+
+    except Exception as e:
+        bot_print(f"Error in check_mini part 2: {e}")
 
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)
