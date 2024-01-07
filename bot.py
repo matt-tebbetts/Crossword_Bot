@@ -264,7 +264,7 @@ async def post_mini(guild_name=None, msg=None):
 
             # get leaderboard
             img = await get_leaderboard(guild_id=str(guild.id), game_name='mini',
-                                        min_date=get_date(), max_date=get_date())
+                                        min_date=get_mini_date(), max_date=get_mini_date())
 
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
@@ -317,7 +317,7 @@ async def check_mini():
     try:
         for guild_name, has_new_leader in guild_differences.items():
             if has_new_leader:
-                message = f"New mini leader found for {guild_name}!"
+                message = f"New mini leader for {guild_name}!"
                 bot_print(message)
                 await post_mini(guild_name=guild_name, msg=message)
 
