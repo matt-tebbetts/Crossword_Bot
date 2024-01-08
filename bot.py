@@ -345,7 +345,7 @@ async def get(ctx, *, time_frame=None):
     # figure out requested time_frame
     if time_frame is None:
         if ctx.invoked_with == 'mini':
-            time_frame = str(get_mini_date())
+            time_frame = get_mini_date().strftime("%Y-%m-%d")
         else:
             time_frame = 'today'
     else:
