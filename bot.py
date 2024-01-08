@@ -339,10 +339,17 @@ async def check_mini():
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
-async def get(ctx, *, time_frame='today'):
+async def get(ctx, *, time_frame=None):
 
-    # default time_frame to 'today' if not provided
-    time_frame = str.lower(time_frame)
+
+    # figure out requested time_frame
+    if time_frame is None:
+        if ctx.invoked_with == 'mini':
+            time_frame = get_mini_date()
+        else:
+            time_frame = 'today'
+    else:
+        time_frame = str.lower(time_frame)
 
     # clarify request
     user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
