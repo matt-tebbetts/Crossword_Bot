@@ -37,11 +37,11 @@ def set_logger():
 # Use the function
 logger = set_logger()
 
-# get now
+# get now as datetime
 def get_now():
     return datetime.now(pytz.timezone('US/Eastern'))
 
-# get current time
+# get now as string
 def get_current_time(ms=False):
     now = get_now()
     if ms:
@@ -53,7 +53,7 @@ def get_current_time(ms=False):
 def get_date():
     return datetime.now(pytz.timezone('US/Eastern'))
 
-# get last hour before expiration
+# get hour of expiration
 def get_cutoff_hour():
     return 18 if get_date().weekday() in [5, 6] else 22
 
