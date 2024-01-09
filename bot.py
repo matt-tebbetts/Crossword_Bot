@@ -306,6 +306,11 @@ async def auto_post():
 @tasks.loop(seconds=10)
 async def check_mini():
 
+    # don't run this in first five minutes after new mini
+    now = get_now()
+    if now.hour == get_cutoff_hour() and now.minute < 5:
+        return
+
     # check for leader changes
     try:
         guild_differences = await check_mini_leaders()
