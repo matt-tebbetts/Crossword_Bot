@@ -112,9 +112,9 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 x.player_name,
                 x.points,
                 x.wins,
-                CONCAT(ROUND(x.top_3 * 100), '%%') as top_3,
-                CONCAT(ROUND(x.top_5 * 100), '%%') as top_5,
-                CONCAT(ROUND((x.games_played / max(x.games_played) over()) * 100), '%%') as participation
+                x.top_3,
+                x.top_5,
+                x.games_played
             FROM
                     (
                     SELECT 
@@ -122,8 +122,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         player_name,
                         sum(points) as points,
                         sum(case when game_rank = 1 then 1 else 0 end) as wins,
-                        sum(case when game_rank <= 3 then 1 else 0 end) / sum(1.0) as top_3,
-                        sum(case when game_rank <= 5 then 1 else 0 end) / sum(1.0) as top_5,
+                        sum(case when game_rank <= 3 then 1 else 0 end) as top_3,
+                        sum(case when game_rank <= 5 then 1 else 0 end) as top_5,
                         sum(1) as games_played
                     FROM game_view
                     WHERE guild_id = %s
