@@ -17,29 +17,42 @@ from config import NYT_COOKIE
 import asyncio
 
 current_mini_dt = get_mini_date().strftime("%Y-%m-%d")
+import json
+import requests
+from bs4 import BeautifulSoup
+from config import NYT_COOKIE
+import re
+import re
+import json
 
-# scrape mini scores
 def scrape_mini_scores():
-
-    # get leaderboard html
     leaderboard_url = 'https://www.nytimes.com/puzzles/leaderboards'
-    html = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
+    response = requests.get(leaderboard_url, cookies={'NYT-S': NYT_COOKIE})
 
-    # find scores in the html
-    soup = BeautifulSoup(html.text, features='lxml')
-    divs = soup.find_all("div", class_='lbd-score')
-    scores = {}
-    for div in divs:
-        name = div.find("p", class_='lbd-score__name').getText().strip().replace(' (you)', '')
-        time_div = div.find("p", class_='lbd-score__time')
-        if time_div:
-            time = time_div.getText()
-            if time != '--':
-                scores[name] = time
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'lxml')
 
-    return scores
+        # Find the script tag containing the scores data
+        script_tag = soup.find('script', string=re.compile('window.data'))
+        if script_tag:
 
-# save mini scores to file
+            # Extract the JavaScript object as a string
+            data_string = script_tag.string.split('=', 1)[1].strip()
+            # Parse the JavaScript object string as JSON
+            data = json.loads(data_string.rstrip(';'))
+            
+            # Extract the scores from the JSON data
+            scores = {entry['name']: entry['solveTime'] for entry in data.get('scoreList', []) if entry.get('solveTime')}
+            return scores
+        else:
+            print("Script tag with data not found.")
+    else:
+        print(f"Failed to fetch leaderboard. Status Code: {response.status_code}")
+
+    return {}
+
+
+# save mini scores to file1
 def save_new_scores_to_json(scores):
 
     # get today's mini path
