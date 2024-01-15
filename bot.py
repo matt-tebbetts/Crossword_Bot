@@ -155,6 +155,10 @@ async def on_message(message):
     except Exception as e:
         bot_print(f"failed to save message: {e}")
 
+    # adding funny responses here
+    if 'twitter' in message.content.lower():
+        await message.channel.send("What's twitter?")
+
     # check channel
     if message.channel.name not in active_channel_names:
         return
