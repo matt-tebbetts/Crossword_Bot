@@ -159,7 +159,20 @@ async def on_message(message):
     if 'twitter' in message.content.lower():
         await message.channel.send("What's twitter?")
 
-    # check channel
+    # Regex pattern to find URLs containing "x.com/"
+    pattern = r"http[s]?://x\.com\/[^\s]+"
+
+    # Search for the pattern in the message
+    urls = re.findall(pattern, message.content)
+    for url in urls:
+        
+        # Replace "x.com/" with "fixvx.com/"
+        new_url = url.replace("x.com/", "fixvx.com/")
+        
+        # Send the modified URL with a message
+        await message.channel.send(f"Hey, I embedded that for you: {new_url}")
+
+    # check channel for games
     if message.channel.name not in active_channel_names:
         return
 
