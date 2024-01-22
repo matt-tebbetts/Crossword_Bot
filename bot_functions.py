@@ -46,7 +46,7 @@ async def get_bot_channels():
 def get_mini_date():
 
     # if past cutoff hour, use tomorrow's date
-    if get_now().hour > get_cutoff_hour():
+    if get_now().hour >= get_cutoff_hour():
         return (get_date() + timedelta(days=1)).date()
     else:
         return get_date()
