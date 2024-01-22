@@ -77,16 +77,16 @@ def get_date_range(user_input):
             max_date = min_date + timedelta(days=6)
         elif user_input == 'this week':
             min_date = today - timedelta(days=today.weekday())
-            max_date = today - timedelta(days=1)
+            max_date = today # - timedelta(days=1)
         elif user_input == 'this month':
             min_date = today.replace(day=1)
-            max_date = today - timedelta(days=1)
+            max_date = today # - timedelta(days=1)
         elif user_input == 'last month':
             min_date = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
             max_date = (min_date.replace(month=min_date.month % 12 + 1) - timedelta(days=1))
         elif user_input == 'this year':
             min_date = today.replace(month=1, day=1)
-            max_date = today - timedelta(days=1)
+            max_date = today # - timedelta(days=1)
         elif user_input == 'last year':
             min_date = today.replace(year=today.year - 1, month=1, day=1)
             max_date = today.replace(year=today.year - 1, month=12, day=31)
