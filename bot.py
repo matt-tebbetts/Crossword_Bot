@@ -272,7 +272,7 @@ async def post_mini(guild_name=None, msg=None):
 
         # set default message
         if msg is None:
-            msg = "Here is Today's Mini Leaderboard"
+            msg = "Here is the current leaderboard"
 
         # post in each guild
         for guild in bot.guilds:
@@ -286,7 +286,14 @@ async def post_mini(guild_name=None, msg=None):
                                         min_date=get_mini_date(), max_date=get_mini_date())
 
             for channel in guild.channels:
-                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+
+                # only post in certain channels
+                cond1 = channel.name in active_channel_names
+                cond2 = isinstance(channel, discord.TextChannel)
+                cond3 = channel.name != 'bot-test'
+
+                # post
+                if cond1 and cond2 and cond3:
                     await channel.send(msg)
                     await channel.send(file=discord.File(img))
 
