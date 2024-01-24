@@ -158,7 +158,8 @@ async def on_message(message):
     # adding funny responses here
     if 'twitter' in message.content.lower():
         await message.channel.send("What's twitter?")
-
+    
+    """
     # Regex pattern to find URLs containing "x.com/"
     pattern = r"http[s]?://x\.com\/[^\s]+"
 
@@ -171,7 +172,8 @@ async def on_message(message):
         
         # Send the modified URL with a message
         await message.channel.send(f"Hey, I embedded that for you: {new_url}")
-
+    """
+    
     # check channel for games
     if message.channel.name not in active_channel_names:
         return
