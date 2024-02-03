@@ -269,7 +269,7 @@ async def send_mini_warning():
                 await channel.send(discord_message)
 
 # post mini
-async def post_mini(guild_name=None, msg=None):
+async def post_mini(guild_name=None, msg=None, final_post=False):
     async with asyncio.Lock():
 
         # set default message
@@ -283,9 +283,15 @@ async def post_mini(guild_name=None, msg=None):
             if guild_name is not None and guild.name != guild_name:
                 continue
 
+            # set mini date
+            if final_post:
+                min_date, max_date = get_date(), get_date()
+            else:
+                min_date, max_date = get_mini_date(), get_mini_date()
+
             # get leaderboard
             img = await get_leaderboard(guild_id=str(guild.id), game_name='mini',
-                                        min_date=get_mini_date(), max_date=get_mini_date())
+                                        min_date=min_date, max_date=max_date)
 
             for channel in guild.channels:
 
@@ -318,7 +324,7 @@ async def auto_post():
     # for final time
     if now.hour == post_hour and now.minute == 0:
         bot_print("Time to post final!")
-        await post_mini(msg="Here's the Final Leaderboard") # all guilds
+        await post_mini(msg="Here's the Final Leaderboard", final_post=True) # all guilds
         return
 
     # for warning time
