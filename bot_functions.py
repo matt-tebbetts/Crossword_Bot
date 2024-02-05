@@ -103,7 +103,7 @@ def get_date_range(user_input):
     return min_date, max_date
 
 # returns image location of leaderboard
-async def get_leaderboard(guild_id, game_name, min_date=None, max_date=None, user_nm=None):
+async def get_leaderboard(guild_id='Global', game_name=None, min_date=None, max_date=None, user_nm=None):
     from bot_queries import build_query
 
     today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
@@ -347,10 +347,15 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
 
     if game_prefix == "TimeGuessr":
         game_name = 'timeguessr'
-        parts = msg_txt.split(" ")
-        game_score = parts[2].split("\n")[0]  # Get the score before the newline
-        game_score = game_score.split('/')[0]  # Split by '/' and take the first part
-        game_score = game_score.replace(',', '')  # Remove commas
+        # Use a regex pattern to match scores in the format 'number/number'
+        score_pattern = re.compile(r"\b\d+/\d+\b")
+        match = score_pattern.search(msg_txt)
+        if match:
+            game_score = match.group().split('/')[0]  # Extract the score before '/'
+            game_score = game_score.replace(',', '')  # Remove commas
+        else:
+            # Handle case where no valid score is found
+            print("No valid score found in message.")  # Remove commas
 
     if game_prefix == "Concludle":
         game_name = 'concludle'
