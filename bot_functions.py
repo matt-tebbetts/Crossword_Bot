@@ -354,8 +354,8 @@ async def add_score(game_prefix, game_date, discord_id, msg_txt):
             game_score = match.group().split('/')[0]  # Extract the score before '/'
             game_score = game_score.replace(',', '')  # Remove commas
         else:
-            # Handle case where no valid score is found
-            print("No valid score found in message.")  # Remove commas
+            msg_back = [False, 'Invalid format']
+            return msg_back
 
     if game_prefix == "Concludle":
         game_name = 'concludle'
