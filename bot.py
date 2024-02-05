@@ -47,7 +47,7 @@ my_intents = discord.Intents.all()
 my_intents.message_content = True
 
 # bot setup
-bot = commands.Bot(command_prefix="/", intents=my_intents)
+bot = commands.Bot(command_prefix="/", intents=my_intents, case_insensitive=True)
 bot_ready = False
 
 # remove this!!!!
