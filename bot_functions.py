@@ -175,7 +175,7 @@ async def extract_score(message_text, game_name):
     scoring_type = await get_scoring_type(game_name)
     print(f"scoring type is {scoring_type}")
 
-    if scoring_type == "guessing":
+    if scoring_type == "guesses":
         pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
     elif scoring_type == "points":
         pattern = re.compile(r'(\d{1,3}(?:,\d{3})*)(?=/)')
