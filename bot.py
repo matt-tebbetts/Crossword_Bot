@@ -159,21 +159,6 @@ async def on_message(message):
     if 'twitter' in message.content.lower():
         await message.channel.send("What's twitter?")
     
-    """
-    # Regex pattern to find URLs containing "x.com/"
-    pattern = r"http[s]?://x\.com\/[^\s]+"
-
-    # Search for the pattern in the message
-    urls = re.findall(pattern, message.content)
-    for url in urls:
-        
-        # Replace "x.com/" with "fixvx.com/"
-        new_url = url.replace("x.com/", "fixvx.com/")
-        
-        # Send the modified URL with a message
-        await message.channel.send(f"Hey, I embedded that for you: {new_url}")
-    """
-    
     # check channel for games
     if message.channel.name not in active_channel_names:
         return
@@ -183,8 +168,18 @@ async def on_message(message):
     # check for game score
     for game_prefix in game_prefixes:
 
-        # find prefix
+        # if message begins with a game prefix, add the score
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
+
+            print(f"This is a game score for {game_prefix}")
+
+            # find game name from prefix
+            for key, value in game_prefix_dict.items():
+                if value.lower() == game_prefix.lower():
+                    game_name = key
+                    break
+
+            print(f"Found {game_name} score")
 
             # get message detail
             game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
@@ -194,7 +189,7 @@ async def on_message(message):
             user_id = author[:-2] if author.endswith("#0") else author
 
             # send to score scraper
-            response = await add_score(game_prefix, game_date, user_id, msg_text)
+            response = await add_score(game_name, game_date, user_id, msg_text)
 
             # react with proper emoji
             emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')

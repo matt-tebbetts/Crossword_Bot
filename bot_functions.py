@@ -161,224 +161,55 @@ async def get_leaderboard(guild_id='Global', game_name=None, min_date=None, max_
 
     return img
 
+async def get_scoring_type(game_name=None):
+
+    # This function would return 'guessing', 'points', or 'timed' based on the game_name
+    query = """select distinct scoring_type from game_details where game_name = %s"""
+    params = (game_name,)
+    df = await get_df_from_sql(query, params=params)
+
+    return df['scoring_type'].values[0]
+
+async def extract_score(message_text, game_name):
+    print(f"getting scoring type for game: {game_name}")
+    scoring_type = await get_scoring_type(game_name)
+    print(f"scoring type is {scoring_type}")
+
+    if scoring_type == "guessing":
+        pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
+    elif scoring_type == "points":
+        pattern = re.compile(r'(\d{1,3}(?:,\d{3})*)(?=/)')
+    elif scoring_type == "timed":
+        pattern = re.compile(r'\d{1,2}:\d{2}')
+    
+    # For games like "boxoffice" where multiple scores are present, find all matches and return the last (or highest) one
+    match = pattern.search(message_text)
+    if match:
+        
+        print(f"Match found: {match}")
+        
+        # Extract the last matched score for "boxoffice" or the only match for others
+        score = match.group(1).replace(',', '')
+        return score
+    return None
+
 # add discord scores to database when people paste them to discord chat
-async def add_score(game_prefix, game_date, discord_id, msg_txt):
+async def add_score(game_name, game_date, discord_id, msg_txt):
 
     # get date and time
     now = datetime.now(pytz.timezone('US/Eastern'))
     added_ts = now.strftime("%Y-%m-%d %H:%M:%S")
 
     # set these up
-    game_name = None
+    game_name = game_name
     game_score = None
     game_dtl = None
     metric_01 = None
     metric_02 = None # game completed yes/no
     metric_03 = None
 
-    if game_prefix == "#Worldle":
-        game_name = "worldle"
-        game_score = msg_txt[14:17]
-
-    if game_prefix == "Wordle":
-        game_name = "wordle"
-
-        # find position slash for the score
-        found_score = msg_txt.find('/')
-        if found_score == -1:
-            msg_back = [False, 'Invalid format']
-            return msg_back
-        else:
-            game_score = msg_txt[11:14]
-            metric_02 = 1 if game_score[0] != 'X' else 0
-
-    if game_prefix in ["#travle", "#travle_usa", "#travle_gbr"]:
-        game_name = game_prefix[1:]
-
-        # find position of opening and closing parentheses
-        opening_paren = msg_txt.find('(')
-        closing_paren = msg_txt.find(')')
-
-        # get substring between parentheses
-        game_score = msg_txt[opening_paren+1:closing_paren]
-
-        # set metric_02 based on first character of game_score
-        metric_02 = 1 if game_score[0] != '?' else 0
-
-    if game_prefix == "Factle.app":
-        game_name = "factle"
-        game_score = msg_txt[14:17]
-        game_dtl = msg_txt.splitlines()[1]
-        lines = msg_txt.split('\n')
-
-        # find green frogs
-        g1, g2, g3, g4, g5 = 0, 0, 0, 0, 0
-        for line in lines[2:]:
-            if line[0] == '🐸':
-                g1 = 1
-            if line[1] == '🐸':
-                g2 = 1
-            if line[2] == '🐸':
-                g3 = 1
-            if line[3] == '🐸':
-                g4 = 1
-            if line[4] == '🐸':
-                g5 = 1
-        metric_03 = g1 + g2 + g3 + g4 + g5
-
-        # get top X% denoting a win
-        final_line = lines[-1]
-        if "Top" in final_line:
-            metric_01 = final_line[4:]
-            metric_02 = 1
-        else:
-            game_score = 'X/5'
-            metric_02 = 0
-
-    if game_prefix == 'boxofficega.me':
-        game_name = 'boxoffice'
-        game_dtl = msg_txt.split('\n')[1]
-        movies_guessed = 0
-        trophy_symbol = u'\U0001f3c6'
-        check_mark = u'\u2705'
-
-        # check for overall score and movies_guessed
-        for line in msg_txt.split('\n'):
-
-            if line.find(trophy_symbol) >= 0:
-                game_score = line.split(' ')[1]
-
-            if line.find(check_mark) >= 0:
-                movies_guessed += 1
-
-        metric_01 = movies_guessed
-
-    if game_prefix == 'Atlantic':
-        game_name = 'atlantic'
-        msg_txt = msg_txt.replace('[', '')
-
-        # find position of colon for time, slash for date
-        s = msg_txt.find(':')
-        d = msg_txt.find('/')
-        if s == -1 or d == -1:
-            msg_back = [False, 'Invalid format']
-            return msg_back
-
-        # find score and date
-        game_score = msg_txt[s - 2:s + 3].strip()
-        r_month = msg_txt[d - 2:d].strip().zfill(2)
-        r_day = msg_txt[d + 1:d + 3].strip().zfill(2)
-
-        # find year (this is generally not working)
-        if '202' in msg_txt:
-            y = msg_txt.find('202')
-            r_year = msg_txt[y:y + 4]
-        else:
-            r_year = game_date[0:4]
-
-        game_date = f'{r_year}-{r_month}-{r_day}'
-
-    if game_prefix == 'Connections':
-        game_name = 'connections'
-        
-        # split the text by newlines
-        lines = msg_txt.strip().split("\n")
-
-        # only keep lines that contain at least one emoji square
-        emoji_squares = ["🟨", "🟩", "🟦", "🟪"]
-        lines = [line for line in lines if any(emoji in line for emoji in emoji_squares)]
-
-        max_possible_guesses = 7
-        guesses_taken = len(lines)
-        completed_lines = 0
-
-        # purple square bonus
-        metric_01 = 1 if lines[0].count("🟪") == 4 else 0
-
-        for line in lines:
-            # a line is considered completed if all emojis are the same
-            if len(set(line)) == 1:
-                completed_lines += 1
-
-        metric_02 = int(completed_lines == 4) # did the user complete the puzzle?
-        game_score = f"{guesses_taken}/{max_possible_guesses}" if metric_02 == 1 else f"X/{max_possible_guesses}"
-
-    if game_prefix == '#Emovi':
-        game_name = 'emovi'
-
-        # split the string into lines
-        lines = msg_txt.split('\n')
-
-        # find the line with the score
-        for line in lines:
-            if '🟥' in line or '🟩' in line:
-                score_line = line
-                break
-        else:
-            raise ValueError('No score line found in game text')
-
-        # count the total squares and the position of the green square
-        total_squares = 3
-        green_square_pos = None
-        for i, char in enumerate(score_line):
-            if char == '🟩':
-                green_square_pos = i
-
-        # if no green square was found, the score is 0
-        if green_square_pos is None:
-            game_score = f"X/{total_squares}"
-            metric_02 = 0
-        else:
-            game_score = f"{green_square_pos+1}/{total_squares}"
-            metric_02 = 1
-
-    if game_prefix == 'Daily Crosswordle':
-        game_name = 'crosswordle'
-        match = re.search(r"(?:(\d+)m\s*)?(\d+)s", msg_txt) # make minutes optional
-        metric_02 = 1
-        if match:
-            minutes = match.group(1)
-            seconds = int(match.group(2))
-            seconds_str = str(seconds).zfill(2)
-            
-            # If no minutes are present, consider it as 0
-            minutes = 0 if minutes is None else int(minutes)
-            game_score = f"{minutes}:{seconds_str}"
-
-    if game_prefix == "TimeGuessr":
-        game_name = 'timeguessr'
-        # Use a regex pattern to match scores in the format 'number/number'
-        score_pattern = re.compile(r"\b\d+/\d+\b")
-        match = score_pattern.search(msg_txt)
-        if match:
-            game_score = match.group().split('/')[0]  # Extract the score before '/'
-            game_score = game_score.replace(',', '')  # Remove commas
-        else:
-            msg_back = [False, 'Invalid format']
-            return msg_back
-
-    if game_prefix == "Concludle":
-        game_name = 'concludle'
-        lines = msg_txt.split("\n")
-        for line in lines:
-            if "/6" in line:
-                game_score = line.split(" ")[1]
-                metric_02 = 0 if 'X' in game_score else 1
-
-    if game_prefix == "Actorle":
-        game_name = "actorle"
-
-        # Split the message by lines, then split the first line by spaces
-        lines = msg_txt.split('\n')
-        parts = lines[0].split() if lines else []
-
-        if len(parts) < 3:
-            msg_back = [False, 'Invalid format']
-            return msg_back
-        else:
-            game_score = parts[2]  # The score is the third part of the first line
-            metric_02 = 1 if '/' in game_score and game_score[0] != 'X' else 0
-
+    # find game_score from message details
+    game_score = await extract_score(msg_txt, game_name)
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
