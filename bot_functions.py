@@ -188,8 +188,8 @@ async def extract_score(message_text, game_name):
         
         print(f"Match found: {match}")
         
-        # Extract the last matched score for "boxoffice" or the only match for others
-        score = match.group(1).replace(',', '')
+        # timeguessr we replace the comma and take the first part before the slash. others we take the whole match
+        score = match.group(1).replace(',', '') if game_name == 'timeguessr' else match.group(0)
         return score
     return None
 
