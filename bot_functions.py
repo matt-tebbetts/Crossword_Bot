@@ -161,24 +161,57 @@ async def get_leaderboard(guild_id='Global', game_name=None, min_date=None, max_
 
     return img
 
+# find game type
 async def get_scoring_type(game_name=None):
-
-    # This function would return 'guessing', 'points', or 'timed' based on the game_name
     query = """select distinct scoring_type from game_details where game_name = %s"""
     params = (game_name,)
     df = await get_df_from_sql(query, params=params)
-
     return df['scoring_type'].values[0]
 
+# get score from message
 async def extract_score(message_text, game_name):
     print(f"getting scoring type for game: {game_name}")
     scoring_type = await get_scoring_type(game_name)
-    print(f"scoring type is {scoring_type}")
 
-    if scoring_type == "guesses":
+    if game_name.lower() == "connections":
+        # split the text by newlines
+        lines = message_text.strip().split("\n")
+
+        # only keep lines that contain at least one emoji square
+        emoji_squares = ["🟨", "🟩", "🟦", "🟪"]
+        lines = [line for line in lines if any(emoji in line for emoji in emoji_squares)]
+
+        max_possible_guesses = 7
+        guesses_taken = len(lines)
+        completed_lines = 0
+
+        # purple square bonus
+        metric_01 = 1 if lines[0].count("🟪") == 4 else 0
+
+        for line in lines:
+            # a line is considered completed if all emojis are the same
+            if len(set(line)) == 1:
+                completed_lines += 1
+
+        #metric_02 = int(completed_lines == 4) # did the user complete the puzzle?
+        score = f"{guesses_taken}/{max_possible_guesses}" if completed_lines == 4 else f"X/{max_possible_guesses}"
+        return score
+    
+    elif game_name.lower() == 'crosswordle':
+        match = re.search(r"(\d+)m\s*(\d+)s", message_text)
+        if match:
+            minutes = int(match.group(1))
+            seconds = int(match.group(2))
+            seconds_str = str(seconds).zfill(2)
+            score = f"{minutes}:{seconds_str}"
+            return score
+
+    elif scoring_type == "guesses":
         pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
+
     elif scoring_type == "points":
         pattern = re.compile(r'(\d{1,3}(?:,\d{3})*)(?=/)')
+        
     elif scoring_type == "timed":
         pattern = re.compile(r'\d{1,2}:\d{2}')
     
@@ -286,6 +319,10 @@ def save_message_detail(message):
     # Write updated messages back to the file
     with open(file_path, 'w') as file:
         json.dump(messages, file, indent=4)
+
+    ## write contents to sql
+    # df = pd.DataFrame(data=[message_data])
+    # await send_df_to_sql(df, 'guild_messages', if_exists='append')
 
     return
 
