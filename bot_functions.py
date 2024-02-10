@@ -200,6 +200,12 @@ async def extract_score(message_text, game_name):
             score = f"{minutes}:{seconds_str}"
             return score
 
+    elif game_name.lower() == 'boxoffice':
+        pattern = re.compile(r'🏆\s*(\d+)')
+        match = pattern.search(message_text)
+        score = match.group(1) if match else None
+        return score
+
     elif scoring_type == "guesses":
         pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
 
