@@ -174,27 +174,21 @@ async def extract_score(message_text, game_name):
     scoring_type = await get_scoring_type(game_name)
 
     if game_name.lower() == "connections":
-        # split the text by newlines
+        
+        # analyze line squares
         lines = message_text.strip().split("\n")
-
-        # only keep lines that contain at least one emoji square
         emoji_squares = ["🟨", "🟩", "🟦", "🟪"]
-        lines = [line for line in lines if any(emoji in line for emoji in emoji_squares)]
-
-        max_possible_guesses = 7
-        guesses_taken = len(lines)
+        lines_with_squares = [line for line in lines if any(emoji in line for emoji in emoji_squares)]
+        guesses_taken = len(lines_with_squares)
         completed_lines = 0
-
-        # purple square bonus
         metric_01 = 1 if lines[0].count("🟪") == 4 else 0
 
-        for line in lines:
-            # a line is considered completed if all emojis are the same
+        # count completed categories
+        for line in lines_with_squares:
             if len(set(line)) == 1:
                 completed_lines += 1
 
-        #metric_02 = int(completed_lines == 4) # did the user complete the puzzle?
-        score = f"{guesses_taken}/{max_possible_guesses}" if completed_lines == 4 else f"X/{max_possible_guesses}"
+        score = f"{guesses_taken}/7" if completed_lines == 4 else "X/7"
         return score
     
     elif game_name.lower() == 'crosswordle':
