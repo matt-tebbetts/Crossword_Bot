@@ -382,6 +382,11 @@ openai_client = AsyncOpenAI(api_key=gpt_key)
 # gpt command
 @bot.command(name='gpt')
 async def fetch_gpt_response(ctx, *, query: str):
+
+    # only allow svendiamond to use this command
+    if ctx.author.id != 340940380927295491:
+        return await ctx.send("Sorry, this feature is locked for now.")
+
     try:
 
         # estimate tokens
