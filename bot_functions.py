@@ -246,7 +246,8 @@ async def add_score(game_name, game_date, discord_id, msg_txt):
 
     # game detail for certian games
     if game_name == 'boxoffice':
-        game_dtl = msg_txt.strip().split("\n")[1]
+        game_dtl = msg_txt.strip().split("\n")[1] # movie date
+        metric_01 = msg_txt.count("✅") # movies guessed
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']
