@@ -496,7 +496,12 @@ async def rescan(ctx, game_to_rescan=None):
 
                 # get message detail
                 game_date = message.created_at.astimezone(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
-
+                # find game name from prefix
+                for key, value in game_prefix_dict.items():
+                    if value.lower() == game_prefix.lower():
+                        game_name = key
+                        break
+                
                 # get discord name
                 author = message.author.name
                 user_id = author[:-2] if author.endswith("#0") else author
@@ -504,14 +509,14 @@ async def rescan(ctx, game_to_rescan=None):
                 bot_print(f"Found {user_id}'s {game_prefix} score from {game_date}")
 
                 # send to score scraper
-                response = await add_score(game_prefix, game_date, user_id, msg_text)
+                response = await add_score(game_name, game_date, user_id, msg_text)
 
                 # react with proper emoji
                 emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
                 await message.add_reaction(emoji)
 
                 # add to counter
-                condition = (df['Player'] == user_id) & (df['Game Name'] == game_prefix) & (df['Game Date'] == game_date)
+                condition = (df['Player'] == user_id) & (df['Game Name'] == game_name) & (df['Game Date'] == game_date)
 
                 if df[condition].any().any():
                     df.loc[condition, 'Scores Added'] += 1
