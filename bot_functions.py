@@ -222,7 +222,7 @@ async def extract_score(message_text, game_name):
         print(f"Match found: {match}")
         
         # timeguessr we replace the comma and take the first part before the slash. others we take the whole match
-        score = match.group(1).replace(',', '') if game_name == 'timeguessr' else match.group(0)
+        score = match.group(1).replace(',', '') if game_name.lower() == 'timeguessr' else match.group(0)
         return score
     return None
 
