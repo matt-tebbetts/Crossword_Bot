@@ -28,6 +28,8 @@ from discord import app_commands  # trying new method
 import numpy as np
 import pandas as pd
 import json
+#import openai
+#from openai import OpenAI
 
 # timing and scheduling
 from datetime import date, datetime, timedelta
@@ -370,6 +372,47 @@ async def check_mini():
 # commands (only 2 right now: /get and /rescan)
 # /get can be replaced by any of the game names
 # ****************************************************************************** #
+
+from openai import AsyncOpenAI
+
+# chat gpt
+gpt_key = os.getenv('OPENAI_API_KEY')
+openai_client = AsyncOpenAI(api_key=gpt_key)
+
+# gpt command
+@bot.command(name='gpt')
+async def fetch_gpt_response(ctx, *, query: str):
+    try:
+
+        # estimate tokens
+        est_tokens = len(query) / 4
+        est_cost = est_tokens * 0.0000005
+        
+        # send message confirming the tokens and cost
+        print(f"Estimated tokens: {est_tokens} (cost: ${est_cost})")
+
+        # Generating a response from OpenAI ChatGPT using the updated API interface and client instance
+        response = await openai_client.chat.completions.create(
+
+            # this model turbo-0125 costs $0.0000005 per token
+            model="gpt-3.5-turbo-0125",  # You can choose a different model as per your requirements
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": query}
+            ],
+            max_tokens=1000
+        )
+        # Sending the response back to the Discord channel
+        await ctx.send(response.choices[0].message.content)
+    except Exception as e:
+
+        error_message = str(e)
+        if "token limit exceeded" in error_message.lower():
+            custom_message = "Error: Token limit exceeded. Please try a shorter query."
+        else:
+            custom_message = f"Error: {error_message}"
+
+        await ctx.send(custom_message)
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
