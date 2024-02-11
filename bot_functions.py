@@ -192,12 +192,21 @@ async def extract_score(message_text, game_name):
         return score
     
     elif game_name.lower() == 'crosswordle':
+        # Check for minutes and seconds format first
         match = re.search(r"(\d+)m\s*(\d+)s", message_text)
         if match:
             minutes = int(match.group(1))
             seconds = int(match.group(2))
-            seconds_str = str(seconds).zfill(2)
-            score = f"{minutes}:{seconds_str}"
+        else:
+            # If not found, look for seconds only
+            match = re.search(r"(\d+)s", message_text)
+            if match:
+                seconds = int(match.group(1))
+                minutes = 0
+
+        # Format the score as "minutes:seconds"
+        if match:  # Check if either pattern was found
+            score = f"{minutes}:{str(seconds).zfill(2)}"
             return score
 
     elif game_name.lower() == 'boxoffice':
