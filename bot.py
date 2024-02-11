@@ -158,8 +158,8 @@ async def on_message(message):
         bot_print(f"failed to save message: {e}")
 
     # adding funny responses here
-    if 'twitter' in message.content.lower():
-        await message.channel.send("What's twitter?")
+    if ' twitter ' in message.content.lower():
+        await message.channel.send("You mean 'X'?")
     
     # check channel for games
     if message.channel.name not in active_channel_names:
