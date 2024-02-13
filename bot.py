@@ -384,17 +384,41 @@ openai_client = AsyncOpenAI(api_key=gpt_key)
 async def fetch_gpt_response(ctx, *, query: str):
 
     # only allow svendiamond to use this command
-    if ctx.author.id != 340940380927295491:
+    is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
+
+    if not is_allowed_author:
         return await ctx.send("Sorry, this feature is locked for now.")
 
     try:
-
         # estimate tokens
         est_tokens = len(query) / 4
         est_cost = est_tokens * 0.0000005
-        
-        # send message confirming the tokens and cost
-        print(f"Estimated tokens: {est_tokens} (cost: ${est_cost})")
+
+        # data input
+        my_query = """
+        SELECT
+            game_name,
+            game_date,
+            player_name,
+            game_score,
+            game_rank
+        FROM game_view
+        WHERE guild_nm = 'nerd city'
+        and game_date >= '2024-01-01'
+        and game_name = 'mini'
+        """
+        df = await get_df_from_sql(query=my_query, params=None)
+        analysis_data = df.to_csv(index=False, header=True)
+
+        # assuming you call /gpt [question about game data]
+        analyis_request = ctx.message.content
+
+        full_input = f"{analyis_request}\n\n{analysis_data}"
+
+        # tell the model to creatively summarize the game data
+        gpt_role_description = """
+        You are a helpful assistant. Please help me understand the game data and summarize it in a fun way.
+        """
 
         # Generating a response from OpenAI ChatGPT using the updated API interface and client instance
         response = await openai_client.chat.completions.create(
@@ -402,13 +426,15 @@ async def fetch_gpt_response(ctx, *, query: str):
             # this model turbo-0125 costs $0.0000005 per token
             model="gpt-3.5-turbo-0125",  # You can choose a different model as per your requirements
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": query}
+                {"role": "system", "content": gpt_role_description},
+                {"role": "user", "content": full_input}
             ],
             max_tokens=1000
         )
+ 
         # Sending the response back to the Discord channel
         await ctx.send(response.choices[0].message.content)
+
     except Exception as e:
 
         error_message = str(e)
