@@ -28,16 +28,14 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
     # all games, winners only, range of dates
     elif game_name == 'winners' and is_date_range:
-        cols = ['Game', 'Leader', 'Points', 'Wins', 'Top 3', 'Top 5', 'Played']
+        cols = ['Game', 'Leader', 'Points', 'Avg', 'Played']
         query = f"""
             SELECT 
 	            game_name,
                 player_name,
                 points,
-                wins,
-                top_3,
-                top_5,
-                participation
+                avg_score,
+                games_played
             FROM
                     (
                     SELECT
@@ -45,21 +43,16 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         dense_rank() over(partition by game_name order by points desc) as overall_rank,
                         x.player_name,
                         x.points,
-                        x.wins,
-                        CONCAT(ROUND(x.top_3 * 100), '%%') as top_3,
-                        CONCAT(ROUND(x.top_5 * 100), '%%') as top_5,
-                        max(x.games_played) over(partition by x.game_name) as total_games,
-                        CONCAT(ROUND((x.games_played / max(x.games_played) over(partition by x.game_name)) * 100), '%') as participation
+                        x.avg_score,
+                        x.games_played
                     FROM
                             (
                             SELECT 
                                 game_name,
                                 player_name,
                                 sum(points) as points,
-                                sum(case when game_rank = 1 then 1 else 0 end) as wins,
-                                sum(case when game_rank <= 3 then 1 else 0 end) / sum(1.0) as top_3,
-                                sum(case when game_rank <= 5 then 1 else 0 end) / sum(1.0) as top_5,
-                                sum(1) as games_played
+                                sum(1) as games_played,
+                                round(avg(seconds), 1) as avg_score
                             FROM game_view
                             WHERE guild_id = %s
                             AND game_date BETWEEN %s AND %s
