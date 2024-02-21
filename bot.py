@@ -388,7 +388,7 @@ async def fetch_gpt_response(ctx, *, query: str):
 
     if not is_allowed_author:
         return await ctx.send("Sorry, this feature is locked for now.")
-
+    
     try:
         # estimate tokens
         est_tokens = len(query) / 4
@@ -407,6 +407,8 @@ async def fetch_gpt_response(ctx, *, query: str):
         and game_date >= '2024-01-01'
         and game_name = 'mini'
         """
+
+        # get the data
         df = await get_df_from_sql(query=my_query, params=None)
         analysis_data = df.to_csv(index=False, header=True)
 
@@ -420,11 +422,13 @@ async def fetch_gpt_response(ctx, *, query: str):
         You are a helpful assistant. Please help me understand the game data and summarize it in a fun way.
         """
 
-        # Generating a response from OpenAI ChatGPT using the updated API interface and client instance
+        gpt_model = 'gpt-4-0125-preview' # gpt-3.5-turbo-0125
+
+        # ask GPT
         response = await openai_client.chat.completions.create(
 
-            # this model turbo-0125 costs $0.0000005 per token
-            model="gpt-3.5-turbo-0125",  # You can choose a different model as per your requirements
+            # configuration
+            model=gpt_model,
             messages=[
                 {"role": "system", "content": gpt_role_description},
                 {"role": "user", "content": full_input}
