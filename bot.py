@@ -262,7 +262,7 @@ async def send_mini_warning():
     for guild in bot.guilds:
         bot_print(f"Posting Mini Warning for {guild.name}")
         for channel in guild.channels:
-            if channel.name in active_channel_names and isinstance(channel, discord.TextChannel):
+            if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
                 await channel.send(discord_message)
 
 # post mini
