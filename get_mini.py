@@ -38,6 +38,7 @@ def scrape_mini_scores():
 
             # Extract the JavaScript object as a string
             data_string = script_tag.string.split('=', 1)[1].strip()
+            
             # Parse the JavaScript object string as JSON
             data = json.loads(data_string.rstrip(';'))
             
