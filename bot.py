@@ -244,7 +244,7 @@ async def send_mini_warning():
                         name=row['player_name'],
                         number=row['phone_nbr'],
                         carrier=row['phone_carr_cd'],
-                        message=f"Hey {row['player_name']}, do the mini!"
+                        message=f"Hey {row['player_name']}, there still time to do today's mini: https://www.nytimes.com/crosswords/game/mini"
                         )
                 text_count += 1
 
@@ -256,7 +256,7 @@ async def send_mini_warning():
         # Prepare the final message for the Discord channel
         discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
         if discord_tags:
-            discord_message += " The following users have not completed the mini and are not signed up for text alerts yet: " + " ".join(discord_tags)
+            discord_message += " These peeps have yet to go: " + " ".join(discord_tags)
 
     # post warning in each active channel for each guild
     for guild in bot.guilds:
@@ -390,12 +390,16 @@ async def fetch_gpt_response(ctx, *, query: str):
         return await ctx.send("Sorry, this feature is locked for now.")
     
     try:
+
+        print(f"User requested GPT response to this prompt: {query}")
+
         # estimate tokens
         est_tokens = len(query) / 4
         est_cost = est_tokens * 0.0000005
+        print(f"Estimated tokens: {est_tokens}, Estimated cost: {est_cost}")
 
         # data input
-        my_query = """
+        sql_query = """
         SELECT
             game_name,
             game_date,
@@ -408,18 +412,27 @@ async def fetch_gpt_response(ctx, *, query: str):
         and game_name = 'mini'
         """
 
-        # get the data
-        df = await get_df_from_sql(query=my_query, params=None)
+        # get the game stats in text format
+        df = await get_df_from_sql(query=sql_query, params=None)
         analysis_data = df.to_csv(index=False, header=True)
 
-        # assuming you call /gpt [question about game data]
-        analyis_request = ctx.message.content
+        # read the /gpt command and the game data
+        analysis_request = ctx.message.content
 
-        full_input = f"{analyis_request}\n\n{analysis_data}"
+        # full input should be the analysis request followed by an explanation that next is the game data...
+        full_input = f"Analysis Request:\n{analysis_request}\n\nGame Data:\n{analysis_data}"
 
         # tell the model to creatively summarize the game data
         gpt_role_description = """
-        You are a helpful assistant. Please help me understand the game data and summarize it in a fun way.
+        Imagine you are a highly skilled senior data analyst with expertise in analyzing data for a leading gaming analytics firm. Your role involves delving into datasets to uncover meaningful insights, trends, and patterns that can help both gamers and developers understand gaming performance on a deeper level.
+
+        Your analysis is not just about answering questions; it's about telling a story with the data. When responding to queries, your goal is to provide succinct, yet comprehensive insights. Think of yourself as a detective uncovering the hidden truths within the data. 
+
+        For instance, if asked about the frequency of scores under 10 seconds for a game called 'mini,' go beyond just providing a count. Offer context, like comparing it to previous periods or highlighting any interesting trends. Similarly, for questions regarding averages, best players, or game popularity, your responses should not only address the query directly but also add value by identifying underlying factors or implications that might not be immediately apparent.
+
+        Remember, your responses must be brief enough to fit within a short message, yet rich with information and analysis. Your expertise should illuminate aspects of the data that might not be obvious, providing both direct answers and broader insights that can inform strategies, improve player experiences, and spark curiosity.
+
+        Leverage your analytical prowess to craft responses that are not just answers, but narratives that weave through the data to reveal new understandings and perspectives. Your insights are invaluable, offering a blend of precision, creativity, and depth that enriches the conversation around game data analytics.
         """
 
         gpt_model = 'gpt-4-0125-preview' # gpt-3.5-turbo-0125
