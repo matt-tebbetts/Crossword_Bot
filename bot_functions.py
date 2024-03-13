@@ -174,22 +174,23 @@ async def extract_score(message_text, game_name):
     scoring_type = await get_scoring_type(game_name)
 
     if game_name.lower() == "connections":
-        
+            
         # analyze line squares
         lines = message_text.strip().split("\n")
-        emoji_squares = ["🟨", "🟩", "🟦", "🟪"]
-        lines_with_squares = [line for line in lines if any(emoji in line for emoji in emoji_squares)]
-        guesses_taken = len(lines_with_squares)
+        guesses_taken = len([line for line in lines if any(emoji in line for emoji in ["🟨", "🟩", "🟦", "🟪"])])
         completed_lines = 0
-        metric_01 = 1 if lines[0].count("🟪") == 4 else 0
+
+        # Calculate metric_01 based on the second line of the message
+        metric_01 = 1 if lines[1].count("🟪") == 4 else 0
 
         # count completed categories
-        for line in lines_with_squares:
-            if len(set(line)) == 1:
+        for line in lines[1:]:  # Start from the second line
+            if len(set(line)) == 1 and line.strip() != "":
                 completed_lines += 1
 
         score = f"{guesses_taken}/7" if completed_lines == 4 else "X/7"
         return score
+
     
     elif game_name.lower() == 'crosswordle':
         # Check for minutes and seconds format first
@@ -253,10 +254,13 @@ async def add_score(game_name, game_date, discord_id, msg_txt):
     # find game_score from message details
     game_score = await extract_score(msg_txt, game_name)
 
-    # game detail for certian games
+    # game detail for certain games
     if game_name == 'boxoffice':
         game_dtl = msg_txt.strip().split("\n")[1] # movie date
         metric_01 = msg_txt.count("✅") # movies guessed
+    elif game_name.lower() == 'connections':
+        lines = msg_txt.strip().split("\n")
+        metric_01 = 1 if lines[2].count("🟪") == 4 else 0
 
     # put into dataframe
     my_cols = ['game_date', 'game_name', 'game_score', 'added_ts', 'discord_id', 'game_dtl', 'metric_01', 'metric_02', 'metric_03']

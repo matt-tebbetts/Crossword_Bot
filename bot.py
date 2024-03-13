@@ -409,7 +409,6 @@ async def fetch_gpt_response(ctx, *, query: str):
         FROM game_view
         WHERE guild_nm = 'nerd city'
         and game_date >= '2024-01-01'
-        and game_name = 'mini'
         """
 
         # get the game stats in text format
@@ -420,19 +419,15 @@ async def fetch_gpt_response(ctx, *, query: str):
         analysis_request = ctx.message.content
 
         # full input should be the analysis request followed by an explanation that next is the game data...
-        full_input = f"Analysis Request:\n{analysis_request}\n\nGame Data:\n{analysis_data}"
+        full_input = f"Briefly and succinctly answer the analysis request based on the game data.\nAnalysis Request:\n{analysis_request}\n\nGame Data:\n{analysis_data}"
 
         # tell the model to creatively summarize the game data
         gpt_role_description = """
         Imagine you are a highly skilled senior data analyst with expertise in analyzing data for a leading gaming analytics firm. Your role involves delving into datasets to uncover meaningful insights, trends, and patterns that can help both gamers and developers understand gaming performance on a deeper level.
 
-        Your analysis is not just about answering questions; it's about telling a story with the data. When responding to queries, your goal is to provide succinct, yet comprehensive insights. Think of yourself as a detective uncovering the hidden truths within the data. 
-
-        For instance, if asked about the frequency of scores under 10 seconds for a game called 'mini,' go beyond just providing a count. Offer context, like comparing it to previous periods or highlighting any interesting trends. Similarly, for questions regarding averages, best players, or game popularity, your responses should not only address the query directly but also add value by identifying underlying factors or implications that might not be immediately apparent.
+        When responding to queries, your goal is to provide comprehensive insights, however you must keep your responses short and sweet. No response should be more than 2000 characters in total, but ideally your response should use bullet points and keep things straight to the point.
 
         Remember, your responses must be brief enough to fit within a short message, yet rich with information and analysis. Your expertise should illuminate aspects of the data that might not be obvious, providing both direct answers and broader insights that can inform strategies, improve player experiences, and spark curiosity.
-
-        Leverage your analytical prowess to craft responses that are not just answers, but narratives that weave through the data to reveal new understandings and perspectives. Your insights are invaluable, offering a blend of precision, creativity, and depth that enriches the conversation around game data analytics.
         """
 
         gpt_model = 'gpt-4-0125-preview' # gpt-3.5-turbo-0125
@@ -446,7 +441,7 @@ async def fetch_gpt_response(ctx, *, query: str):
                 {"role": "system", "content": gpt_role_description},
                 {"role": "user", "content": full_input}
             ],
-            max_tokens=1000
+            max_tokens=150
         )
  
         # Sending the response back to the Discord channel
@@ -528,7 +523,7 @@ async def rescan(ctx, game_to_rescan=None):
     since_text = since.strftime("%Y-%m-%d %H:%M:%S")
     await ctx.channel.send(f"Rescanning messages since {since_text}...")
 
-    # start dataframe to keep track of re-added scores
+    # start dataframe to keep track  of re-added scores
     columns = ['Player', 'Game Date', 'Game Name', 'Scores Added']
     df = pd.DataFrame(columns=columns)
 
