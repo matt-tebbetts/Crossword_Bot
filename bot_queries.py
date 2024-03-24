@@ -88,7 +88,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 player_name,
                 game_score,
                 points
-            FROM game_view
+            FROM leaderboard_today
             WHERE guild_id = %s
             AND game_date BETWEEN %s AND %s
             AND game_name = %s

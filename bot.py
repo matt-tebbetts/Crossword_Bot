@@ -244,7 +244,7 @@ async def send_mini_warning():
                         name=row['player_name'],
                         number=row['phone_nbr'],
                         carrier=row['phone_carr_cd'],
-                        message=f"Hey {row['player_name']}, there still time to do today's mini: https://www.nytimes.com/crosswords/game/mini"
+                        message=f"Hey {row['player_name']}, you can still do today's mini: https://www.nytimes.com/crosswords/game/mini"
                         )
                 text_count += 1
 
@@ -254,9 +254,9 @@ async def send_mini_warning():
                 discord_tags.append(discord_tag)
 
         # Prepare the final message for the Discord channel
-        discord_message = f"Today's mini expires soon. {text_count} users were sent a text message reminder."
+        discord_message = f"Mini expires soon. Texted {text_count}."
         if discord_tags:
-            discord_message += " These peeps have yet to go: " + " ".join(discord_tags)
+            discord_message += " These peeps haven't done the mini yet: " + " ".join(discord_tags)
 
     # post warning in each active channel for each guild
     for guild in bot.guilds:
@@ -321,7 +321,7 @@ async def auto_post():
     # for final time
     if now.hour == post_hour and now.minute == 0:
         bot_print("Time to post final!")
-        await post_mini(msg="Here's the Final Leaderboard", final_post=True) # all guilds
+        await post_mini(msg="Here's the final leaderboard", final_post=True) # all guilds
         return
 
     # for warning time
@@ -334,7 +334,7 @@ async def auto_post():
     else:
         return
 
-@tasks.loop(seconds=10)
+@tasks.loop(seconds=5)
 async def check_mini():
 
     # don't run this in first five minutes after new mini
