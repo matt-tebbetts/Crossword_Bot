@@ -43,6 +43,7 @@ import asyncio
 # environment variables
 load_dotenv()
 TOKEN = os.getenv('MATT_BOT') if test_mode else os.getenv('CROSSWORD_BOT')
+if test_mode: print("Running in test mode.")
 
 # discord connection details
 my_intents = discord.Intents.all()

@@ -31,7 +31,9 @@ db_config = {
 }
 
 # set test_mode if on desktop
-test_mode = True if 'desktop' in str.lower(socket.gethostname()) else False
+keywords = ['desktop', 'mjt']
+hostname = str.lower(socket.gethostname())
+test_mode = any(keyword in hostname for keyword in keywords)
 
 # load mobile carrier emails
 sms_carriers_path = 'files/config/carriers.json'
