@@ -174,15 +174,11 @@ async def on_message(message):
         # if message begins with a game prefix, add the score
         if str.lower(msg_text).startswith(str.lower(game_prefix)):
 
-            print(f"This is a game score for {game_prefix}")
-
             # find game name from prefix
             for key, value in game_prefix_dict.items():
                 if value.lower() == game_prefix.lower():
                     game_name = key
                     break
-
-            print(f"Found {game_name} score")
 
             # get message detail
             game_date = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")
@@ -191,12 +187,17 @@ async def on_message(message):
             author = message.author.name
             user_id = author[:-2] if author.endswith("#0") else author
 
-            # send to score scraper
+            # get score and bonuses (as dictionary)
             response = await add_score(game_name, game_date, user_id, msg_text)
 
-            # react with proper emoji
-            emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
+            # react with proper emoji(s)
+            emoji = emoji_map.get(game_prefix.lower(), '✅')
             await message.add_reaction(emoji)
+
+            if response.get('bonuses', {}).get('rainbow_bonus'):
+                await message.add_reaction('🌈')
+            if response.get('bonuses', {}).get('purple_bonus'):
+                await message.add_reaction('🟪')
 
             # exit the loop since we found the prefix
             break

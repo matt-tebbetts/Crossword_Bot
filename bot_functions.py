@@ -170,8 +170,8 @@ async def get_scoring_type(game_name=None):
 
 # get score from message
 async def extract_score(message_text, game_name):
-    print(f"getting scoring type for game: {game_name}")
     scoring_type = await get_scoring_type(game_name)
+    bonuses = {}
 
     if game_name.lower() == "connections":
             
@@ -188,8 +188,11 @@ async def extract_score(message_text, game_name):
             if len(set(line)) == 1 and line.strip() != "":
                 completed_lines += 1
 
+        rainbow_bonus = len(set(lines[2])) == 4
+        purple_bonus = lines[0].count("🟪") == 4
+
         score = f"{guesses_taken}/7" if completed_lines == 4 else "X/7"
-        return score
+        bonuses = {'rainbow_bonus': rainbow_bonus, 'purple_bonus': purple_bonus}
 
     
     elif game_name.lower() == 'crosswordle':
@@ -208,33 +211,30 @@ async def extract_score(message_text, game_name):
         # Format the score as "minutes:seconds"
         if match:  # Check if either pattern was found
             score = f"{minutes}:{str(seconds).zfill(2)}"
-            return score
 
     elif game_name.lower() == 'boxoffice':
         pattern = re.compile(r'🏆\s*(\d+)')
         match = pattern.search(message_text)
         score = match.group(1) if match else None
-        return score
 
-    elif scoring_type == "guesses":
-        pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
+    else:
+        if scoring_type == "guesses":
+            pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
 
-    elif scoring_type == "points":
-        pattern = re.compile(r'(\d{1,3}(?:,\d{3})*)(?=/)')
+        elif scoring_type == "points":
+            pattern = re.compile(r'(\d{1,3}(?:,\d{3})*)(?=/)')
+            
+        elif scoring_type == "timed":
+            pattern = re.compile(r'\d{1,2}:\d{2}')
         
-    elif scoring_type == "timed":
-        pattern = re.compile(r'\d{1,2}:\d{2}')
-    
-    # For games like "boxoffice" where multiple scores are present, find all matches and return the last (or highest) one
-    match = pattern.search(message_text)
-    if match:
+        match = pattern.search(message_text)
+        if match:           
+            if game_name.lower() == 'timeguessr':
+                score = match.group(1).replace(',', '')
+            else:
+                score = match.group(0)
         
-        print(f"Match found: {match}")
-        
-        # timeguessr we replace the comma and take the first part before the slash. others we take the whole match
-        score = match.group(1).replace(',', '') if game_name.lower() == 'timeguessr' else match.group(0)
-        return score
-    return None
+    return {'score': score, 'bonuses': bonuses}
 
 # add discord scores to database when people paste them to discord chat
 async def add_score(game_name, game_date, discord_id, msg_txt):
@@ -252,7 +252,10 @@ async def add_score(game_name, game_date, discord_id, msg_txt):
     metric_03 = None
 
     # find game_score from message details
-    game_score = await extract_score(msg_txt, game_name)
+    score_details = await extract_score(msg_txt, game_name)
+    game_score = score_details.get('score')
+    bonuses = score_details.get('bonuses')
+
 
     # game detail for certain games
     if game_name == 'boxoffice':
@@ -273,7 +276,7 @@ async def add_score(game_name, game_date, discord_id, msg_txt):
     msg_back = f"Added Score: {game_date}, {game_name}, {discord_id}, {game_score}"
     bot_print(msg_back)
 
-    return msg_back
+    return {'message': msg_back, 'bonuses': bonuses}
 
 # save message to file
 def save_message_detail(message):
