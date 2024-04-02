@@ -189,7 +189,7 @@ async def extract_score(message_text, game_name):
                 completed_lines += 1
 
         rainbow_bonus = len(set(lines[2])) == 4
-        purple_bonus = lines[0].count("🟪") == 4
+        purple_bonus = lines[3].count("🟪") == 4
 
         score = f"{guesses_taken}/7" if completed_lines == 4 else "X/7"
         bonuses = {'rainbow_bonus': rainbow_bonus, 'purple_bonus': purple_bonus}
