@@ -41,6 +41,10 @@ logger = set_logger()
 def get_now():
     return datetime.now(pytz.timezone('US/Eastern'))
 
+# get current date as date, not datetime
+def get_today():
+    return get_now().date()
+
 # get now as string
 def get_current_time(ms=False):
     now = get_now()
