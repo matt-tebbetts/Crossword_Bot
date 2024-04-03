@@ -1,4 +1,4 @@
-from global_functions import bot_print
+from global_functions import *
 
 def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
@@ -79,8 +79,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
         """
         query_params.append(user_nm)
 
-    # specific game: single date
-    elif min_date == max_date:  
+    # specific game, single date, today
+    elif min_date == max_date and max_date == get_current_time.date():
         cols = ['Rank', 'Player', 'Score', 'Points']
         query = f"""
             SELECT 
@@ -89,6 +89,23 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 game_score,
                 points
             FROM leaderboard_today
+            WHERE guild_id = %s
+            AND game_date BETWEEN %s AND %s
+            AND game_name = %s
+            ORDER BY case when game_rank is null then 1 else 0 end, game_rank;
+        """
+        query_params.append(game_name)
+
+    # specific game, single date, not today
+    elif min_date == max_date:  
+        cols = ['Rank', 'Player', 'Score', 'Points']
+        query = f"""
+            SELECT 
+                game_rank,
+                player_name,
+                game_score,
+                points
+            FROM game_view
             WHERE guild_id = %s
             AND game_date BETWEEN %s AND %s
             AND game_name = %s
