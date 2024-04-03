@@ -80,7 +80,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
         query_params.append(user_nm)
 
     # specific game, single date, today
-    elif min_date == max_date and max_date == get_current_time.date():
+    elif min_date == max_date and max_date == get_today():
         cols = ['Rank', 'Player', 'Score', 'Points']
         query = f"""
             SELECT 
