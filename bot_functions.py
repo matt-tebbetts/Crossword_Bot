@@ -126,8 +126,6 @@ async def get_leaderboard(guild_id='Global', game_name=None, min_date=None, max_
 
     # determine leaderboard query to run
     cols, query, params = build_query(guild_id, game_name, min_date, max_date, user_nm)
-
-    print(f"query is: {query}")
     
     try:
         # new asynchronous query function
