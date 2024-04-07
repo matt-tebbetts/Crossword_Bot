@@ -224,13 +224,13 @@ async def on_message_edit(before, after):
 # post warning
 async def send_mini_warning():
 
-    # find users who have not yet completed the mini
-    df = await mini_not_completed()
+    # post warning in each active channel for each guild
+    for guild in bot.guilds:
+        bot_print(f"Posting Mini Warning for {guild.name}")
 
-    if df.empty:
-        discord_message = "Wow, everyone has completed the mini!"
+        # find users who have not yet completed the mini
+        df = await mini_not_completed(guild_id=str(guild.id))
 
-    else:
         bot_print(f"Found {len(df)} users who have not completed the mini.")
 
         # prepare discord tags
@@ -260,11 +260,9 @@ async def send_mini_warning():
         if discord_tags:
             discord_message += " These peeps haven't done the mini yet: " + " ".join(discord_tags)
 
-    # post warning in each active channel for each guild
-    for guild in bot.guilds:
-        bot_print(f"Posting Mini Warning for {guild.name}")
         for channel in guild.channels:
             if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
+
                 await channel.send(discord_message)
 
 # post mini

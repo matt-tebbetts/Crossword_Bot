@@ -52,8 +52,9 @@ def get_mini_date():
         return get_date()
 
 # find users who haven't completed the mini
-async def mini_not_completed():
-    df = await get_df_from_sql("SELECT * FROM matt.mini_not_completed")
+async def mini_not_completed(guild_id='global'):
+    query = """SELECT * FROM matt.mini_not_completed WHERE guild_id = %s"""
+    df = await get_df_from_sql(query = query, params=(guild_id,))
     return df
 
 # translate date range based on text
@@ -193,7 +194,6 @@ async def extract_score(message_text, game_name):
 
         score = f"{guesses_taken}/7" if completed_lines == 4 else "X/7"
         bonuses = {'rainbow_bonus': rainbow_bonus, 'purple_bonus': purple_bonus}
-
     
     elif game_name.lower() == 'crosswordle':
         # Check for minutes and seconds format first
@@ -216,6 +216,22 @@ async def extract_score(message_text, game_name):
         pattern = re.compile(r'🏆\s*(\d+)')
         match = pattern.search(message_text)
         score = match.group(1) if match else None
+
+    elif game_name.lower() == 'octordle':
+        
+        # emoji mapping
+        emoji_to_number = {
+            '1️⃣': 1, '2️⃣': 2, '3️⃣': 3, '4️⃣': 4,
+            '5️⃣': 5, '6️⃣': 6, '7️⃣': 7, '8️⃣': 8,
+            '9️⃣': 9, '🔟': 10, '🕚': 11, '🕛': 12,
+            '🕐': 13, '🕑': 14, '🕒': 15, '🕓': 16,
+            '🕔': 17, '🕕': 18, '🕖': 19, '🕗': 20
+        }
+
+        # add scores via emojis
+        emojis = re.findall('[\U0001F1E6-\U0001F1FF\U0001F550-\U0001F567]', message_text, flags=re.UNICODE)
+        total_score = sum(emoji_to_number.get(emoji, 0) for emoji in emojis)
+        score = str(total_score)
 
     else:
         if scoring_type == "guesses":
