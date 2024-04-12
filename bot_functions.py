@@ -173,7 +173,9 @@ async def extract_score(message_text, game_name):
     scoring_type = await get_scoring_type(game_name)
     bonuses = {}
 
-    if game_name.lower() == "connections":
+    game = game_name.lower()
+
+    if game == "connections":
             
         # analyze line squares
         lines = message_text.strip().split("\n")
@@ -194,7 +196,7 @@ async def extract_score(message_text, game_name):
         score = f"{guesses_taken}/7" if completed_lines == 4 else "X/7"
         bonuses = {'rainbow_bonus': rainbow_bonus, 'purple_bonus': purple_bonus}
     
-    elif game_name.lower() == 'crosswordle':
+    elif game == 'crosswordle':
         # Check for minutes and seconds format first
         match = re.search(r"(\d+)m\s*(\d+)s", message_text)
         if match:
@@ -211,27 +213,41 @@ async def extract_score(message_text, game_name):
         if match:  # Check if either pattern was found
             score = f"{minutes}:{str(seconds).zfill(2)}"
 
-    elif game_name.lower() == 'boxoffice':
+    elif game == 'boxoffice':
         pattern = re.compile(r'🏆\s*(\d+)')
         match = pattern.search(message_text)
         score = match.group(1) if match else None
 
-    elif game_name.lower() == 'octordle':
-        
-        # emoji mapping
+    elif game == 'travle':
+        # travle now prints out like this, so scrape the "+0" as the score: #travle #485 +0
+        parts = message_text.split()
+        score = parts[2] if len(parts) > 2 else None
+
+    elif game == 'octordle':
+            
+        print(message_text)
+
+        # Directly mapping emojis to their corresponding scores
         emoji_to_number = {
-            '1️⃣': 1, '2️⃣': 2, '3️⃣': 3, '4️⃣': 4,
-            '5️⃣': 5, '6️⃣': 6, '7️⃣': 7, '8️⃣': 8,
-            '9️⃣': 9, '🔟': 10, '🕚': 11, '🕛': 12,
-            '🕐': 13, '🕑': 14, '🕒': 15, '🕓': 16,
-            '🕔': 17, '🕕': 18, '🕖': 19, '🕗': 20
+            ':one:': 1, ':two:': 2, ':three:': 3, ':four:': 4,
+            ':five:': 5, ':six:': 6, ':seven:': 7, ':eight:': 8,
+            ':nine:': 9, '🔟': 10, '🕚': 11, '🕛': 12, '🕐': 13,
         }
 
-        # add scores via emojis
-        emojis = re.findall('[\U0001F1E6-\U0001F1FF\U0001F550-\U0001F567]', message_text, flags=re.UNICODE)
-        total_score = sum(emoji_to_number.get(emoji, 0) for emoji in emojis)
+        # Split the message by lines, and consider only the relevant lines containing scores
+        scores_lines = message_text.split('\n')[1:5]  # Adjust based on the actual message structure
+
+        total_score = 0
+        for line in scores_lines:
+            for char in line:
+                if char in emoji_to_number:
+                    score = emoji_to_number[char]
+                    print(f"emoji: {char}, score: {score}")  # For testing, print each matched emoji and its score
+                    total_score += score
+
+        print(f"Total Score: {total_score}")
         score = str(total_score)
-    
+
     else:
         if scoring_type == "guesses":
             pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')

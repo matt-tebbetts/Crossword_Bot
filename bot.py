@@ -60,7 +60,8 @@ active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
 game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
                  'Atlantic', 'Connections', '#Emovi',
-                 'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle']
+                 'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle',
+                 'Daily Octordle']
 
 # this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
 game_prefixes.sort(key=len, reverse=True)
@@ -78,12 +79,13 @@ game_prefix_dict = {
     'connections': 'Connections',
     'emovi': '#Emovi',
     'crosswordle': 'Daily Crosswordle',
+    'octordle': 'Daily Octordle',
     'timeguessr': 'TimeGuessr',
     'concludle': 'Concludle',
     'actorle': 'Actorle'
 }
 
-# emoji map for confirming game scores
+# emoji map for confirming game scores (prefix, emoji)
 emoji_map = {
             '#worldle': '🌎',
             '#travle': '🌍',
@@ -95,7 +97,8 @@ emoji_map = {
             'boxofficega.me': '🎥',
             'actorle': '🎭',
             '#emovi': '🎬',
-            'connections': '🔢',
+            'connections': '🔠',
+            'daily octordle': '8️⃣',
             'daily crosswordle': '🧩',
             'timeguessr': '⏱️',
             'concludle': '🏁',
