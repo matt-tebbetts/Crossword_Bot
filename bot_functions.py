@@ -224,30 +224,9 @@ async def extract_score(message_text, game_name):
         score = parts[2] if len(parts) > 2 else None
 
     elif game == 'octordle':
-            
-        print(message_text)
-
-        # Directly mapping emojis to their corresponding scores
-        emoji_to_number = {
-            ':one:': 1, ':two:': 2, ':three:': 3, ':four:': 4,
-            ':five:': 5, ':six:': 6, ':seven:': 7, ':eight:': 8,
-            ':nine:': 9, '🔟': 10, '🕚': 11, '🕛': 12, '🕐': 13,
-        }
-
-        # Split the message by lines, and consider only the relevant lines containing scores
-        scores_lines = message_text.split('\n')[1:5]  # Adjust based on the actual message structure
-
-        total_score = 0
-        for line in scores_lines:
-            for char in line:
-                if char in emoji_to_number:
-                    score = emoji_to_number[char]
-                    print(f"emoji: {char}, score: {score}")  # For testing, print each matched emoji and its score
-                    total_score += score
-
-        print(f"Total Score: {total_score}")
-        score = str(total_score)
-
+        # get second element from last line (i.e. "Score: 87")
+        score = int(message_text.split('\n')[-1].split(' ')[1])
+    
     else:
         if scoring_type == "guesses":
             pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')
