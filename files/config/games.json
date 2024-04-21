@@ -1,0 +1,59 @@
+{
+    "games": {
+        "mini": {
+            "prefix": "Mini",
+            "emoji": "",
+            "scoring_type": "timed"
+        },
+        "wordle": {
+            "prefix": "Wordle",
+            "emoji": "📚",
+            "scoring_type": "guesses"
+        },
+        "worldle": {
+            "prefix": "#Worldle",
+            "emoji": "🌎",
+            "scoring_type": "guesses"
+        },
+        "crosswordle": {
+            "prefix": "Daily Crosswordle",
+            "emoji": "🧩",
+            "scoring_type": "timed"
+        },
+        "boxoffice": {
+            "prefix": "boxofficega.me",
+            "emoji": "🎥",
+            "scoring_type": "points"
+        },
+        "factle": {
+            "prefix": "Factle.app",
+            "emoji": "📈",
+            "scoring_type": "guesses"
+        },
+        "travle": {
+            "prefix": "#travle",
+            "emoji": "🌍",
+            "scoring_type": "guesses"
+        },
+        "connections": {
+            "prefix": "Connections",
+            "emoji": "🔠",
+            "scoring_type": "guesses"
+        },
+        "timeguessr": {
+            "prefix": "TimeGuessr",
+            "emoji": "⏱️",
+            "scoring_type": "points"
+        },
+        "actorle": {
+            "prefix": "Actorle",
+            "emoji": "🎭",
+            "scoring_type": "guesses"
+        },
+        "octordle": {
+            "prefix": "Daily Octordle",
+            "emoji": "8️⃣",
+            "scoring_type": "guesses"
+        }
+    }
+}
