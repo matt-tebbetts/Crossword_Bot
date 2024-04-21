@@ -98,7 +98,7 @@ emoji_map = {
             'actorle': '🎭',
             '#emovi': '🎬',
             'connections': '🔠',
-            'daily octordle': ':octopus:', 
+            'daily octordle': '🐙', 
             'daily crosswordle': '🧩',
             'timeguessr': '⏱️',
             'concludle': '🏁',
