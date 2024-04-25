@@ -249,7 +249,7 @@ async def send_mini_warning():
                         name=row['player_name'],
                         number=row['phone_nbr'],
                         carrier=row['phone_carr_cd'],
-                        message=f"Hey {row['player_name']}, you can still do today's mini: https://www.nytimes.com/crosswords/game/mini"
+                        message=f"Hey {row['player_name']}, you can still do today's mini: https://bit.ly/nyt_mini"
                         )
                 text_count += 1
 
@@ -464,22 +464,42 @@ async def fetch_gpt_response(ctx, *, query: str):
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
-async def get(ctx, *, time_frame=None):
+async def get(ctx, *args):
 
+    # set defaults
+    guild_id = None
+    time_frame = None
+    list_of_valid_time_frames = ['today', 'yesterday', 'this week', 'last week', 'this month', 'last month', 'this year', 'last year', 'all time']
 
-    # figure out requested time_frame
+    # check arguments
+    for i in range(len(args)):
+        arg = args[i]
+        joined_arg = ' '.join(args[i:i+2])
+    
+        # guild check
+        if arg.lower() == "global":
+            guild_id = guild_nm = "global"
+            print("yes, found global within the args")
+    
+        # time frame check
+        if joined_arg.lower() in list_of_valid_time_frames:
+            time_frame = joined_arg.lower()
+            print(f"yes, found time frame: {time_frame}")
+
+    # logic for no guild provided
+    if guild_id is None:
+        guild_id = str(ctx.guild.id)
+        guild_nm = ctx.guild.name
+
+    # logic for no time_frame provided
     if time_frame is None:
         if ctx.invoked_with == 'mini':
             time_frame = get_mini_date().strftime("%Y-%m-%d")
         else:
             time_frame = 'today'
-    else:
-        time_frame = str.lower(time_frame)
 
     # clarify request
     user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
-    guild_id = str(ctx.guild.id)
-    guild_nm = ctx.guild.name
     game_name = ctx.invoked_with
 
     # print
@@ -495,15 +515,14 @@ async def get(ctx, *, time_frame=None):
             """)
     min_date, max_date = date_range
 
-    # get the data
+    # get the leaderboard
     try:
-
-        # pull leaderboard
         img = await get_leaderboard(guild_id, game_name, min_date, max_date, user_nm)
 
-        # send it
+        # send image of leaderboard to discord
         await ctx.channel.send(file=discord.File(img))
 
+    # report errors
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
