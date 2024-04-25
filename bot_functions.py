@@ -226,6 +226,12 @@ async def extract_score(message_text, game_name):
     elif game == 'octordle':
         # get second element from last line (i.e. "Score: 87")
         score = int(message_text.split('\n')[-1].split(' ')[1])
+        # count the number of red square emojis
+        red_square_emojis = message_text.count('🟥')
+        # calculate bonus
+        bonus = 8 - red_square_emojis
+        # add bonus to the score
+        score += bonus
     
     else:
         if scoring_type == "guesses":

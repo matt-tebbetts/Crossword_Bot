@@ -12,7 +12,7 @@ def dataframe_to_image_dark_mode(df,
                                  img_subtitle="Nerd City",
                                  right_aligned_columns=['Rank', 'Time', 'Score','Points', 'Wins',
                                                         'Top 3', 'Top 5', 'Played', 'Games', 
-                                                        'Scores Added', 'Avg', '1st', '2nd', '3rd']):
+                                                        'Scores Added', 'Avg', '1st', '2nd', '3rd', '4th', '5th']):
 
     # Set colors
     header_bg_color = '#4a4e53'
