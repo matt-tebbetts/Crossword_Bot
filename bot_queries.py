@@ -66,16 +66,31 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     elif game_name == 'my_scores':
         cols = ['Game', 'Player', 'Score', 'Rank']
         query = f"""
+            with all_games as (
+                select distinct game_name
+                from game_history
+                where game_date > date_sub(current_date, interval 1 week)
+            )
             SELECT 
-                game_name,
-                player_name,
-                game_score,
-                game_rank
-            FROM game_view
-            WHERE guild_id = %s
-            AND game_date BETWEEN %s AND %s
-            AND member_nm = %s
-            ORDER BY game_name, game_date desc;
+                a.game_name,
+                coalesce(b.player_name, '-') as player_name,
+                coalesce(b.game_score, '-') as game_score,
+                b.game_rank
+            FROM all_games a
+            LEFT JOIN 
+                    (
+                    SELECT 
+                        game_name,
+                        player_name,
+                        game_score,
+                        game_rank
+                    FROM game_view
+                    WHERE guild_id = %s
+                    AND game_date BETWEEN %s AND %s
+                    AND member_nm = %s
+                    ) b
+                ON a.game_name = b.game_name
+            ORDER BY game_name;
         """
         query_params.append(user_nm)
 
