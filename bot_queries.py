@@ -114,7 +114,7 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
 
     # specific game: date range
     else:  
-        cols = ['Rank', 'Player', 'Points', '1st', '2nd', '3rd', 'Played', 'Avg']
+        cols = ['Rank', 'Player', 'Points', '1st', '2nd', '3rd', '4th', '5th', 'Played', 'Avg']
         query = f"""
             SELECT
                 dense_rank() over(order by points desc) as overall_rank,
@@ -123,6 +123,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                 x.wins,
                 x.rank2,
                 x.rank3,
+                x.rank4,
+                x.rank5,
                 x.games_played,
                 x.avg_time
             FROM
@@ -134,6 +136,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
                         sum(case when game_rank = 1 then 1 else 0 end) as wins,
                         sum(case when game_rank = 2 then 1 else 0 end) as rank2,
                         sum(case when game_rank = 3 then 1 else 0 end) as rank3,
+                        sum(case when game_rank = 3 then 1 else 0 end) as rank4,
+                        sum(case when game_rank = 3 then 1 else 0 end) as rank5,
                         sum(case when game_rank <= 3 then 1 else 0 end) as top_3,
                         sum(case when game_rank <= 5 then 1 else 0 end) as top_5,
                         sum(1) as games_played,
