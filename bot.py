@@ -388,6 +388,9 @@ openai_client = AsyncOpenAI(api_key=gpt_key)
 @bot.command(name='gpt')
 async def fetch_gpt_response(ctx, *, query: str):
 
+    # return confirmation message then continue with the process
+    await ctx.send(f"Okay, just a sec...")
+
     # only allow svendiamond to use this command
     is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
 
@@ -400,7 +403,9 @@ async def fetch_gpt_response(ctx, *, query: str):
 
         # estimate tokens
         est_tokens = len(query) / 4
-        est_cost = est_tokens * 0.0000005
+        est_cost = round(est_tokens * 0.0000005, 2)
+        if est_cost < 0.01:
+            est_cost = "under a penny"
         print(f"Estimated tokens: {est_tokens}, Estimated cost: {est_cost}")
 
         # data input
@@ -410,9 +415,10 @@ async def fetch_gpt_response(ctx, *, query: str):
             game_date,
             player_name,
             game_score,
-            game_rank
+            game_rank,
+            seconds as score_as_integer
         FROM game_view
-        WHERE guild_nm = 'nerd city'
+        WHERE guild_nm = 'global'
         and game_date >= '2024-01-01'
         """
 
@@ -435,7 +441,7 @@ async def fetch_gpt_response(ctx, *, query: str):
         Remember, your responses must be brief enough to fit within a short message, yet rich with information and analysis. Your expertise should illuminate aspects of the data that might not be obvious, providing both direct answers and broader insights that can inform strategies, improve player experiences, and spark curiosity.
         """
 
-        gpt_model = 'gpt-4-0125-preview' # gpt-3.5-turbo-0125
+        gpt_model = 'gpt-4-turbo' # gpt-3.5-turbo-0125
 
         # ask GPT
         response = await openai_client.chat.completions.create(
@@ -465,6 +471,10 @@ async def fetch_gpt_response(ctx, *, query: str):
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
 async def get(ctx, *args):
+
+    # check user and game
+    user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
+    game_name = " ".join(ctx.invoked_with.split("global")).strip()
 
     # set defaults
     guild_id = None
@@ -498,12 +508,8 @@ async def get(ctx, *args):
         else:
             time_frame = 'today'
 
-    # clarify request
-    user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
-    game_name = ctx.invoked_with
-
     # print
-    bot_print(f"Leaderboard Request: {guild_nm} user {user_nm} requested {time_frame} {game_name}.")
+    bot_print(f"Leaderboard Request: {guild_nm} user {user_nm} requested leaderboard for {game_name} for {time_frame}.")
 
     # get the min_date and max_date based on the user's input
     date_range = get_date_range(time_frame)
