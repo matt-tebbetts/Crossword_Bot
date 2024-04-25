@@ -473,7 +473,7 @@ async def fetch_gpt_response(ctx, *, query: str):
 async def get(ctx, *args):
 
     # check user and game
-    user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
+    user_nm = None
     game_name = " ".join(ctx.invoked_with.split("global")).strip()
 
     # set defaults
@@ -496,6 +496,15 @@ async def get(ctx, *args):
             time_frame = joined_arg.lower()
             print(f"yes, found time frame: {time_frame}")
 
+        # user check
+        if arg.startswith('<@') and arg.endswith('>'):
+            user_id = arg[2:-1]
+            if user_id.startswith('!'):
+                user_id = user_id[1:]
+            user = ctx.guild.get_member(int(user_id))
+            if user:
+                user_nm = user.name if user.discriminator == "0" else user.name + "#" + user.discriminator
+
     # logic for no guild provided
     if guild_id is None:
         guild_id = str(ctx.guild.id)
@@ -508,6 +517,10 @@ async def get(ctx, *args):
         else:
             time_frame = 'today'
 
+    # if no user provided
+    if user_nm is None:
+        user_nm = ctx.author.name if ctx.author.discriminator == "0" else ctx.author.name + "#" + ctx.author.discriminator
+    
     # print
     bot_print(f"Leaderboard Request: {guild_nm} user {user_nm} requested leaderboard for {game_name} for {time_frame}.")
 
