@@ -36,14 +36,14 @@ async def get_df_from_sql(query, params=None):
             if attempts >= max_attempts:
                 # Return an empty DataFrame after max attempts
                 bot_print("Max attempts reached")
-                return pd.DataFrame()
+                raise e  # Re-raise the exception
 
             await asyncio.sleep(1)  # Wait for a bit before retrying (1 second in this case)
 
         except Exception as e:
             # For other exceptions, you might want to handle them differently or log them
             bot_print(f"Error in bot_sql.py: {e}")
-            return pd.DataFrame()
+            raise e  # Re-raise the exception
 
     # Return an empty DataFrame if all attempts fail
     return pd.DataFrame()
