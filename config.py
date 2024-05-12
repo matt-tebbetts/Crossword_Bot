@@ -33,6 +33,7 @@ db_config = {
 # set test_mode if on desktop
 keywords = ['desktop', 'mjt']
 hostname = str.lower(socket.gethostname())
+print('Hostname:', hostname)
 test_mode = any(keyword in hostname for keyword in keywords)
 
 # load mobile carrier emails
