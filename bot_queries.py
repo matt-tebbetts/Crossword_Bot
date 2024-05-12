@@ -68,9 +68,8 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
         query = f"""
             with all_games as (
                 select distinct
-                    game_name,
-                    player_name
-                from game_view
+                    game_name
+                from game_history
                 where game_date > date_sub(current_date, interval 1 week)
             ),
             selected_games as (
@@ -92,8 +91,6 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
             FROM all_games a
             LEFT JOIN selected_games b
                 ON a.game_name = b.game_name
-                and a.player_name = b.player_name
-            WHERE a.player_name in (SELECT player_name FROM selected_games)
             ORDER BY game_name;
         """
         query_params.append(user_nm)
