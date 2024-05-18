@@ -142,7 +142,7 @@ def check_chromedriver():
 
         # Define the directory where the driver will be downloaded
         download_dir = 'files/config'
-        full_file_nm = f"{download_dir}/chromedriver-{platform_key}/chromedriver.exe"
+        full_file_nm = f"{download_dir}/chromedriver-{platform_key}/chromedriver"
 
         testing = True
 

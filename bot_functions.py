@@ -451,12 +451,10 @@ async def get_actorle_summary():
     file_exists = os.path.exists(file_name)
     if file_exists:
         last_update = datetime.fromtimestamp(os.path.getctime(file_name)).date()
-    else:
-        last_update = get_today() - timedelta(days=1)
+        file_exists if last_update == get_today() else False
 
-    if not file_exists or last_update < get_today():
-        save_html_to_file(url='https://actorle.com/', 
-                          file_name=file_name)
+    if not file_exists:
+        save_html_to_file(url='https://actorle.com/', file_name=file_name)
 
     with open(file_name, 'r', encoding='utf-8') as f:
         html = f.read()
