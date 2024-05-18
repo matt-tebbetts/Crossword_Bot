@@ -53,6 +53,9 @@ my_intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=my_intents, case_insensitive=True)
 bot_ready = False
 
+# check chromedriver
+check_chromedriver()
+
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
 
