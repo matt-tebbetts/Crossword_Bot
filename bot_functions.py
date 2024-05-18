@@ -448,9 +448,13 @@ async def get_actorle_summary():
 
     # check file
     file_name = 'files/downloads/actorle.html'
-    last_update = datetime.fromtimestamp(os.path.getctime(file_name)).date()
+    file_exists = os.path.exists(file_name)
+    if file_exists:
+        last_update = datetime.fromtimestamp(os.path.getctime(file_name)).date()
+    else:
+        last_update = get_today() - timedelta(days=1)
 
-    if not os.path.exists(file_name) or last_update < get_today():
+    if not file_exists or last_update < get_today():
         save_html_to_file(url='https://actorle.com/', 
                           file_name=file_name)
 
