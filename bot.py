@@ -54,6 +54,7 @@ bot = commands.Bot(command_prefix="/", intents=my_intents, case_insensitive=True
 bot_ready = False
 
 # check chromedriver
+bot_print("Checking chromedriver version...")
 check_chromedriver()
 
 # remove this!!!!

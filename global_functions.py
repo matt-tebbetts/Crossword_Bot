@@ -6,6 +6,7 @@ from datetime import datetime
 import stat
 import json
 from config import test_mode
+import traceback
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -181,3 +182,6 @@ def check_chromedriver():
             bot_print("ChromeDriver already exists.")
     except Exception as e:
         bot_print(f"An error occurred while checking for ChromeDriver: {e}")
+        bot_print(f"Exception type: {type(e)}")
+        bot_print("Traceback:")
+        bot_print(traceback.format_exc())
