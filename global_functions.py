@@ -117,7 +117,8 @@ def save_html_to_file(url, file_name):
     # set up chromedriver
     sys = "win64" if test_mode else "linux64"
     driver_path = f"files\config\chromedriver-{sys}"
-    service = Service(executable_path=f"{driver_path}\chromedriver")
+    extension = ".exe" if platform.system().lower() == 'windows' else ""
+    service = Service(executable_path=f"{driver_path}\chromedriver{extension}")
     options = Options()
     options.add_argument('--headless')
     driver = webdriver.Chrome(service=service, options=options)
@@ -139,15 +140,14 @@ def check_chromedriver():
 
         # Define the platform key based on the current platform
         platform_key = 'linux64' if platform.system().lower() == 'linux' else 'win64'
+        extension = ".exe" if platform.system().lower() == 'windows' else ""
 
         # Define the directory where the driver will be downloaded
         download_dir = 'files/config'
-        full_file_nm = f"{download_dir}/chromedriver-{platform_key}/chromedriver"
-
-        testing = True
+        full_file_nm = f"{download_dir}/chromedriver-{platform_key}/chromedriver{extension}"
 
         # Check if the driver is already downloaded
-        if testing or not os.path.exists(full_file_nm):
+        if not os.path.exists(full_file_nm):
             bot_print(f"ChromeDriver not found in {download_dir}. Downloading...")
 
             # Get the driver data
