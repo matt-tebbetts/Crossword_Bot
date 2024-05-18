@@ -640,7 +640,5 @@ async def rescan(ctx, game_to_rescan=None):
 
     await ctx.channel.send(f"Rescan complete. Here are the results:", file=discord.File(img))
 
-print(f"attempting to use this token: {TOKEN}")
-
 # run bot
 bot.run(TOKEN)

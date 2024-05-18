@@ -146,14 +146,12 @@ def check_chromedriver():
         if not os.path.exists(download_dir + 'chromedriver'):
             bot_print("ChromeDriver not found. Downloading...")
 
-            # Get the latest driver version
-            response = requests.get('https://chromedriver.storage.googleapis.com/LATEST_RELEASE')
-            latest_version = response.text.strip()
-
             # Get the driver data
-            response = requests.get('https://api.github.com/repos/rosolimo/chromedriver')
+            response = requests.get('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
             data = response.json()
-            latest_version_data = data['versions'][0]
+            latest_version_data = data[0]
+            latest_version = latest_version_data['chromedriver']
+            print(f"Latest ChromeDriver version: {latest_version}")
 
             # Find the driver download URL
             download_url = None
