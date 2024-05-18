@@ -12,4 +12,5 @@ files/logs
 files/mini
 files/downloads
 files/config/chrome*
+files/config/chrome*
 test.py
