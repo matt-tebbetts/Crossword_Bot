@@ -185,6 +185,15 @@ def check_chromedriver():
                 os.remove(download_dir + f'{app}.zip')
                 bot_print(f"{app} installed successfully")
 
+                # Change the permissions to add execute permissions
+                try:
+                    os.chmod(app_path, stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                except Exception as e:
+                    bot_print(f"An error occurred while changing permissions: {e}")
+                    bot_print(f"Exception type: {type(e)}")
+                    bot_print("Traceback:")
+                    bot_print(traceback.format_exc())
+
             else:
                 bot_print("Download URL not found.")
         
