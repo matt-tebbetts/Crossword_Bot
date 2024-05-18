@@ -1,42 +1,111 @@
 import os, socket
 from dotenv import load_dotenv
 import json
+import requests
+import zipfile
+import platform
 
-# Load environment variables from a .env file
-load_dotenv()
+def load_env_variables():
+    # Load environment variables from a .env file
+    load_dotenv()
 
-# Retrieve environment variables
-SQLUSER = os.getenv('SQLUSER')
-SQLPASS = os.getenv('SQLPASS')
-SQLHOST = os.getenv('SQLHOST')
-SQLPORT = int(os.getenv('SQLPORT'))
-SQLDATA = os.getenv('SQLDATA')
-NYT_COOKIE = os.getenv('NYT_COOKIE')
+    # Retrieve environment variables
+    SQLUSER = os.getenv('SQLUSER')
+    SQLPASS = os.getenv('SQLPASS')
+    SQLHOST = os.getenv('SQLHOST')
+    SQLPORT = int(os.getenv('SQLPORT'))
+    SQLDATA = os.getenv('SQLDATA')
+    NYT_COOKIE = os.getenv('NYT_COOKIE')
 
-# Check if all environment variables were found
-for var in [SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA]:
-    if var is None:
-        raise ValueError(f"Environment variable '{var}' not found.")
+    # Check if all environment variables were found
+    for var in [SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA]:
+        if var is None:
+            raise ValueError(f"Environment variable '{var}' not found.")
 
-# Construct the SQL address string using the variables
-sql_addr = f"mysql+pymysql://{SQLUSER}:{SQLPASS}@{SQLHOST}:{SQLPORT}/{SQLDATA}"
+    return SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA, NYT_COOKIE
 
-# Define db_config using the variables
-db_config = {
-    'host': SQLHOST,
-    'port': SQLPORT,
-    'user': SQLUSER,
-    'password': SQLPASS,
-    'db': SQLDATA
-}
+def get_sql_address(SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA):
+    # Construct the SQL address string using the variables
+    sql_addr = f"mysql+pymysql://{SQLUSER}:{SQLPASS}@{SQLHOST}:{SQLPORT}/{SQLDATA}"
+    return sql_addr
 
-# set test_mode if on desktop
-keywords = ['desktop', 'mjt']
-hostname = str.lower(socket.gethostname())
-print('Hostname:', hostname)
-test_mode = any(keyword in hostname for keyword in keywords)
+def get_db_config(SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA):
+    # Define db_config using the variables
+    db_config = {
+        'host': SQLHOST,
+        'port': SQLPORT,
+        'user': SQLUSER,
+        'password': SQLPASS,
+        'db': SQLDATA
+    }
+    return db_config
 
-# load mobile carrier emails
-sms_carriers_path = 'files/config/carriers.json'
-with open(sms_carriers_path, 'r') as file:
-    carrier_emails = json.load(file)
+def get_test_mode():
+    # set test_mode if on desktop
+    keywords = ['desktop', 'mjt']
+    hostname = str.lower(socket.gethostname())
+    print('Hostname:', hostname)
+    test_mode = any(keyword in hostname for keyword in keywords)
+    return test_mode
+
+def load_carrier_emails():
+    # load mobile carrier emails
+    sms_carriers_path = 'files/config/carriers.json'
+    with open(sms_carriers_path, 'r') as file:
+        carrier_emails = json.load(file)
+    return carrier_emails
+
+def check_chromedriver():
+
+    # check if chromedriver is installed
+    platform_key = 'win64' if platform.system() == 'Windows' else 'linux64'
+    download_dir = f"files/config/chromedriver-{platform_key}/"
+    chromedriver_exists = os.path.exists(download_dir + 'chromedriver.exe')
+
+    # if not installed, download and install it
+    if not chromedriver_exists:
+        print(f"Chromedriver not found in {download_dir}. Downloading...")
+        json_url = "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+        response = requests.get(json_url)
+        data = json.loads(response.text)
+        latest_version_data = data['versions'][0]
+
+        # find the driver download URL
+        download_url = None
+        for download in latest_version_data['downloads']['chrome']:
+            if download['platform'] == platform_key:
+                download_url = download['url']
+                break
+
+        # Download the driver
+        if download_url:
+            response = requests.get(download_url)
+            with open(download_dir + 'chromedriver.zip', 'wb') as f:
+                f.write(response.content)
+
+            # Extract the driver
+            with zipfile.ZipFile(download_dir + 'chromedriver.zip', 'r') as zip_ref:
+                zip_ref.extractall(download_dir)
+
+            # Remove the zip file
+            os.remove(download_dir + 'chromedriver.zip')
+        else:
+            print("Download URL not found.")
+
+# Load environment variables
+SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA, NYT_COOKIE = load_env_variables()
+
+# Get SQL address
+sql_addr = get_sql_address(SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA)
+
+# Get DB config
+db_config = get_db_config(SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA)
+
+# Get test mode
+test_mode = get_test_mode()
+
+# Load carrier emails
+carrier_emails = load_carrier_emails()
+
+# Check chromedriver installation
+check_chromedriver()

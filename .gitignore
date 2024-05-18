@@ -5,9 +5,10 @@ __pycache__/
 .idea/
 .venv/
 venv/
-files/images
-files/guilds
-files/logs
 files/archive
+files/guilds
+files/images
+files/logs
 files/mini
+files/downloads
 test.py
