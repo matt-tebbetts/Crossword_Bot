@@ -54,7 +54,6 @@ bot = commands.Bot(command_prefix="/", intents=my_intents, case_insensitive=True
 bot_ready = False
 
 # check chromedriver
-bot_print("Checking chromedriver version...")
 check_chromedriver()
 
 # remove this!!!!
@@ -493,12 +492,10 @@ async def get(ctx, *args):
         # guild check
         if arg.lower() == "global":
             guild_id = guild_nm = "global"
-            print("yes, found global within the args")
     
         # time frame check
         if joined_arg.lower() in list_of_valid_time_frames:
             time_frame = joined_arg.lower()
-            print(f"yes, found time frame: {time_frame}")
 
         # user check
         if arg.startswith('<@') and arg.endswith('>'):

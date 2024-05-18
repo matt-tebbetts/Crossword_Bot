@@ -112,23 +112,85 @@ def write_json(filepath, data):
     with open(filepath, 'w') as file:
         json.dump(data, file, indent=4)
 
-def get_platform_key():
-    return 'linux64' if platform.system().lower() == 'linux' else 'win64'
+def get_os_info():
+    os_name = platform.system().lower()
+    if os_name == 'linux':
+        os_ver = 'linux64'
+        os_ext = ''
+    elif os_name == 'windows':
+        os_ver = 'win64'
+        os_ext = '.exe'
+    return {'os_name': os_name, 'os_ver': os_ver, 'os_ext': os_ext}
 
-def get_webdriver_path():
-    ext = '.exe' if platform.system().lower() == 'windows' else ''
-    path_components = ['files', 'config', f'chromedriver-{get_platform_key()}', f'chromedriver{ext}']
+def get_path(app):
+    os_info = get_os_info()
+    app_folder = f"{app}-{os_info['os_ver']}"
+    app_filenm = f"{app}{os_info['os_ext']}"
+    path_components = ['files', 'config', app_folder, app_filenm]
     path = os.path.join(*path_components)
-    print(f"webdriver_path is: {path}")
     return path
 
 def get_webdriver():
-    path = get_webdriver_path()
-    service = Service(executable_path=path)
+    
+    # set service
+    service = Service(executable_path=get_path('chromedriver'))
+
+    # set options
     options = Options()
+    options.binary_location = get_path('chrome')
     options.add_argument('--headless')
-    driver = webdriver.Chrome(service=service, options=options)
-    return driver
+
+    return webdriver.Chrome(service=service, options=options)
+
+# check for both chrome and chromedriver
+def check_chromedriver():
+
+    os_info = get_os_info()
+
+    for app in ['chromedriver', 'chrome']:
+        app_path = get_path(app)
+
+        # Check if already installed
+        if os.path.exists(app_path):
+            bot_print(f"{app} found")
+            continue
+
+        bot_print(f"{app} does not exist")
+        try:
+            download_dir = "files/config"
+
+            # find url for latest driver
+            json_url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
+            response = requests.get(json_url)
+            data = response.json()
+            sorted_versions = sorted(data['versions'], key=lambda v: v['version'], reverse=True)
+            latest_version_data = sorted_versions[0]
+            download_url = None
+            for download in latest_version_data['downloads'][f'{app}']:
+                if download['platform'] == os_info['os_ver']:
+                    download_url = download['url']
+                    break
+
+            # Download the driver
+            if download_url:
+                response = requests.get(download_url)
+                with open(download_dir + f'{app}.zip', 'wb') as f:
+                    f.write(response.content)
+
+                # Extract the driver
+                with zipfile.ZipFile(download_dir + f'{app}.zip', 'r') as zip_ref:
+                    zip_ref.extractall(download_dir)
+                os.remove(download_dir + f'{app}.zip')
+                bot_print(f"{app} installed successfully")
+
+            else:
+                bot_print("Download URL not found.")
+        
+        except Exception as e:
+            bot_print(f"An error occurred while checking for ChromeDriver: {e}")
+            bot_print(f"Exception type: {type(e)}")
+            bot_print("Traceback:")
+            bot_print(traceback.format_exc())
 
 def save_html_to_file(url, file_name):
     # use chromedriver + soup
@@ -142,48 +204,3 @@ def save_html_to_file(url, file_name):
     
     driver.quit()
     bot_print(f"HTML saved from {url} to {file_name}")
-
-def check_chromedriver():
-    try:
-        
-        # Check if the driver is already downloaded
-        path = get_webdriver_path()
-        if not os.path.exists(path):
-            bot_print(f"ChromeDriver not found!")
-
-            download_dir = "files/config"
-
-            # get the latest driver
-            response = requests.get('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
-            data = response.json()
-            sorted_versions = sorted(data['versions'], key=lambda v: v['version'], reverse=True)
-            latest_version_data = sorted_versions[0]
-            download_url = None
-            for download in latest_version_data['downloads']['chromedriver']:
-                if download['platform'] == get_platform_key():
-                    download_url = download['url']
-                    break
-
-            # Download the driver
-            if download_url:
-                bot_print("Download URL found. Downloading ChromeDriver...")
-                response = requests.get(download_url)
-                with open(download_dir + 'chromedriver.zip', 'wb') as f:
-                    f.write(response.content)
-
-                # Extract the driver
-                bot_print("Extracting ChromeDriver...")
-                with zipfile.ZipFile(download_dir + 'chromedriver.zip', 'r') as zip_ref:
-                    zip_ref.extractall(download_dir)
-                os.remove(download_dir + 'chromedriver.zip')
-                bot_print("ChromeDriver downloaded and extracted.")
-
-            else:
-                bot_print("Download URL not found.")
-        else:
-            bot_print("ChromeDriver already exists.")
-    except Exception as e:
-        bot_print(f"An error occurred while checking for ChromeDriver: {e}")
-        bot_print(f"Exception type: {type(e)}")
-        bot_print("Traceback:")
-        bot_print(traceback.format_exc())

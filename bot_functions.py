@@ -485,7 +485,7 @@ async def get_actorle_summary():
     # make image
     img = bot_camera.dataframe_to_image_dark_mode(agg_df,
                                                   img_filepath='files/downloads/actorle.png',
-                                                  img_title="Today's Actorle",
+                                                  img_title="Actorle: Who Could It Be?",
                                                   img_subtitle=get_today().strftime("%Y-%m-%d"))
     
     return img
