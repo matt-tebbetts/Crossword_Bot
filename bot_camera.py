@@ -10,6 +10,7 @@ def dataframe_to_image_dark_mode(df,
                                  img_filepath='files/images/leaderboard.png', 
                                  img_title="Today's Mini", 
                                  img_subtitle="Nerd City",
+                                 left_aligned_columns=['Game', 'Name', 'Player', 'Genre'],
                                  right_aligned_columns=['Rank', 'Time', 'Score','Points', 'Wins',
                                                         'Top 3', 'Top 5', 'Played', 'Games', 
                                                         'Scores Added', 'Avg', '1st', '2nd', '3rd', '4th', '5th']):
@@ -64,8 +65,8 @@ def dataframe_to_image_dark_mode(df,
     for col, width in zip(df.columns, col_widths):
         draw.rectangle([x, y, x + width, y + row_height], fill=header_bg_color)
         text_x = x + padding  # Left-align by default
-        if right_aligned_columns and col in right_aligned_columns:
-            text_x = x + width - temp_draw.textlength(str(col), font) - padding  # Right-align if specified
+        if col not in left_aligned_columns:
+            text_x = x + width - temp_draw.textlength(str(col), font) - padding  # Right-align if not in left_aligned_columns
         draw.text((text_x, y + padding), col, font=font, fill=text_color)
         x += width
 
@@ -81,8 +82,8 @@ def dataframe_to_image_dark_mode(df,
             text_value = str(row[col])
             text_width = draw.textlength(text_value, font)
             text_x = x + padding  # Left-align by default
-            if right_aligned_columns and col in right_aligned_columns:
-                text_x = x + width - text_width - padding  # Right-align if specified
+            if col not in left_aligned_columns:
+                text_x = x + width - text_width - padding  # Right-align if not in left_aligned_columns
 
             draw.text((text_x, y + padding), text_value, font=font, fill=text_color)
             x += width

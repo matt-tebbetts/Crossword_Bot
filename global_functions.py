@@ -7,6 +7,11 @@ import stat
 import json
 from config import test_mode
 
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from bs4 import BeautifulSoup
+
 def set_logger():
     # Logger configuration
     logger = logging.getLogger(__name__)
@@ -102,3 +107,24 @@ def write_json(filepath, data):
 
     with open(filepath, 'w') as file:
         json.dump(data, file, indent=4)
+
+def save_html_to_file(url, file_name):
+
+    # set up chromedriver
+    sys = "win64" if test_mode else "linux64"
+    driver_path = f"files\config\chromedriver-{sys}"
+    service = Service(executable_path=f"{driver_path}\chromedriver.exe")
+    options = Options()
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(service=service, options=options)
+
+    # use chromedriver + soup
+    driver.get(url)
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'html.parser')
+    pretty_html = soup.prettify()
+    with open(file_name, 'w', encoding='utf-8') as f:
+        f.write(pretty_html)
+    
+    driver.quit()
+    bot_print(f"HTML saved from {url} to {file_name}")
