@@ -126,7 +126,7 @@ def get_path(app):
     os_info = get_os_info()
     app_folder = f"{app}-{os_info['os_ver']}"
     app_filenm = f"{app}{os_info['os_ext']}"
-    path_components = ['files', 'config', app_folder, app_filenm]
+    path_components = ['files', 'downloads', app_folder, app_filenm]
     path = os.path.join(*path_components)
     return path
 
@@ -159,7 +159,7 @@ def check_chromedriver():
 
         bot_print(f"{app} does not exist")
         try:
-            download_dir = "files/config"
+            download_dir = "files/downloads"
 
             # find url for latest driver
             json_url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
