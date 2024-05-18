@@ -112,18 +112,27 @@ def write_json(filepath, data):
     with open(filepath, 'w') as file:
         json.dump(data, file, indent=4)
 
-def save_html_to_file(url, file_name):
+def get_platform_key():
+    return 'linux64' if platform.system().lower() == 'linux' else 'win64'
 
-    # set up chromedriver
-    sys = "win64" if test_mode else "linux64"
-    driver_path = f"files\config\chromedriver-{sys}"
-    extension = ".exe" if platform.system().lower() == 'windows' else ""
-    service = Service(executable_path=f"{driver_path}\chromedriver{extension}")
+def get_webdriver_path():
+    ext = '.exe' if platform.system().lower() == 'windows' else ''
+    path_components = ['files', 'config', f'chromedriver-{get_platform_key()}', f'chromedriver{ext}']
+    path = os.path.join(*path_components)
+    print(f"webdriver_path is: {path}")
+    return path
+
+def get_webdriver():
+    path = get_webdriver_path()
+    service = Service(executable_path=path)
     options = Options()
     options.add_argument('--headless')
     driver = webdriver.Chrome(service=service, options=options)
+    return driver
 
+def save_html_to_file(url, file_name):
     # use chromedriver + soup
+    driver = get_webdriver()
     driver.get(url)
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
@@ -136,36 +145,22 @@ def save_html_to_file(url, file_name):
 
 def check_chromedriver():
     try:
-        bot_print("Checking for ChromeDriver...")
-
-        # Define the platform key based on the current platform
-        platform_key = 'linux64' if platform.system().lower() == 'linux' else 'win64'
-        extension = ".exe" if platform.system().lower() == 'windows' else ""
-
-        # Define the directory where the driver will be downloaded
-        download_dir = 'files/config'
-        full_file_nm = f"{download_dir}/chromedriver-{platform_key}/chromedriver{extension}"
-
+        
         # Check if the driver is already downloaded
-        if not os.path.exists(full_file_nm):
-            bot_print(f"ChromeDriver not found in {download_dir}. Downloading...")
+        path = get_webdriver_path()
+        if not os.path.exists(path):
+            bot_print(f"ChromeDriver not found!")
 
-            # Get the driver data
+            download_dir = "files/config"
+
+            # get the latest driver
             response = requests.get('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
-            
-            # Parse the response data
             data = response.json()
-
-            # Sort the versions in descending order
             sorted_versions = sorted(data['versions'], key=lambda v: v['version'], reverse=True)
-
-            # Get the latest version
             latest_version_data = sorted_versions[0]
-
-            # Find the driver download URL
             download_url = None
             for download in latest_version_data['downloads']['chromedriver']:
-                if download['platform'] == platform_key:
+                if download['platform'] == get_platform_key():
                     download_url = download['url']
                     break
 
@@ -180,10 +175,9 @@ def check_chromedriver():
                 bot_print("Extracting ChromeDriver...")
                 with zipfile.ZipFile(download_dir + 'chromedriver.zip', 'r') as zip_ref:
                     zip_ref.extractall(download_dir)
-
-                # Remove the zip file
-                bot_print("Removing zip file...")
                 os.remove(download_dir + 'chromedriver.zip')
+                bot_print("ChromeDriver downloaded and extracted.")
+
             else:
                 bot_print("Download URL not found.")
         else:
