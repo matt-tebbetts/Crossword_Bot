@@ -4,7 +4,6 @@ import json
 import requests
 import zipfile
 import platform
-from global_functions import bot_print
 
 def load_env_variables():
     # Load environment variables from a .env file
@@ -58,7 +57,7 @@ def load_carrier_emails():
 
 def check_chromedriver():
     try:
-        bot_print("Checking for ChromeDriver...")
+        print("Checking for ChromeDriver...")
 
         # Define the platform key based on the current platform
         platform_key = 'linux64' if platform.system().lower() == 'linux' else 'win32'
@@ -68,7 +67,7 @@ def check_chromedriver():
 
         # Check if the driver is already downloaded
         if not os.path.exists(download_dir + 'chromedriver'):
-            bot_print("ChromeDriver not found. Downloading...")
+            print("ChromeDriver not found. Downloading...")
 
             # Get the latest driver version
             response = requests.get('https://chromedriver.storage.googleapis.com/LATEST_RELEASE')
@@ -88,25 +87,25 @@ def check_chromedriver():
 
             # Download the driver
             if download_url:
-                bot_print("Download URL found. Downloading ChromeDriver...")
+                print("Download URL found. Downloading ChromeDriver...")
                 response = requests.get(download_url)
                 with open(download_dir + 'chromedriver.zip', 'wb') as f:
                     f.write(response.content)
 
                 # Extract the driver
-                bot_print("Extracting ChromeDriver...")
+                print("Extracting ChromeDriver...")
                 with zipfile.ZipFile(download_dir + 'chromedriver.zip', 'r') as zip_ref:
                     zip_ref.extractall(download_dir)
 
                 # Remove the zip file
-                bot_print("Removing zip file...")
+                print("Removing zip file...")
                 os.remove(download_dir + 'chromedriver.zip')
             else:
-                bot_print("Download URL not found.")
+                print("Download URL not found.")
         else:
-            bot_print("ChromeDriver already exists.")
+            print("ChromeDriver already exists.")
     except Exception as e:
-        bot_print(f"An error occurred while checking for ChromeDriver: {e}")
+        print(f"An error occurred while checking for ChromeDriver: {e}")
 
 # Load environment variables
 SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA, NYT_COOKIE = load_env_variables()
