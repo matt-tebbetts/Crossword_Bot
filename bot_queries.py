@@ -64,18 +64,19 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
 
     # all games: single user, single date ## technically this will run with multiple dates FIX IT
     elif game_name == 'my_scores':
-        cols = ['Game', 'Player', 'Score', 'Rank']
+        cols = ['Game', 'Score', 'Rank']
         query = f"""
             with all_games as (
                 select distinct
                     game_name
                 from game_history
                 where game_date > date_sub(current_date, interval 1 week)
+                union all 
+                select 'mini' as game_name
             ),
             selected_games as (
                 SELECT 
                     game_name,
-                    player_name,
                     game_score,
                     game_rank
                 FROM game_view
@@ -85,7 +86,6 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
             )
             SELECT 
                 a.game_name,
-                coalesce(b.player_name, '-') as player_name,
                 coalesce(b.game_score, '-') as game_score,
                 b.game_rank
             FROM all_games a
