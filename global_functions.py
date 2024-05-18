@@ -138,25 +138,33 @@ def check_chromedriver():
         bot_print("Checking for ChromeDriver...")
 
         # Define the platform key based on the current platform
-        platform_key = 'linux64' if platform.system().lower() == 'linux' else 'win32'
+        platform_key = 'linux64' if platform.system().lower() == 'linux' else 'win64'
 
         # Define the directory where the driver will be downloaded
-        download_dir = 'files/config/chromedriver-' + platform_key + '/'
+        download_dir = 'files/config'
+        full_file_nm = f"{download_dir}/chromedriver-{platform_key}/chromedriver.exe"
+
+        testing = True
 
         # Check if the driver is already downloaded
-        if not os.path.exists(download_dir + 'chromedriver'):
-            bot_print("ChromeDriver not found. Downloading...")
+        if testing or not os.path.exists(full_file_nm):
+            bot_print(f"ChromeDriver not found in {download_dir}. Downloading...")
 
             # Get the driver data
             response = requests.get('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
+            
+            # Parse the response data
             data = response.json()
-            latest_version_data = data[0]
-            latest_version = latest_version_data['chromedriver']
-            print(f"Latest ChromeDriver version: {latest_version}")
+
+            # Sort the versions in descending order
+            sorted_versions = sorted(data['versions'], key=lambda v: v['version'], reverse=True)
+
+            # Get the latest version
+            latest_version_data = sorted_versions[0]
 
             # Find the driver download URL
             download_url = None
-            for download in latest_version_data['downloads']['chrome']:
+            for download in latest_version_data['downloads']['chromedriver']:
                 if download['platform'] == platform_key:
                     download_url = download['url']
                     break
