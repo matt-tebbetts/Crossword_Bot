@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 import stat
 import json
-from config import test_mode
+from config import *
 import traceback
 
 from selenium import webdriver
@@ -117,7 +117,7 @@ def save_html_to_file(url, file_name):
     # set up chromedriver
     sys = "win64" if test_mode else "linux64"
     driver_path = f"files\config\chromedriver-{sys}"
-    service = Service(executable_path=f"{driver_path}\chromedriver.exe")
+    service = Service(executable_path=f"{driver_path}\chromedriver")
     options = Options()
     options.add_argument('--headless')
     driver = webdriver.Chrome(service=service, options=options)
