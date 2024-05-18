@@ -139,6 +139,8 @@ def get_webdriver():
     options = Options()
     options.binary_location = get_path('chrome')
     options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
 
     return webdriver.Chrome(service=service, options=options)
 
