@@ -4,6 +4,7 @@ import json
 import requests
 import zipfile
 import platform
+from global_functions import bot_print
 
 def load_env_variables():
     # Load environment variables from a .env file
@@ -56,21 +57,28 @@ def load_carrier_emails():
     return carrier_emails
 
 def check_chromedriver():
+    bot_print("Checking for ChromeDriver...")
 
-    # check if chromedriver is installed
-    platform_key = 'win64' if platform.system() == 'Windows' else 'linux64'
-    download_dir = f"files/config/chromedriver-{platform_key}/"
-    chromedriver_exists = os.path.exists(download_dir + 'chromedriver.exe')
+    # Define the platform key based on the current platform
+    platform_key = 'linux64' if platform.system().lower() == 'linux' else 'win32'
 
-    # if not installed, download and install it
-    if not chromedriver_exists:
-        print(f"Chromedriver not found in {download_dir}. Downloading...")
-        json_url = "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
-        response = requests.get(json_url)
-        data = json.loads(response.text)
+    # Define the directory where the driver will be downloaded
+    download_dir = 'files/config/chromedriver-' + platform_key + '/'
+
+    # Check if the driver is already downloaded
+    if not os.path.exists(download_dir + 'chromedriver'):
+        bot_print("ChromeDriver not found. Downloading...")
+
+        # Get the latest driver version
+        response = requests.get('https://chromedriver.storage.googleapis.com/LATEST_RELEASE')
+        latest_version = response.text.strip()
+
+        # Get the driver data
+        response = requests.get('https://api.github.com/repos/rosolimo/chromedriver')
+        data = response.json()
         latest_version_data = data['versions'][0]
 
-        # find the driver download URL
+        # Find the driver download URL
         download_url = None
         for download in latest_version_data['downloads']['chrome']:
             if download['platform'] == platform_key:
@@ -79,18 +87,23 @@ def check_chromedriver():
 
         # Download the driver
         if download_url:
+            bot_print("Download URL found. Downloading ChromeDriver...")
             response = requests.get(download_url)
             with open(download_dir + 'chromedriver.zip', 'wb') as f:
                 f.write(response.content)
 
             # Extract the driver
+            bot_print("Extracting ChromeDriver...")
             with zipfile.ZipFile(download_dir + 'chromedriver.zip', 'r') as zip_ref:
                 zip_ref.extractall(download_dir)
 
             # Remove the zip file
+            bot_print("Removing zip file...")
             os.remove(download_dir + 'chromedriver.zip')
         else:
-            print("Download URL not found.")
+            bot_print("Download URL not found.")
+    else:
+        bot_print("ChromeDriver already exists.")
 
 # Load environment variables
 SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA, NYT_COOKIE = load_env_variables()
