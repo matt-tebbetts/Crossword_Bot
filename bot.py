@@ -638,5 +638,71 @@ async def rescan(ctx, game_to_rescan=None):
 
     await ctx.channel.send(f"Rescan complete. Here are the results:", file=discord.File(img))
 
+## drafts test below
+
+drafts = {}
+async def draft(draft_name, user, item, category, comment, youtube_link=None, rating=None):
+    
+    if draft_name not in drafts:
+        return "Draft does not exist"
+    
+    if category not in drafts[draft_name]['categories']:
+        return "Invalid category"
+    
+    draft_info = {
+        'user': user,
+        'item': item,
+        'category': category,
+        'comment': comment,
+        'youtube_link': youtube_link,
+        'rating': rating,
+        'active': False
+    }
+    
+    if youtube_link and not re.match(r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/.+$', youtube_link):
+        return "Invalid YouTube link"
+    
+    drafts[draft_name]['picks'].append(draft_info)
+    
+    with open('drafts.json', 'w') as f:
+        json.dump(drafts, f)
+    
+    return drafts
+
+@bot.command(name='start_draft')
+async def start_draft(ctx, draft_name, *categories):
+    for draft in drafts.values():
+        draft['active'] = False
+    drafts[draft_name] = {
+        'categories': categories,
+        'picks': [],
+        'active': True
+    }
+    with open('drafts.json', 'w') as f:
+        json.dump(drafts, f)
+
+@bot.command(name='end_draft')
+async def end_draft(ctx, draft_name):
+    if draft_name in drafts:
+        drafts[draft_name]['active'] = False
+    with open('drafts.json', 'w') as f:
+        json.dump(drafts, f)
+
+@bot.command(name='get_active_draft')
+async def get_active_draft(ctx):
+    active_draft = next((draft for draft in drafts.values() if draft['active']), None)
+    await ctx.send(active_draft)
+
+
+
+
+
+
+
+
+
+
+
+
 # run bot
 bot.run(TOKEN)
