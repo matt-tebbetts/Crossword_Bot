@@ -254,7 +254,7 @@ async def send_mini_warning():
                         name=row['player_name'],
                         number=row['phone_nbr'],
                         carrier=row['phone_carr_cd'],
-                        message=f"What up, {row['player_name']}? FYI, the mini resets in 2 hours."
+                        message=f"Hey {row['player_name']}, the mini resets in 2 hours."
                         )
                 text_count += 1
 
