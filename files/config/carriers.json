@@ -38,5 +38,17 @@
     "Vodafone": {
         "sms_email": "vodafone-sms.nl",
         "mms_email": "vodafone-sms.nl"
+    },
+    "Google Fi": {
+        "sms_email": "msg.fi.google.com",
+        "mms_email": "msg.fi.google.com"
+    },
+    "Republic Wireless": {
+        "sms_email": "text.republicwireless.com",
+        "mms_email": "text.republicwireless.com"
+    },
+    "Straight Talk": {
+        "sms_email": "vtext.com",
+        "mms_email": "mypixmessages.com"
     }
 }

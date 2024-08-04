@@ -1,0 +1,9 @@
+Analyze the following messages and provide a comprehensive description of each user. The goal is for your description to help another bot try to replicate the user's character and persona in a new novel. Be as specific as possible about each user, while keeping your answers relatively concise when possible.
+
+Your analysis should be two main parts: their typing/language style, and their actual personal details about their life.
+
+For the language analysis, include their overall tone, the complexity and richness of the language they use, and whether they use proper grammar.
+
+Additionally, find life details based on the messages, such as the user's name, estimated age, sex, location, education level, family life, favorite food or drinks, alcohol and drug usage, occupation and hobbies, personality traits, estimated political affiliation, life goals and motivations, and also their potential relationships to the other users.
+
+The bot who will read your description will be attempting to write a book about these people. I want it to be as realistic as possible.
