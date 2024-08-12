@@ -438,15 +438,9 @@ async def fetch_gpt_response(ctx, *, query: str):
         full_input = f"Briefly and succinctly answer the analysis request based on the game data.\nAnalysis Request:\n{analysis_request}\n\nGame Data:\n{analysis_data}"
 
         # tell the model to creatively summarize the game data
-        gpt_role_description = """
-        Imagine you are a highly skilled senior data analyst with expertise in analyzing data for a leading gaming analytics firm. Your role involves delving into datasets to uncover meaningful insights, trends, and patterns that can help both gamers and developers understand gaming performance on a deeper level.
+        gpt_role_description = """Imagine you are a senior data analyst with expertise in gaming analytics. Your goal is to provide comprehensive insights in a concise manner. Keep responses under 2000 characters, using bullet points and being straight to the point. Illuminate hidden aspects of the data to inform strategies, improve player experiences, and spark curiosity."""
 
-        When responding to queries, your goal is to provide comprehensive insights, however you must keep your responses short and sweet. No response should be more than 2000 characters in total, but ideally your response should use bullet points and keep things straight to the point.
-
-        Remember, your responses must be brief enough to fit within a short message, yet rich with information and analysis. Your expertise should illuminate aspects of the data that might not be obvious, providing both direct answers and broader insights that can inform strategies, improve player experiences, and spark curiosity.
-        """
-
-        gpt_model = 'gpt-4-turbo' # gpt-3.5-turbo-0125
+        gpt_model = "gpt-4o-mini" #"gpt-4o" # gpt-3.5-turbo-0125
 
         # ask GPT
         response = await openai_client.chat.completions.create(
