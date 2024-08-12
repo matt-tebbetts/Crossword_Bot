@@ -507,17 +507,6 @@ async def get(ctx, *args):
             user = ctx.guild.get_member(int(user_id))
             if user:
                 user_nm = user.name if user.discriminator == "0" else user.name + "#" + user.discriminator
-
-        # summary check
-        if arg.lower() == "summary":
-
-            # only "actorle" has a summary option for now so
-            if game_name != "actorle":
-                return await ctx.channel.send("Sorry, the summary is only currently available for Actorle.")
-                
-            # get the summary
-            img = await get_actorle_summary()
-            return await ctx.channel.send(file=discord.File(img))
             
 
     # logic for no guild provided
