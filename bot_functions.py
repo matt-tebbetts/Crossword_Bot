@@ -223,16 +223,7 @@ async def extract_score(message_text, game_name):
         parts = message_text.split()
         score = parts[2] if len(parts) > 2 else None
 
-    elif game == 'octordle':
-        
-        # get second element from last line (i.e. "Score: 87")
-        score = int(message_text.split('\n')[-1].split(' ')[1])
-        
-        # calculate bonus
-        red_square_emojis = message_text.count('🟥')
-        bonuses = {'correct_guesses': (8 - red_square_emojis)}
-    
-    elif game == 'octordle_sequence':
+    elif game == 'octordle' or game == 'octordle_sequence' or game == 'octordle_rescue':
         
         # get second element from last line (i.e. "Score: 87")
         score = int(message_text.split('\n')[-1].split(' ')[1])

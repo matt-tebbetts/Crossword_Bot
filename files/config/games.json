@@ -59,6 +59,11 @@
             "prefix": "Daily Sequence Octordle",
             "emoji": "8️⃣",
             "scoring_type": "guesses"
+        },
+        "octordle_rescue": {
+            "prefix": "Daily Rescue Octordle",
+            "emoji": "8️⃣",
+            "scoring_type": "guesses"
         }
     }
 }

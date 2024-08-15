@@ -64,7 +64,7 @@ game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
                  'Atlantic', 'Connections', '#Emovi',
                  'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle',
-                 'Daily Octordle', 'Daily Sequence Octordle']
+                 'Daily Octordle', 'Daily Sequence Octordle', 'Daily Rescue Octordle']
 
 # this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
 game_prefixes.sort(key=len, reverse=True)
@@ -84,6 +84,7 @@ game_prefix_dict = {
     'crosswordle': 'Daily Crosswordle',
     'octordle': 'Daily Octordle',
     'octordle_sequence': 'Daily Sequence Octordle',
+    'octordle_rescue': 'Daily Rescue Octordle',
     'timeguessr': 'TimeGuessr',
     'concludle': 'Concludle',
     'actorle': 'Actorle'
@@ -104,6 +105,7 @@ emoji_map = {
             'connections': '🔠',
             'daily octordle': '🐙', 
             'daily sequence octordle': '🔢',
+            'daily rescue octordle': '🚑',
             'daily crosswordle': '🧩',
             'timeguessr': '⏱️',
             'concludle': '🏁',
