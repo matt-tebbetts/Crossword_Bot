@@ -617,6 +617,10 @@ async def rescan(ctx, game_to_rescan=None):
                 emoji = '❌' if not response[0] else emoji_map.get(game_prefix.lower(), '✅')
                 await message.add_reaction(emoji)
 
+                # if reacted with the "X" then send a message to matt
+                if not response[0]:
+                    await ctx.channel.send(f"Error adding score for {user_id} in {game_name} on {game_date}.")
+
                 # add to counter
                 condition = (df['Player'] == user_id) & (df['Game Name'] == game_name) & (df['Game Date'] == game_date)
 
