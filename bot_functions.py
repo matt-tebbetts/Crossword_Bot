@@ -232,6 +232,15 @@ async def extract_score(message_text, game_name):
         red_square_emojis = message_text.count('🟥')
         bonuses = {'correct_guesses': (8 - red_square_emojis)}
     
+    elif game == 'octordle_sequence':
+        
+        # get second element from last line (i.e. "Score: 87")
+        score = int(message_text.split('\n')[-1].split(' ')[1])
+        
+        # calculate bonus
+        red_square_emojis = message_text.count('🟥')
+        bonuses = {'correct_guesses': (8 - red_square_emojis)}
+
     else:
         if scoring_type == "guesses":
             pattern = re.compile(r'(\d{1,2}|\?|X)/\d{1,2}')

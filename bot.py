@@ -64,7 +64,7 @@ game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
                  'Atlantic', 'Connections', '#Emovi',
                  'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle',
-                 'Daily Octordle']
+                 'Daily Octordle', 'Daily Sequence Octordle']
 
 # this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
 game_prefixes.sort(key=len, reverse=True)
@@ -83,6 +83,7 @@ game_prefix_dict = {
     'emovi': '#Emovi',
     'crosswordle': 'Daily Crosswordle',
     'octordle': 'Daily Octordle',
+    'octordle_sequence': 'Daily Sequence Octordle',
     'timeguessr': 'TimeGuessr',
     'concludle': 'Concludle',
     'actorle': 'Actorle'
@@ -102,6 +103,7 @@ emoji_map = {
             '#emovi': '🎬',
             'connections': '🔠',
             'daily octordle': '🐙', 
+            'daily sequence octordle': '🔢',
             'daily crosswordle': '🧩',
             'timeguessr': '⏱️',
             'concludle': '🏁',
@@ -417,14 +419,26 @@ async def fetch_gpt_response(ctx, *, query: str):
         sql_query = """
         SELECT
             game_name,
-            game_date,
+            concat(
+                extract(year from game_date)
+                ,
+                case 	when extract(month from game_date) < 10
+                        then '0'
+                        else ''
+                end,
+                extract(month from game_date)
+                ) as game_month,
             player_name,
-            game_score,
-            game_rank,
-            seconds as score_as_integer
+            sum(points) as points,
+            sum(case when game_rank = 1 then 1 else 0 end) as wins,
+            sum(case when game_rank = 2 then 1 else 0 end) as placed_2nd,
+            sum(case when game_rank = 3 then 1 else 0 end) as placed_3rd,
+            round(sum(case when game_rank <= 5 then 1 else 0 end)
+            / sum(1.00), 3) as pct_in_top_5
         FROM game_view
         WHERE guild_nm = 'global'
         and game_date >= '2024-01-01'
+        group by 1,2,3
         """
 
         # get the game stats in text format
@@ -453,6 +467,8 @@ async def fetch_gpt_response(ctx, *, query: str):
             ],
             max_tokens=1000
         )
+
+        print('sending response now...')
  
         # Sending the response back to the Discord channel
         await ctx.send(response.choices[0].message.content)
