@@ -275,6 +275,15 @@ async def send_mini_warning():
     # post warning in each active channel for each guild
     for guild in bot.guilds:
         bot_print(f"Posting Mini Warning for {guild.name}")
+        
+        # Filter discord_tags based on the current guild
+        filtered_discord_tags = [tag for tag in discord_tags if tag.guild_id == guild.id]
+        
+        # Prepare the final message for the Discord channel
+        discord_message = f"Mini expires soon. Texted {text_count}."
+        if filtered_discord_tags:
+            discord_message += " Non-texted remaining players are: " + " ".join(filtered_discord_tags)
+        
         for channel in guild.channels:
             if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
                 await channel.send(discord_message)
