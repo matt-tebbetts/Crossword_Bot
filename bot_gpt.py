@@ -16,12 +16,7 @@ openai_client = AsyncOpenAI(api_key=gpt_key)
 async def fetch_gpt_response(ctx, query: str):
     print(f"fetch_gpt_response called with query: {query}")
 
-    try:
-        is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
-    except AttributeError as e:
-        print(f"Error checking author ID: {e}")
-        return await ctx.send("Error: Unable to verify author permissions.")
-
+    is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
     if not is_allowed_author:
         print(f"User {ctx.author.name} is not allowed to use the GPT command.")
         return await ctx.send(f"Sorry, {ctx.author.name}, this feature is locked for now.")
