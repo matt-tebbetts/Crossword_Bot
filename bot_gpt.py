@@ -6,6 +6,7 @@ import os
 from pytz import timezone
 import pytz
 from global_functions import get_now
+import re
 
 # chat gpt
 gpt_key = os.getenv('OPENAI_API_KEY')
@@ -33,6 +34,16 @@ async def fetch_gpt_response(ctx, query: str):
         try:
             with open(f'files/guilds/{ctx.guild.name}/messages.json', 'r') as file:
                 messages_data = json.load(file)
+
+                for message in messages_data.values():
+
+                    # Find all spoilers in the message content
+                    spoilers = re.findall(r'\|\|(.*?)\|\|', message['content'])
+                    
+                    # Mark spoilers in the message content
+                    for spoiler in spoilers:
+                        message['content'] = message['content'].replace(f'||{spoiler}||', f'[SPOILER: {spoiler}]')
+
         except FileNotFoundError as e:
             print(f"Error reading messages.json file: {e}")
             return await ctx.send("Error: messages.json file not found.")
