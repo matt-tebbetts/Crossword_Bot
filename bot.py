@@ -180,10 +180,12 @@ async def on_message(message):
         await message.channel.send("You mean 'X'?")
     """
 
+    """
     # check channel for games
     if message.channel.name not in active_channel_names:
         return
-
+    """
+    
     msg_text = str(message.content)
 
     # check for game score
