@@ -23,7 +23,7 @@ async def fetch_gpt_response(ctx, query: str):
         print(f"User {ctx.author.name} is not allowed to use the GPT command.")
         return await ctx.send(f"Sorry, {ctx.author.name}, this feature is locked for now.")
     """
-    
+
     try:
         print(f"User requested GPT response.")
         gpt_model = "gpt-4o-mini" #"gpt-4o" # gpt-3.5-turbo-0125
@@ -67,8 +67,8 @@ async def fetch_gpt_response(ctx, query: str):
             if datetime.fromisoformat(msg.get('create_ts', '')).astimezone(pytz.utc) >= x_hours_ago
         ]
 
-        # If no messages are found, take the last 100 messages
-        if not recent_messages:
+        # If no messages are found or if there are 10 or fewer recent messages, take the last 100 messages
+        if not recent_messages or len(recent_messages) <= 10:
             recent_messages = sorted(
                 channel_messages,
                 key=lambda msg: msg.get('id', ''),
