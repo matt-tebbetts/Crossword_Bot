@@ -16,6 +16,7 @@ from bot_camera import dataframe_to_image_dark_mode
 from config import test_mode
 from bot_sql import send_df_to_sql, get_df_from_sql
 from bot_texter import send_sms
+from bot_gpt import fetch_gpt_response
 
 # discord
 import discord
@@ -473,10 +474,6 @@ async def get(ctx, *args):
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
-
-# bot.py
-from discord.ext import commands
-from bot_gpt import fetch_gpt_response
 
 # gpt
 @bot.command(name='gpt_summarize')
