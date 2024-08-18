@@ -16,6 +16,7 @@ from bot_camera import dataframe_to_image_dark_mode
 from config import test_mode
 from bot_sql import send_df_to_sql, get_df_from_sql
 from bot_texter import send_sms
+from bot_gpt import fetch_gpt_response
 
 # discord
 import discord
@@ -137,6 +138,11 @@ async def on_ready():
     global bot_ready
     bot_ready = True
     bot_print(f"{bot.user.name} is ready!")
+    
+    # Print registered commands
+    print('Registered commands:')
+    for command in bot.commands:
+        print(command.name)
 
     # get users into json
     get_users(bot)
@@ -396,103 +402,17 @@ async def check_mini():
 # /get can be replaced by any of the game names
 # ****************************************************************************** #
 
-from openai import AsyncOpenAI
-
-# chat gpt
-gpt_key = os.getenv('OPENAI_API_KEY')
-openai_client = AsyncOpenAI(api_key=gpt_key)
-
-# gpt command
+# gpt
 @bot.command(name='gpt')
-async def fetch_gpt_response(ctx, *, query: str):
+async def gpt(ctx, *, query: str):
+    # send message confirming the command
+    print(f"Received GPT request")
 
-    # return confirmation message then continue with the process
-    await ctx.send(f"Okay, just a sec...")
-
-    # only allow svendiamond to use this command
-    is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
-
-    if not is_allowed_author:
-        return await ctx.send("Sorry, this feature is locked for now.")
-    
-    try:
-
-        print(f"User requested GPT response to this prompt: {query}")
-
-        # estimate tokens
-        est_tokens = len(query) / 4
-        est_cost = round(est_tokens * 0.0000005, 2)
-        if est_cost < 0.01:
-            est_cost = "under a penny"
-        print(f"Estimated tokens: {est_tokens}, Estimated cost: {est_cost}")
-
-        # data input
-        sql_query = """
-        SELECT
-            game_name,
-            concat(
-                extract(year from game_date)
-                ,
-                case 	when extract(month from game_date) < 10
-                        then '0'
-                        else ''
-                end,
-                extract(month from game_date)
-                ) as game_month,
-            player_name,
-            sum(points) as points,
-            sum(case when game_rank = 1 then 1 else 0 end) as wins,
-            sum(case when game_rank = 2 then 1 else 0 end) as placed_2nd,
-            sum(case when game_rank = 3 then 1 else 0 end) as placed_3rd,
-            round(sum(case when game_rank <= 5 then 1 else 0 end)
-            / sum(1.00), 3) as pct_in_top_5
-        FROM game_view
-        WHERE guild_nm = 'global'
-        and game_date >= '2024-01-01'
-        group by 1,2,3
-        """
-
-        # get the game stats in text format
-        df = await get_df_from_sql(query=sql_query, params=None)
-        analysis_data = df.to_csv(index=False, header=True)
-
-        # read the /gpt command and the game data
-        analysis_request = ctx.message.content
-
-        # full input should be the analysis request followed by an explanation that next is the game data...
-        full_input = f"Briefly and succinctly answer the analysis request based on the game data.\nAnalysis Request:\n{analysis_request}\n\nGame Data:\n{analysis_data}"
-
-        # tell the model to creatively summarize the game data
-        gpt_role_description = """Imagine you are a senior data analyst with expertise in gaming analytics. Your goal is to provide comprehensive insights in a concise manner. Keep responses under 2000 characters, using bullet points and being straight to the point. Illuminate hidden aspects of the data to inform strategies, improve player experiences, and spark curiosity."""
-
-        gpt_model = "gpt-4o-mini" #"gpt-4o" # gpt-3.5-turbo-0125
-
-        # ask GPT
-        response = await openai_client.chat.completions.create(
-
-            # configuration
-            model=gpt_model,
-            messages=[
-                {"role": "system", "content": gpt_role_description},
-                {"role": "user", "content": full_input}
-            ],
-            max_tokens=1000
-        )
-
-        print('sending response now...')
- 
-        # Sending the response back to the Discord channel
-        await ctx.send(response.choices[0].message.content)
-
-    except Exception as e:
-
-        error_message = str(e)
-        if "token limit exceeded" in error_message.lower():
-            custom_message = "Error: Token limit exceeded. Please try a shorter query."
-        else:
-            custom_message = f"Error: {error_message}"
-
-        await ctx.send(custom_message)
+    if "summarize" in query.lower():
+        await ctx.send(f"Okay, let me check...")
+        await fetch_gpt_response(ctx, query)
+    else:
+        await ctx.send(f"I can't do that yet. Try 'summarize'.")
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
@@ -570,6 +490,8 @@ async def get(ctx, *args):
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
+
+
 
 # request rescan
 @bot.command(name='rescan')
