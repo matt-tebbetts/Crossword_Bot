@@ -47,16 +47,15 @@ async def fetch_gpt_response(ctx, query: str):
             print(f"Error filtering messages: {e}")
             return await ctx.send("Error: Invalid message format in messages.json file.")
 
-        # Get the current time in Eastern Time
-        eastern_tz = timezone('US/Eastern')
-        current_time = datetime.now(eastern_tz)
+        # Calculate the time h hours ago with timezone awareness
+        now = get_now().astimezone(pytz.utc)
+        h = 8
+        x_hours_ago = now - timedelta(hours=h)
 
-        # Filter messages from the past hour
-        one_hour_ago = current_time - timedelta(hours=1)
+        # Filter messages within the past 2 hours
         recent_messages = [
             msg for msg in channel_messages
-            if isinstance(msg, dict) and
-            eastern_tz.localize(datetime.fromisoformat(msg.get('create_ts', ''))) > one_hour_ago
+            if datetime.fromisoformat(msg.get('create_ts', '')).astimezone(pytz.utc) >= x_hours_ago
         ]
 
         # Format the messages for GPT input
