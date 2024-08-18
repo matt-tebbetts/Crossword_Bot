@@ -58,6 +58,14 @@ async def fetch_gpt_response(ctx, query: str):
             if datetime.fromisoformat(msg.get('create_ts', '')).astimezone(pytz.utc) >= x_hours_ago
         ]
 
+        # If no messages are found, take the last 100 messages
+        if not recent_messages:
+            recent_messages = sorted(
+                channel_messages,
+                key=lambda msg: msg.get('id', ''),
+                reverse=True
+            )[:100]
+
         # Format the messages for GPT input
         formatted_messages = "\n".join([f"{msg.get('author_nm', '')}: {msg.get('content', '')}" for msg in recent_messages])
 
