@@ -138,6 +138,11 @@ async def on_ready():
     global bot_ready
     bot_ready = True
     bot_print(f"{bot.user.name} is ready!")
+    
+    # Print registered commands
+    print('Registered commands:')
+    for command in bot.commands:
+        print(command.name)
 
     # get users into json
     get_users(bot)
@@ -397,6 +402,15 @@ async def check_mini():
 # /get can be replaced by any of the game names
 # ****************************************************************************** #
 
+# gpt
+@bot.command(name='gpt')
+async def gpt(ctx, *, query: str):
+
+    # send message confirming the command
+    print(f"Received GPT request")
+    await ctx.send(f"Okay, let me check...")
+
+    await fetch_gpt_response(ctx, query)
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
@@ -475,10 +489,7 @@ async def get(ctx, *args):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
-# gpt
-@bot.command(name='gpt_summarize')
-async def gpt_command(ctx, *, query: str):
-    await fetch_gpt_response(ctx, query)
+
 
 # request rescan
 @bot.command(name='rescan')
