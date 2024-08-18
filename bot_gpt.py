@@ -95,7 +95,7 @@ async def fetch_gpt_response(ctx, query: str):
             response = await openai_client.chat.completions.create(
                 model=gpt_model,
                 messages=[
-                    {"role": "system", "content": "Summarize the following conversation:"},
+                    {"role": "system", "content": "Summarize the following conversation, and don't reveal any of the key information within any SPOILER tags:"},
                     {"role": "user", "content": formatted_messages}
                 ],
                 max_tokens=1000
