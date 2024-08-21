@@ -140,7 +140,7 @@ async def on_ready():
     bot_print(f"{bot.user.name} is ready!")
     
     # Print registered commands
-    print('Registered commands:')
+    print('Checking registered commands:')
     for command in bot.commands:
         print(command.name)
 
@@ -148,6 +148,7 @@ async def on_ready():
     get_users(bot)
 
     # Start timed tasks
+    print("Starting timed tasks (auto_post and check_mini)")
     tasks_to_start = [auto_post, check_mini]
     for task in tasks_to_start:
         if not task.is_running():
