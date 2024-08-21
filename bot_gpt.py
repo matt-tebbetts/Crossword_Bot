@@ -111,10 +111,16 @@ async def fetch_gpt_response(ctx, query: str):
  
         # Sending the response back to the Discord channel
         try:
+            
+            # metadata for the response
             num_messages_used = len(selected_messages)
+            oldest_message_date = sorted_messages[-1]['timestamp'] if sorted_messages else "N/A"
+            oldest_message_date = datetime.fromisoformat(oldest_message_date).strftime('%Y-%m-%d %H:%M:%S')
+
+            # Send the response to the Discord channel
             response_content = response.choices[0].message.content
-            response_content += f"\n\nThis answer was based on analysis of {num_messages_used} messages from this channel."
-            await ctx.send(response.choices[0].message.content)
+            response_content += f"\n\nThis answer was based on analysis of {num_messages_used} messages from this channel, starting from {oldest_message_date}."
+            await ctx.send(response_content)
 
         except Exception as e:
             print(f"Error sending response to Discord: {e}")
