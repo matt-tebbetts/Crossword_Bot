@@ -411,6 +411,10 @@ async def gpt(ctx, *, query: str):
     # send message confirming the command
     print(f"Received GPT request")
 
+    if ctx.author.id != 340940380927295491:
+        return await ctx.send(f"Sorry, {ctx.author.name}, as a dumb robot I need Matt to fix my code first.")
+
+
     await fetch_gpt_response(ctx, query)
 
 # get leaderboards
@@ -489,8 +493,6 @@ async def get(ctx, *args):
     except Exception as e:
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
-
-
 
 # request rescan
 @bot.command(name='rescan')
