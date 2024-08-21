@@ -14,8 +14,6 @@ openai_client = AsyncOpenAI(api_key=gpt_key)
 
 # gpt command
 async def fetch_gpt_response(ctx, query: str):
-    print(f"fetch_gpt_response called with query: {query}")
-
 
     """
     is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
@@ -61,7 +59,7 @@ async def fetch_gpt_response(ctx, query: str):
         h = 8
         x_hours_ago = now - timedelta(hours=h)
 
-        # Filter messages within the past 2 hours
+        # Filter messages within the past X (h) hours
         recent_messages = [
             msg for msg in channel_messages
             if datetime.fromisoformat(msg.get('create_ts', '')).astimezone(pytz.utc) >= x_hours_ago
@@ -98,7 +96,11 @@ async def fetch_gpt_response(ctx, query: str):
             response = await openai_client.chat.completions.create(
                 model=gpt_model,
                 messages=[
-                    {"role": "system", "content": "Summarize the following conversation, and don't reveal any of the key information within any SPOILER tags:"},
+                    {"role": "system", "content": f"""
+                        Take the user's query and if they asked about recent messages in this channel, then use the recent messages to form your answer. Also, don't reveal any of the key information within any SPOILER tags. 
+                        Here is the user's query: {query}
+                        Attached are the recent messages:
+                        """},
                     {"role": "user", "content": formatted_messages}
                 ],
                 max_tokens=1000
