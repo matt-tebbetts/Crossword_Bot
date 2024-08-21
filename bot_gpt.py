@@ -67,7 +67,7 @@ async def fetch_gpt_response(ctx, query: str):
             formatted_message = f"{msg.get('author_nm', '')}: {msg.get('content', '')}"
             message_tokens = len(encoder.encode(formatted_message))
             
-            if token_count + message_tokens > max_tokens:
+            if token_count + message_tokens > max_tokens-100:
                 break
             
             selected_messages.append(formatted_message)
@@ -82,9 +82,7 @@ async def fetch_gpt_response(ctx, query: str):
             tokens = encoding.encode(formatted_messages)
         except Exception as e:
             print(f"Error encoding messages: {e}")
-            return await ctx.send("Error: Failed to encode messages for GPT input.")
-        
-       
+            return await ctx.send("Error: Failed to encode messages for GPT input.")-
 
         # Truncate the messages to fit within the limit
         if len(tokens) > max_tokens:
@@ -103,7 +101,7 @@ async def fetch_gpt_response(ctx, query: str):
                         """},
                     {"role": "user", "content": formatted_messages}
                 ],
-                max_tokens=1000
+                max_tokens=max_tokens
             )
         except Exception as e:
             print(f"Error fetching GPT response: {e}")
@@ -113,7 +111,11 @@ async def fetch_gpt_response(ctx, query: str):
  
         # Sending the response back to the Discord channel
         try:
+            num_messages_used = len(selected_messages)
+            response_content = response.choices[0].message.content
+            response_content += f"\n\nThis answer was based on analysis of {num_messages_used} messages from this channel."
             await ctx.send(response.choices[0].message.content)
+
         except Exception as e:
             print(f"Error sending response to Discord: {e}")
             return await ctx.send("Error: Failed to send response to Discord.")
