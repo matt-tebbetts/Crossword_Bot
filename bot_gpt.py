@@ -84,7 +84,7 @@ async def fetch_gpt_response(ctx, query: str):
                 model=gpt_model,
                 messages=[
                     {"role": "system", "content": f"""
-                        Take the user's query and if they asked about recent messages in this channel, then use the recent_messages to form your answer. The recent_messages could be several conversations across multiple days, or just one conversation over the past hour. Try to group them logically and understand which conversation is the most recent, and which conversation is most relevant to the user's query. The user might ask specific questions about the conversation. Try to keep your answers as concise and to the point as possible. Don't give vague responses. Also, don't reveal any of the key information within any SPOILER tags. 
+                        Take the user's query and if they asked about recent messages in this channel, then use the recent_messages to form your answer. The recent_messages could be several conversations across multiple days, or just one conversation over the past hour. Try to group them logically and understand which conversation is the most recent, and which conversation is most relevant to the user's query. The user might ask specific questions about the conversation. Try to keep your answers as concise and to the point as possible. Use bullet points if it helps make things clear and simple. Don't give vague responses. Also, don't reveal any of the key information within any SPOILER tags. 
                         Here is the user's query: {query}
                         Attached are the recent_messages:
                         """},
