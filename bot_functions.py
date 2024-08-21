@@ -318,6 +318,7 @@ def save_message_detail(message):
         "length": len(message.content),
         "author_id": message.author.id,
         "author_nm": message.author.name,
+        "author_nick": message.author.nick,
         "channel_id": message.channel.id,
         "channel_nm": message.channel.name,
         "has_attachments": bool(message.attachments),
