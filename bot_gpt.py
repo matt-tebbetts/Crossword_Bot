@@ -54,14 +54,26 @@ async def fetch_gpt_response(ctx, query: str):
             print(f"Error filtering messages: {e}")
             return await ctx.send("Error: Invalid message format in messages.json file.")
 
-        recent_messages = sorted(
-            channel_messages,
-            key=lambda msg: msg.get('id', ''),
-            reverse=True
-        )[:100]
-
-        # Format the messages for GPT input
-        formatted_messages = "\n".join([f"{msg.get('author_nm', '')}: {msg.get('content', '')}" for msg in recent_messages])
+        # Sort messages by ID in descending order
+        sorted_messages = sorted(channel_messages, key=lambda msg: msg.get('id', ''), reverse=True)
+        
+        # Initialize token counter
+        token_count = 0
+        selected_messages = []
+        encoder = tiktoken.encoding_for_model(gpt_model)
+        
+        for msg in sorted_messages:
+            formatted_message = f"{msg.get('author_nm', '')}: {msg.get('content', '')}"
+            message_tokens = len(encoder.encode(formatted_message))
+            
+            if token_count + message_tokens > max_tokens:
+                break
+            
+            selected_messages.append(formatted_message)
+            token_count += message_tokens
+        
+        # Join selected messages
+        formatted_messages = "\n".join(selected_messages)
 
         # Calculate the number of tokens
         try:
