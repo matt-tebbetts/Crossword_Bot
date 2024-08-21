@@ -25,6 +25,7 @@ async def fetch_gpt_response(ctx, query: str):
     try:
         print(f"User requested GPT response.")
         gpt_model = "gpt-4o-mini" #"gpt-4o" # gpt-3.5-turbo-0125
+        max_tokens = 4096
 
         # Read the messages.json file
         try:
@@ -83,7 +84,7 @@ async def fetch_gpt_response(ctx, query: str):
             print(f"Error encoding messages: {e}")
             return await ctx.send("Error: Failed to encode messages for GPT input.")
         
-        max_tokens = 4096
+       
 
         # Truncate the messages to fit within the limit
         if len(tokens) > max_tokens:
