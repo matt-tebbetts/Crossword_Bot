@@ -15,38 +15,23 @@ openai_client = AsyncOpenAI(api_key=gpt_key)
 # gpt command
 async def fetch_gpt_response(ctx, query: str):
 
-    """
-    is_allowed_author = ctx.author.id == 340940380927295491 or ctx.author.id == 163849350827606016
-    if not is_allowed_author:
-        print(f"User {ctx.author.name} is not allowed to use the GPT command.")
-        return await ctx.send(f"Sorry, {ctx.author.name}, this feature is locked for now.")
-    """
-
     try:
         print(f"User requested GPT response.")
         gpt_model = "gpt-4o-mini" #"gpt-4o" # gpt-3.5-turbo-0125
         max_tokens = 4096
 
-        # Read the messages.json file
-        try:
-            with open(f'files/guilds/{ctx.guild.name}/messages.json', 'r') as file:
-                messages_data = json.load(file)
+        # read messages.json file
+        with open(f'files/guilds/{ctx.guild.name}/messages.json', 'r') as file:
+            messages_data = json.load(file)
 
-                for message in messages_data.values():
+            for message in messages_data.values():
 
-                    # Find all spoilers in the message content
-                    spoilers = re.findall(r'\|\|(.*?)\|\|', message['content'])
-                    
-                    # Mark spoilers in the message content
-                    for spoiler in spoilers:
-                        message['content'] = message['content'].replace(f'||{spoiler}||', f'[SPOILER: {spoiler}]')
-
-        except FileNotFoundError as e:
-            print(f"Error reading messages.json file: {e}")
-            return await ctx.send("Error: messages.json file not found.")
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON from messages.json file: {e}")
-            return await ctx.send("Error: Failed to decode messages.json file.")
+                # Find all spoilers in the message content
+                spoilers = re.findall(r'\|\|(.*?)\|\|', message['content'])
+                
+                # Mark spoilers in the message content
+                for spoiler in spoilers:
+                    message['content'] = message['content'].replace(f'||{spoiler}||', f'[SPOILER: {spoiler}]')
 
         # Filter messages for the current channel
         try:
@@ -118,7 +103,7 @@ async def fetch_gpt_response(ctx, query: str):
 
             # Send the response to the Discord channel
             response_content = response.choices[0].message.content
-            response_content += f"\n\nThis answer was based on analysis of {num_messages_used} messages from this channel, starting from {oldest_message_date}."
+            response_content += f"\n\n```This answer was based on analysis of {num_messages_used} messages from this channel, starting from {oldest_message_date}.```"
             await ctx.send(response_content)
 
         except Exception as e:
