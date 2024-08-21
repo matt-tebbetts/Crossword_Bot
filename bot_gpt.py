@@ -114,8 +114,7 @@ async def fetch_gpt_response(ctx, query: str):
             
             # metadata for the response
             num_messages_used = len(selected_messages)
-            oldest_message_date = sorted_messages[-1]['timestamp'] if sorted_messages else "N/A"
-            oldest_message_date = datetime.fromisoformat(oldest_message_date).strftime('%Y-%m-%d %H:%M:%S')
+            oldest_message_date = datetime.fromisoformat(sorted_messages[-1]['create_ts']).strftime('%Y-%m-%d %H:%M:%S')
 
             # Send the response to the Discord channel
             response_content = response.choices[0].message.content
