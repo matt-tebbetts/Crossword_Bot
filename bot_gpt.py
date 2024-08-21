@@ -82,7 +82,7 @@ async def fetch_gpt_response(ctx, query: str):
             tokens = encoding.encode(formatted_messages)
         except Exception as e:
             print(f"Error encoding messages: {e}")
-            return await ctx.send("Error: Failed to encode messages for GPT input.")-
+            return await ctx.send("Error: Failed to encode messages for GPT input.")
 
         # Truncate the messages to fit within the limit
         if len(tokens) > max_tokens:
