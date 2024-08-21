@@ -411,11 +411,7 @@ async def gpt(ctx, *, query: str):
     # send message confirming the command
     print(f"Received GPT request")
 
-    if "summarize" in query.lower():
-        await ctx.send(f"Okay, let me check...")
-        await fetch_gpt_response(ctx, query)
-    else:
-        await ctx.send(f"I can't do that yet. Try 'summarize'.")
+    await fetch_gpt_response(ctx, query)
 
 # get leaderboards
 @bot.command(name='get', aliases=list_of_game_names)
