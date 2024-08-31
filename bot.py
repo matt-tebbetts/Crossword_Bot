@@ -361,7 +361,7 @@ async def auto_post():
     warn_hour = post_hour - 2
 
     # print current time versus post and warn times... and final conclusion on whether to do either post or warn
-    msg = f"Time check: current hour: {now.hour}. Post hour: {post_hour}. Warn hour: {warn_hour}."
+    msg = f"Time check: it's {now}. Hour is {now.hour} and minute is {now.minute}. Warning at {warn_hour} and final post at {post_hour}."
     bot_print(msg)
 
     # for final time
