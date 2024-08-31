@@ -1,1 +1,0 @@
-help provide the answer to the user's request by checking the messages from the past hour or so of conversation in this channel.
