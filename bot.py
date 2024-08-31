@@ -139,6 +139,7 @@ async def on_ready():
     bot_ready = True
     bot_print(f"{bot.user.name} is ready!")
     
+    """ # removing while testing
     # Print registered commands
     print('Checking registered commands:')
     for command in bot.commands:
@@ -146,13 +147,22 @@ async def on_ready():
 
     # get users into json
     get_users(bot)
-
+    """
+    
     # Start timed tasks
     print("Starting timed tasks (auto_post and check_mini)")
-    tasks_to_start = [auto_post, check_mini]
-    for task in tasks_to_start:
-        if not task.is_running():
+    tasks_to_start = [
+        (auto_post, "auto_post"),
+        (check_mini, "check_mini")
+    ]
+    
+    for task, task_name in tasks_to_start:
+        if task.is_running():
+            print(f"{task_name} is already running.")
+        else:
+            print(f"{task_name} is not running, starting it now.")
             task.start()
+            print(f"{task_name} started.")
 
     return
 
@@ -350,18 +360,26 @@ async def auto_post():
     post_hour = get_cutoff_hour()
     warn_hour = post_hour - 2
 
+    # print current time versus post and warn times... and final conclusion on whether to do either post or warn
+    msg = f"Time check: current hour: {now.hour}. Post hour: {post_hour}. Warn hour: {warn_hour}."
+    bot_print(msg)
+
     # for final time
-    if now.hour == post_hour and now.minute == 0:
-        bot_print("Time to post final!")
-        await post_mini(msg="Here's the final leaderboard", final_post=True) # all guilds
-        return
+    if now.hour == post_hour:
+        bot_print("We are within the hour to post the final leaderboard.")
+        if now.minute == 0:
+            bot_print("Time to post final!")
+            await post_mini(msg="Here's the final leaderboard", final_post=True) # all guilds
+            return
 
     # for warning time
-    elif now.hour == warn_hour and now.minute == 0:
-        bot_print("Time to warn!")
-        await send_mini_warning()
-        await post_mini()
-        return
+    if now.hour == warn_hour:
+        bot_print("We are within the hour to warn users who haven't done the mini yet.")
+        if now.minute == 0:
+            bot_print("Time to warn!")
+            await send_mini_warning()
+            await post_mini()
+            return
 
     else:
         return
