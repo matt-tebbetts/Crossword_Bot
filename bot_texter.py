@@ -9,7 +9,7 @@ load_dotenv()
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
 
-def send_sms(name, number, carrier, message):
+async def send_sms(name, number, carrier, message):
     try:
         # find user's carrier email based on their carrier
         carrier_gateway_template = carrier_emails[carrier]["sms_email"]
