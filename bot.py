@@ -152,7 +152,7 @@ async def on_ready():
     # Start timed tasks
     print("Starting timed tasks (auto_post and check_mini)")
     tasks_to_start = [
-        (auto_post, "auto_post"),
+        # (auto_post, "auto_post"), # this is disabled for now
         (check_mini, "check_mini")
     ]
     
