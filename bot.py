@@ -149,6 +149,7 @@ async def on_ready():
     get_users(bot)
     """
     
+    """ # HASNT BEEN WORKING!!!
     # Start timed tasks
     print("Starting timed tasks (auto_post and check_mini)")
     tasks_to_start = [
@@ -163,7 +164,7 @@ async def on_ready():
             print(f"{task_name} is not running, starting it now.")
             task.start()
             print(f"{task_name} started.")
-
+    """
     return
 
 # read channel messages
