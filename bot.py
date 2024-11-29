@@ -253,6 +253,7 @@ async def on_message_edit(before, after):
 # tasks
 # ****************************************************************************** #
 
+"""
 # post warning
 async def send_mini_warning():
 
@@ -347,11 +348,13 @@ async def post_mini(guild_name=None, msg=None, final_post=False):
 
             if guild_name is not None:
                 break
+"""
 
 # ****************************************************************************** #
 # timers for the tasks
 # ****************************************************************************** #
 
+"""
 # this function runs every minute to see if we should post the mini leaderboard
 @tasks.loop(minutes=1)
 async def auto_post():
@@ -418,7 +421,7 @@ async def check_mini():
 
     except Exception as e:
         bot_print(f"Error in check_mini part 2: {e}")
-
+"""
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)
 # /get can be replaced by any of the game names
