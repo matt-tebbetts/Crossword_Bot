@@ -249,24 +249,13 @@ async def send_mini_warning():
     if df.empty:
         discord_message = "Wow, everyone has completed the mini!"
     else:
-        bot_print(f"Found {len(df)} users who have not completed the mini.")
+        # prepare discord tags for all users
+        discord_tags = [f"<@{row['discord_id_nbr']}>" for index, row in df.iterrows()]
+        discord_message = "Mini expires soon. These users haven't done the mini yet: " + " ".join(discord_tags)
 
     # post warning in each active channel for each guild
     for guild in bot.guilds:
         bot_print(f"Posting Mini Warning for {guild.name}")
-
-        # Filter discord_tags based on the current guild
-        guild_df = df[df['guild_id'] == guild.id]
-
-        if guild_df.empty:
-            discord_message = "Wow, everyone in this guild has completed the mini!"
-        else:
-            # prepare discord tags
-            discord_tags = [f"<@{row['discord_id_nbr']}>" for index, row in guild_df.iterrows()]
-
-            # Prepare the final message for the Discord channel
-            discord_message = "Mini expires soon. These peeps haven't done the mini yet: " + " ".join(discord_tags)
-
         for channel in guild.channels:
             if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
                 await channel.send(discord_message)
