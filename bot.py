@@ -139,21 +139,10 @@ async def on_ready():
     bot_ready = True
     bot_print(f"{bot.user.name} is ready!")
     
-    """ # removing while testing
-    # Print registered commands
-    print('Checking registered commands:')
-    for command in bot.commands:
-        print(command.name)
-
-    # get users into json
-    get_users(bot)
-    """
-    
-    """ # HASNT BEEN WORKING!!!
     # Start timed tasks
     print("Starting timed tasks (auto_post and check_mini)")
     tasks_to_start = [
-        # (auto_post, "auto_post"), # this is disabled for now
+        (auto_post, "auto_post"), # this is disabled for now
         (check_mini, "check_mini")
     ]
     
@@ -164,7 +153,6 @@ async def on_ready():
             print(f"{task_name} is not running, starting it now.")
             task.start()
             print(f"{task_name} started.")
-    """
     return
 
 # read channel messages
@@ -253,58 +241,32 @@ async def on_message_edit(before, after):
 # tasks
 # ****************************************************************************** #
 
-"""
 # post warning
 async def send_mini_warning():
-
     # find users who have not yet completed the mini
     df = await mini_not_completed()
 
     if df.empty:
         discord_message = "Wow, everyone has completed the mini!"
-
     else:
         bot_print(f"Found {len(df)} users who have not completed the mini.")
-
-        # prepare discord tags
-        discord_tags = []
-        text_count = 0
-
-        # loop through the dataframe
-        for index, row in df.iterrows():
-
-            # if they want the text message, send it
-            if row['wants_text'] == 1 and row['phone_nbr'] and row['phone_carr_cd']:
-                send_sms(
-                        name=row['player_name'],
-                        number=row['phone_nbr'],
-                        carrier=row['phone_carr_cd'],
-                        message=f"Hey {row['player_name']}, the mini resets in 2 hours."
-                        )
-                text_count += 1
-
-            # otherwise, tag them in Discord
-            else:
-                discord_tag = f"<@{row['discord_id_nbr']}>"
-                discord_tags.append(discord_tag)
-
-        # Prepare the final message for the Discord channel
-        discord_message = f"Mini expires soon. Texted {text_count}."
-        if discord_tags:
-            discord_message += " These peeps haven't done the mini yet: " + " ".join(discord_tags)
 
     # post warning in each active channel for each guild
     for guild in bot.guilds:
         bot_print(f"Posting Mini Warning for {guild.name}")
-        
+
         # Filter discord_tags based on the current guild
-        filtered_discord_tags = [tag for tag in discord_tags if tag.guild_id == guild.id]
-        
-        # Prepare the final message for the Discord channel
-        discord_message = f"Mini expires soon. Texted {text_count}."
-        if filtered_discord_tags:
-            discord_message += " Non-texted remaining players are: " + " ".join(filtered_discord_tags)
-        
+        guild_df = df[df['guild_id'] == guild.id]
+
+        if guild_df.empty:
+            discord_message = "Wow, everyone in this guild has completed the mini!"
+        else:
+            # prepare discord tags
+            discord_tags = [f"<@{row['discord_id_nbr']}>" for index, row in guild_df.iterrows()]
+
+            # Prepare the final message for the Discord channel
+            discord_message = "Mini expires soon. These peeps haven't done the mini yet: " + " ".join(discord_tags)
+
         for channel in guild.channels:
             if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
                 await channel.send(discord_message)
@@ -348,13 +310,12 @@ async def post_mini(guild_name=None, msg=None, final_post=False):
 
             if guild_name is not None:
                 break
-"""
+
 
 # ****************************************************************************** #
 # timers for the tasks
 # ****************************************************************************** #
 
-"""
 # this function runs every minute to see if we should post the mini leaderboard
 @tasks.loop(minutes=1)
 async def auto_post():
@@ -362,7 +323,7 @@ async def auto_post():
     # check if it's time for any auto-post
     now = get_now()
     post_hour = get_cutoff_hour()
-    warn_hour = post_hour - 2
+    warn_hour = post_hour - 4
 
     # print current time versus post and warn times... and final conclusion on whether to do either post or warn
     msg = f"Time check: it's {now}. Hour is {now.hour} and minute is {now.minute}. Warning at {warn_hour} and final post at {post_hour}."
@@ -381,6 +342,7 @@ async def auto_post():
         bot_print("We are within the hour to warn users who haven't done the mini yet.")
         if now.minute == 0:
             bot_print("Time to warn!")
+            bot_print("Warning texts are currently disabled...")
             await send_mini_warning()
             await post_mini()
             return
@@ -421,7 +383,7 @@ async def check_mini():
 
     except Exception as e:
         bot_print(f"Error in check_mini part 2: {e}")
-"""
+
 # ****************************************************************************** #
 # commands (only 2 right now: /get and /rescan)
 # /get can be replaced by any of the game names
@@ -516,6 +478,7 @@ async def get(ctx, *args):
         error_message = f"Error getting {game_name} leaderboard: {str(e)}"
         await ctx.channel.send(error_message)
 
+"""
 # request rescan
 @bot.command(name='rescan')
 async def rescan(ctx, game_to_rescan=None):
@@ -598,6 +561,7 @@ async def rescan(ctx, game_to_rescan=None):
                                     img_subtitle=f"Since {since.strftime('%Y-%m-%d')}")
 
     await ctx.channel.send(f"Rescan complete. Here are the results:", file=discord.File(img))
+"""
 
 # run bot
 bot.run(TOKEN)
