@@ -312,15 +312,10 @@ async def auto_post():
     # check if it's time for any auto-post
     now = get_now()
     post_hour = get_cutoff_hour()
-    warn_hour = post_hour - 4
-
-    # print current time versus post and warn times... and final conclusion on whether to do either post or warn
-    msg = f"Time check: it's {now}. Hour is {now.hour} and minute is {now.minute}. Warning at {warn_hour} and final post at {post_hour}."
-    bot_print(msg)
+    warn_hour = post_hour - 2
 
     # for final time
     if now.hour == post_hour:
-        bot_print("We are within the hour to post the final leaderboard.")
         if now.minute == 0:
             bot_print("Time to post final!")
             await post_mini(msg="Here's the final leaderboard", final_post=True) # all guilds
@@ -328,7 +323,6 @@ async def auto_post():
 
     # for warning time
     if now.hour == warn_hour:
-        bot_print("We are within the hour to warn users who haven't done the mini yet.")
         if now.minute == 0:
             bot_print("Time to warn!")
             bot_print("Warning texts are currently disabled...")
