@@ -50,6 +50,11 @@
             "emoji": "🎭",
             "scoring_type": "guesses"
         },
+        "moviedle": {
+            "prefix": "Moviedle",
+            "emoji": "🎬",
+            "scoring_type": "guesses"
+        },
         "octordle": {
             "prefix": "Daily Octordle",
             "emoji": "8️⃣",

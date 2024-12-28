@@ -88,7 +88,8 @@ game_prefix_dict = {
     'octordle_rescue': 'Daily Rescue Octordle',
     'timeguessr': 'TimeGuessr',
     'concludle': 'Concludle',
-    'actorle': 'Actorle'
+    'actorle': 'Actorle',
+    'moviedle': 'Moviedle'
 }
 
 # emoji map for confirming game scores (prefix, emoji)
@@ -102,6 +103,7 @@ emoji_map = {
             'wordle': '📚',
             'boxofficega.me': '🎥',
             'actorle': '🎭',
+            'moviedle': '🎬',
             '#emovi': '🎬',
             'connections': '🔠',
             'daily octordle': '🐙', 
