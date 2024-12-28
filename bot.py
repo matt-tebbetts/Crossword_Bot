@@ -64,7 +64,7 @@ active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
 game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
                  'Wordle', 'Factle.app', 'boxofficega.me',
                  'Atlantic', 'Connections', '#Emovi',
-                 'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle',
+                 'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle', 'Moviedle',
                  'Daily Octordle', 'Daily Sequence Octordle', 'Daily Rescue Octordle']
 
 # this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
