@@ -103,7 +103,7 @@ def get_date_range(user_input):
     return min_date, max_date
 
 # returns image location of leaderboard
-async def get_leaderboard(guild_id='Global', game_name=None, min_date=None, max_date=None, user_nm=None):
+async def get_leaderboard(guild_id='global', game_name=None, min_date=None, max_date=None, user_nm=None):
     from bot_queries import build_query
 
     today = datetime.now(pytz.timezone('US/Eastern')).strftime("%Y-%m-%d")

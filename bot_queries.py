@@ -2,6 +2,10 @@ from global_functions import *
 
 def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
     
+    # Set guild_id to 'global' unless the game is "mini"
+    if game_name != 'mini':
+        guild_id = 'global'
+
     # Initialize the parameters list
     query_params = []
 
@@ -11,9 +15,6 @@ def build_query(guild_id, game_name, min_date, max_date, user_nm=None):
 
     is_date_range = False if min_date == max_date else True
 
-    # Set guild_id to 'global' unless the game is "mini"
-    if game_name != 'mini':
-        guild_id = 'global'
 
     # all games, winners only, single date
     if game_name == 'winners' and min_date == max_date:
