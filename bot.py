@@ -245,22 +245,31 @@ async def on_message_edit(before, after):
 
 # post warning
 async def send_mini_warning():
+    
     # find users who have not yet completed the mini
     df = await mini_not_completed()
-
     if df.empty:
         discord_message = "Wow, everyone has completed the mini!"
     else:
-        # prepare discord tags for all users
-        discord_tags = [f"<@{row['discord_id_nbr']}>" for index, row in df.iterrows()]
-        discord_message = "Mini expires soon. These users haven't done the mini yet: " + " ".join(discord_tags)
+        # post warning in each active channel for each guild
+        for guild in bot.guilds:
+            bot_print(f"Posting Mini Warning for {guild.name}")
+            
+            # prepare discord tags for users in the guild
+            discord_tags = []
+            for index, row in df.iterrows():
+                member = guild.get_member(int(row['discord_id_nbr']))
+                if member:
+                    discord_tags.append(f"<@{member.id}>")
+            
+            if discord_tags:
+                discord_message = "Mini expires soon. These users haven't done the mini yet: " + " ".join(discord_tags)
+            else:
+                discord_message = "Wow, everyone in this guild has completed the mini!"
 
-    # post warning in each active channel for each guild
-    for guild in bot.guilds:
-        bot_print(f"Posting Mini Warning for {guild.name}")
-        for channel in guild.channels:
-            if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
-                await channel.send(discord_message)
+            for channel in guild.channels:
+                if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
+                    await channel.send(discord_message)
 
 # post mini
 async def post_mini(guild_name=None, msg=None, final_post=False):
