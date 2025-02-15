@@ -1,7 +1,6 @@
 import os, socket
 from dotenv import load_dotenv
 import json
-import requests
 import zipfile
 import platform
 

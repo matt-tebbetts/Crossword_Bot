@@ -8,10 +8,6 @@ import json
 from config import *
 import traceback
 
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from bs4 import BeautifulSoup
 import requests
 import zipfile
 import platform
@@ -202,7 +198,7 @@ def check_chromedriver():
             bot_print(f"Exception type: {type(e)}")
             bot_print("Traceback:")
             bot_print(traceback.format_exc())
-
+"""
 def save_html_to_file(url, file_name):
     # use chromedriver + soup
     driver = get_webdriver()
@@ -215,3 +211,4 @@ def save_html_to_file(url, file_name):
     
     driver.quit()
     bot_print(f"HTML saved from {url} to {file_name}")
+"""
