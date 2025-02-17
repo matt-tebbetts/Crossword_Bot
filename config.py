@@ -40,12 +40,11 @@ def get_db_config(SQLUSER, SQLPASS, SQLHOST, SQLPORT, SQLDATA):
     return db_config
 
 def get_test_mode():
-    # set test_mode if on desktop
-    keywords = ['desktop', 'mjt']
-    hostname = str.lower(socket.gethostname())
-    print('Hostname:', hostname)
-    test_mode = any(keyword in hostname for keyword in keywords)
-    return test_mode
+    # Check the operating system
+    if platform.system().lower() in ['linux', 'unix']:
+        return False
+    else:
+        return True
 
 def load_carrier_emails():
     # load mobile carrier emails

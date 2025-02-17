@@ -134,12 +134,16 @@ async def get_leaderboard(guild_id='global', game_name=None, min_date=None, max_
     except Exception as e:
         bot_print(f"Error when trying to run SQL query: {e}")
         img = 'files/images/error.png'
+        if not os.path.exists(img):
+            img = "unknown error"
         return img
 
     # if leaderboard empty
     if len(df) == 0 or not cols:
         bot_print('The leaderboard is empty')
-        img = 'files/images/error.png' # should return a blank image or something...
+        img = 'files/images/error.png'
+        if not os.path.exists(img):
+            img = "unknown error"
         return img
 
     df.columns = cols
@@ -158,6 +162,9 @@ async def get_leaderboard(guild_id='global', game_name=None, min_date=None, max_
     except Exception as e:
         bot_print(f"Error when trying to generate image: {e}")
         img = 'files/images/error.png'
+        if not os.path.exists(img):
+            img = "unknown error"
+        return img
 
     return img
 

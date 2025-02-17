@@ -43,8 +43,13 @@ import asyncio
 
 # environment variables
 load_dotenv()
-TOKEN = os.getenv('MATT_BOT') if test_mode else os.getenv('CROSSWORD_BOT')
-if test_mode: print("Running in test mode.")
+if test_mode:
+    TOKEN = os.getenv('TEST_BOT')
+    print("Running in test mode.")
+else:
+    TOKEN = os.getenv('CROSSWORD_BOT')
+    print("Running in production mode.")
+print(f"TOKEN: {TOKEN}")
 
 # discord connection details
 my_intents = discord.Intents.all()
@@ -55,7 +60,7 @@ bot = commands.Bot(command_prefix="/", intents=my_intents, case_insensitive=True
 bot_ready = False
 
 # check chromedriver
-check_chromedriver()
+# check_chromedriver()
 
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]

@@ -116,6 +116,9 @@ def get_os_info():
     elif os_name == 'windows':
         os_ver = 'win64'
         os_ext = '.exe'
+    elif os_name == 'darwin':  # macOS is identified as 'Darwin'
+        os_ver = 'mac64'
+        os_ext = ''
     return {'os_name': os_name, 'os_ver': os_ver, 'os_ext': os_ext}
 
 def get_path(app):
@@ -126,6 +129,7 @@ def get_path(app):
     path = os.path.join(*path_components)
     return path
 
+"""
 def get_webdriver():
     
     # set service
@@ -198,7 +202,7 @@ def check_chromedriver():
             bot_print(f"Exception type: {type(e)}")
             bot_print("Traceback:")
             bot_print(traceback.format_exc())
-"""
+
 def save_html_to_file(url, file_name):
     # use chromedriver + soup
     driver = get_webdriver()
