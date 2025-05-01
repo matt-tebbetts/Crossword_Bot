@@ -256,25 +256,23 @@ async def send_mini_warning():
     if df.empty:
         discord_message = "Wow, everyone has completed the mini!"
     else:
-        # post warning in each active channel for each guild
+        # send DM to each user who hasn't completed the mini
         for guild in bot.guilds:
-            bot_print(f"Posting Mini Warning for {guild.name}")
+            bot_print(f"Sending Mini Warning DMs for {guild.name}")
             
-            # prepare discord tags for users in the guild
-            discord_tags = []
             for index, row in df.iterrows():
-                member = guild.get_member(int(row['discord_id_nbr']))
-                if member:
-                    discord_tags.append(f"<@{member.id}>")
-            
-            if discord_tags:
-                discord_message = "Mini expires soon. These users haven't done the mini yet: " + " ".join(discord_tags)
-            else:
-                discord_message = "Wow, everyone in this guild has completed the mini!"
+                try:
+                    member = guild.get_member(int(row['discord_id_nbr']))
+                    if member:
+                        await member.send("Mini expires soon! You haven't completed today's mini yet.")
+                        bot_print(f"Sent DM to {member.name}")
+                except Exception as e:
+                    bot_print(f"Failed to send DM to user: {e}")
 
+            # Post a general message in each active channel
             for channel in guild.channels:
                 if channel.name in active_channel_names and isinstance(channel, discord.TextChannel) and channel.name != 'bot-test':
-                    await channel.send(discord_message)
+                    await channel.send("Mini expires soon! I've sent DMs to users who haven't completed it yet.")
 
 # post mini
 async def post_mini(guild_name=None, msg=None, final_post=False):
