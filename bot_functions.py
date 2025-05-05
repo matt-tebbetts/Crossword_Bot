@@ -290,6 +290,18 @@ async def add_score(game_name, game_date, discord_id, msg_txt):
             if not df.empty:
                 game_date = df['game_dt'].iloc[0]
 
+    # Extract game number for Timeguessr
+    elif game_name.lower() == 'timeguessr':
+        match = re.search(r'#(\d+)', msg_txt)
+        if match:
+            game_number = match.group(1)
+            # Query the database for the game date
+            query = "SELECT game_dt FROM games.timeguessr_xref WHERE game_nbr = %s"
+            params = (game_number,)
+            df = await get_df_from_sql(query, params=params)
+            if not df.empty:
+                game_date = df['game_dt'].iloc[0]
+
     # game detail for certain games
     if game_name == 'boxoffice':
         game_dtl = msg_txt.strip().split("\n")[1] # movie date
