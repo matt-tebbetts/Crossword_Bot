@@ -230,6 +230,13 @@ async def extract_score(message_text, game_name):
         parts = message_text.split()
         score = parts[2] if len(parts) > 2 else None
 
+    elif game == 'timeguessr':
+        # Handle TimeGuessr scores like "41,006/50,000"
+        pattern = re.compile(r'(\d{1,3}(?:,\d{3})*)(?=/)')
+        match = pattern.search(message_text)
+        if match:
+            score = match.group(1).replace(',', '')
+
     elif game == 'octordle' or game == 'octordle_sequence' or game == 'octordle_rescue':
         
         # get second element from last line (i.e. "Score: 87")
@@ -296,11 +303,11 @@ async def add_score(game_name, game_date, discord_id, msg_txt):
         if match:
             game_number = match.group(1)
             # Query the database for the game date
-            query = "SELECT game_dt FROM games.timeguessr_xref WHERE game_nbr = %s"
+            query = "SELECT game_date FROM games.timeguessr_xref WHERE game_nbr = %s"
             params = (game_number,)
             df = await get_df_from_sql(query, params=params)
             if not df.empty:
-                game_date = df['game_dt'].iloc[0]
+                game_date = df['game_date'].iloc[0]
 
     # game detail for certain games
     if game_name == 'boxoffice':
