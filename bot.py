@@ -65,59 +65,29 @@ bot_ready = False
 # remove this!!!!
 active_channel_names = ["crossword-corner", "game-scores", "bot-test"]
 
-# set game names and prefixes
-game_prefixes = ['#Worldle', '#travle', '#travle_usa', '#travle_gbr',
-                 'Wordle', 'Factle.app', 'boxofficega.me',
-                 'Atlantic', 'Connections', '#Emovi',
-                 'Daily Crosswordle', 'TimeGuessr', 'Concludle', 'Actorle', 'Moviedle',
-                 'Daily Octordle', 'Daily Sequence Octordle', 'Daily Rescue Octordle']
+def load_games_config():
+    """Load games configuration from JSON file"""
+    with open('files/config/games.json', 'r') as f:
+        games_config = json.load(f)
+    
+    # Build game_prefixes list
+    game_prefixes = []
+    game_prefix_dict = {}
+    emoji_map = {}
+    
+    for game_name, game_data in games_config.items():
+        if 'prefix' in game_data:
+            game_prefixes.append(game_data['prefix'])
+            game_prefix_dict[game_name] = game_data['prefix']
+            emoji_map[game_data['prefix'].lower()] = game_data.get('emoji', '✅')
+    
+    # Sort prefixes by length to prevent prefix conflicts
+    game_prefixes.sort(key=len, reverse=True)
+    
+    return game_prefixes, game_prefix_dict, emoji_map, games_config
 
-# this helps prevent the bot from thinking that #travle is a prefix for #travle_usa
-game_prefixes.sort(key=len, reverse=True)
-
-game_prefix_dict = {
-    'mini': 'Mini',
-    'worldle': '#Worldle',
-    'travle': '#travle',
-    'travle_usa': '#travle_usa',
-    'travle_gbr': '#travle_gbr',
-    'factle': 'Factle.app',
-    'boxoffice': 'boxofficega.me',
-    'wordle': 'Wordle',
-    'atlantic': 'Atlantic',
-    'connections': 'Connections',
-    'emovi': '#Emovi',
-    'crosswordle': 'Daily Crosswordle',
-    'octordle': 'Daily Octordle',
-    'octordle_sequence': 'Daily Sequence Octordle',
-    'octordle_rescue': 'Daily Rescue Octordle',
-    'timeguessr': 'TimeGuessr',
-    'concludle': 'Concludle',
-    'actorle': 'Actorle',
-    'moviedle': 'Moviedle'
-}
-
-# emoji map for confirming game scores (prefix, emoji)
-emoji_map = {
-            '#worldle': '🌎',
-            '#travle': '🌍',
-            '#travle_usa': '🇺🇸',
-            '#travle_gbr': '🇬🇧',
-            'atlantic': '🌊',
-            'factle.app': '📈',
-            'wordle': '📚',
-            'boxofficega.me': '🎥',
-            'actorle': '🎭',
-            'moviedle': '🎬',
-            '#emovi': '🎬',
-            'connections': '🔠',
-            'daily octordle': '🐙', 
-            'daily sequence octordle': '🔢',
-            'daily rescue octordle': '🚑',
-            'daily crosswordle': '🧩',
-            'timeguessr': '⏱️',
-            'concludle': '🏁',
-        }
+# Load game configuration
+game_prefixes, game_prefix_dict, emoji_map, games_config = load_games_config()
 
 # for calling the /get_leaderboard command (which has aliases)
 list_of_game_names = list(game_prefix_dict.keys())
@@ -221,10 +191,12 @@ async def on_message(message):
             emoji = emoji_map.get(game_prefix.lower(), '✅')
             await message.add_reaction(emoji)
 
-            if response.get('bonuses', {}).get('rainbow_bonus'):
-                await message.add_reaction('🌈')
-            if response.get('bonuses', {}).get('purple_bonus'):
-                await message.add_reaction('🟪')
+            # Add bonus emojis if available
+            if game_name in games_config and 'bonus_emojis' in games_config[game_name]:
+                bonuses = response.get('bonuses', {})
+                for bonus_key, bonus_emoji in games_config[game_name]['bonus_emojis'].items():
+                    if bonuses.get(bonus_key):
+                        await message.add_reaction(bonus_emoji)
 
             # exit the loop since we found the prefix
             break

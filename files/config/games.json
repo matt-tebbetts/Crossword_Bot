@@ -1,74 +1,149 @@
 {
-    "games": {
-        "mini": {
-            "prefix": "Mini",
-            "emoji": "",
-            "scoring_type": "timed"
-        },
-        "wordle": {
-            "prefix": "Wordle",
-            "emoji": "📚",
-            "scoring_type": "guesses"
-        },
-        "worldle": {
-            "prefix": "#Worldle",
-            "emoji": "🌎",
-            "scoring_type": "guesses"
-        },
-        "crosswordle": {
-            "prefix": "Daily Crosswordle",
-            "emoji": "🧩",
-            "scoring_type": "timed"
-        },
-        "boxoffice": {
-            "prefix": "boxofficega.me",
-            "emoji": "🎥",
-            "scoring_type": "points"
-        },
-        "factle": {
-            "prefix": "Factle.app",
-            "emoji": "📈",
-            "scoring_type": "guesses"
-        },
-        "travle": {
-            "prefix": "#travle",
-            "emoji": "🌍",
-            "scoring_type": "guesses"
-        },
-        "connections": {
-            "prefix": "Connections",
-            "emoji": "🔠",
-            "scoring_type": "guesses"
-        },
-        "timeguessr": {
-            "prefix": "TimeGuessr",
-            "emoji": "⏱️",
-            "scoring_type": "points"
-        },
-        "actorle": {
-            "prefix": "Actorle",
-            "emoji": "🎭",
-            "scoring_type": "guesses"
-        },
-        "moviedle": {
-            "prefix": "Moviedle",
-            "emoji": "🎬",
-            "scoring_type": "guesses"
-        },
-        "octordle": {
-            "prefix": "Daily Octordle",
-            "emoji": "8️⃣",
-            "scoring_type": "guesses"
-        },
-        "octordle_sequence": {
-            "prefix": "Daily Sequence Octordle",
-            "emoji": "8️⃣",
-            "scoring_type": "guesses"
-        },
-        "octordle_rescue": {
-            "prefix": "Daily Rescue Octordle",
-            "emoji": "8️⃣",
-            "scoring_type": "guesses"
+    "mini": {
+        "game_name": "mini",
+        "scoring_type": "timed"
+    },
+    "wordle": {
+        "game_name": "wordle",
+        "prefix": "Wordle",
+        "scoring_type": "guesses",
+        "emoji": "📚"
+    },
+    "worldle": {
+        "game_name": "worldle",
+        "prefix": "#Worldle",
+        "scoring_type": "guesses",
+        "emoji": "🌎",
+        "bonus_emojis": {
+            "first_guess": "🔥"
         }
+    },
+    "crosswordle": {
+        "game_name": "crosswordle",
+        "prefix": "Daily Crosswordle",
+        "scoring_type": "timed",
+        "emoji": "🧩",
+        "bonus_emojis": {
+            "under_30": "🔥"
+        }
+    },
+    "boxoffice": {
+        "game_name": "boxoffice",
+        "prefix": "boxofficega.me",
+        "scoring_type": "points",
+        "emoji": "🎬",
+        "bonus_emojis": {
+            "guessed_1": "1️⃣",
+            "guessed_2": "2️⃣",
+            "guessed_3": "3️⃣",
+            "guessed_4": "4️⃣",
+            "guessed_5": "🔥"
+        }
+    },
+    "factle": {
+        "game_name": "factle",
+        "prefix": "Factle by @FOS",
+        "scoring_type": "guesses",
+        "emoji": "📈",
+        "bonus_emojis": {
+            "perfect": "🔥",
+            "impressive": "👩‍🏫",
+            "lost": "❌"
+        }
+    },
+    "factle_sports": {
+        "game_name": "factle_sports",
+        "prefix": "Factle Sports by @FOS",
+        "scoring_type": "guesses",
+        "emoji": "📈",
+        "bonus_emojis": {
+            "perfect": "🔥",
+            "impressive": "🏈",
+            "lost": "❌"
+        }
+    },
+    "travle": {
+        "game_name": "travle",
+        "prefix": "#travle",
+        "scoring_type": "guesses",
+        "emoji": "🌍",
+        "bonus_emojis": {
+            "perfect": "🎉",
+            "hint": "👎"
+        }
+    },
+    "connections": {
+        "game_name": "connections",
+        "prefix": "Connections",
+        "scoring_type": "guesses",
+        "emoji": "🔠",
+        "bonus_emojis": {
+            "rainbow_first": "🌈",
+            "purple_second": "🟪"
+        }
+    },
+    "timeguessr": {
+        "game_name": "timeguessr",
+        "prefix": "TimeGuessr",
+        "scoring_type": "points",
+        "emoji": "⏱️",
+        "bonus_emojis": {
+            "over_40k": "🔥"
+        }
+    },
+    "actorle": {
+        "game_name": "actorle",
+        "prefix": "Actorle",
+        "scoring_type": "guesses",
+        "emoji": "🎭",
+        "bonus_emojis": {
+            "single_guess": "🔥"
+        }
+    },
+    "octordle": {
+        "game_name": "octordle",
+        "prefix": "Daily Octordle",
+        "scoring_type": "guesses",
+        "emoji": "🐙",
+        "bonus_emojis": {
+            "failed_any": "💀",
+            "under_52": "🔥"
+        }
+    },
+    "octordle_sequence": {
+        "game_name": "octordle_sequence",
+        "prefix": "Daily Sequence Octordle",
+        "scoring_type": "guesses",
+        "emoji": "🔢",
+        "bonus_emojis": {
+            "failed_any": "💀",
+            "under_52": "🔥"
+        }
+    },
+    "octordle_rescue": {
+        "game_name": "octordle_rescue",
+        "prefix": "Daily Rescue Octordle",
+        "scoring_type": "guesses",
+        "emoji": "🚑",
+        "bonus_emojis": {
+            "failed_any": "💀",
+            "bonus_9": "🔥"
+        }
+    },
+    "moviedle": {
+        "game_name": "moviedle",
+        "prefix": "Moviedle #",
+        "scoring_type": "guesses",
+        "emoji": "🎥",
+        "bonus_emojis": {
+            "won": "🏆",
+            "lost": "❌"
+        }
+    },
+    "my_scores": {
+        "game_name": "my_scores"
+    },
+    "winners": {
+        "game_name": "winners"
     }
 }
